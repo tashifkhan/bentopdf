@@ -65,7 +65,8 @@ RUN --mount=type=secret,id=VITE_CORS_PROXY_URL,required=false \
     --mount=type=secret,id=VITE_CORS_PROXY_SECRET,required=false \
     VITE_CORS_PROXY_URL=$(cat /run/secrets/VITE_CORS_PROXY_URL 2>/dev/null || echo "") \
     VITE_CORS_PROXY_SECRET=$(cat /run/secrets/VITE_CORS_PROXY_SECRET 2>/dev/null || echo "") \
-    npm run build:with-docs
+    node scripts/generate-security-headers.mjs && \
+    npm run build:docker
 
 # Production stage — uses standard nginx (starts as root, drops to PUID/PGID)
 FROM nginx:alpine-slim

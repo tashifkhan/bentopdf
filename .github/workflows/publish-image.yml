@@ -65,6 +65,7 @@ jobs:
             VITE_BRAND_NAME=Taf PDF
             VITE_BRAND_LOGO=images/taf-pdf-mark.svg
             VITE_FOOTER_TEXT=Private PDF tools powered by BentoPDF.
+            VITE_CROSS_ORIGIN_ISOLATION=true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

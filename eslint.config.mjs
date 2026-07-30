@@ -24,6 +24,7 @@ export default [
       'public/coherentpdf.browser.min.js',
       'public/libreoffice-wasm/**',
       'public/workers/**',
+      'web/public/libreoffice-wasm/**',
     ],
   },
   { languageOptions: { globals: { ...globals.browser, ...globals.node } } },

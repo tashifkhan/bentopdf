@@ -1,58 +1,37 @@
-# Full BentoPDF toolkit (SIMPLE_MODE) — 100+ tools, all processors
-ARG BASE_URL=
+# BentoPDF web app (TanStack Start + Nitro)
+# The deployed UI is built from web/ and runs on the internal port expected by
+# Nginx Proxy Manager (3000). PDF processing remains client-side in the browser.
 
-FROM public.ecr.aws/docker/library/node:20-alpine AS builder
+FROM oven/bun:1.3.9 AS builder
 WORKDIR /app
-COPY package.json package-lock.json bun.lock* ./
-COPY vendor ./vendor
-ENV HUSKY=0
-RUN npm config set fetch-retries 5 && \
-    npm config set fetch-retry-mintimeout 60000 && \
-    npm config set fetch-retry-maxtimeout 300000 && \
-    npm ci || npm install
 
-COPY . .
+COPY web/package.json web/bun.lock ./
+RUN bun install --frozen-lockfile
 
-ARG SIMPLE_MODE=true
-ENV SIMPLE_MODE=$SIMPLE_MODE
-ARG COMPRESSION_MODE=all
-ENV COMPRESSION_MODE=$COMPRESSION_MODE
-ARG BASE_URL
-ENV BASE_URL=$BASE_URL
-ARG SITE_URL=https://pdf.taf.sh
-ENV SITE_URL=$SITE_URL
-ARG VITE_BRAND_NAME=Taf PDF
-ENV VITE_BRAND_NAME=$VITE_BRAND_NAME
-ARG VITE_BRAND_LOGO=images/taf-pdf-mark.svg
-ENV VITE_BRAND_LOGO=$VITE_BRAND_LOGO
-ARG VITE_FOOTER_TEXT=Private PDF tools powered by BentoPDF.
-ENV VITE_FOOTER_TEXT=$VITE_FOOTER_TEXT
-ENV NODE_OPTIONS="--max-old-space-size=3072"
+COPY web/ ./
 
-# Generate the Nginx policy files from the same origins used by the frontend,
-# then build the deployed static application.
-RUN node scripts/generate-security-headers.mjs && npx vite build
+ARG VITE_CROSS_ORIGIN_ISOLATION=true
+ENV VITE_CROSS_ORIGIN_ISOLATION=${VITE_CROSS_ORIGIN_ISOLATION}
+RUN bun run build
 
-FROM quay.io/nginx/nginx-unprivileged:alpine-slim
-LABEL org.opencontainers.image.source="https://github.com/tashifkhan/bentopdf"
-LABEL org.opencontainers.image.description="BentoPDF full toolkit — private browser PDF tools"
+FROM oven/bun:1.3.9-alpine AS runner
+WORKDIR /app
 
-ARG BASE_URL
-USER root
 RUN apk upgrade --no-cache
-USER nginx
 
-COPY --chown=nginx:nginx --from=builder /app/dist /usr/share/nginx/html${BASE_URL%/}
-COPY --chown=nginx:nginx --from=builder /app/security-headers.conf /etc/nginx/security-headers.conf
-COPY --chown=nginx:nginx nginx.conf /etc/nginx/nginx.conf
-COPY --chown=nginx:nginx security-headers-docs.conf /etc/nginx/security-headers-docs.conf
-COPY --chown=nginx:nginx --chmod=755 nginx-ipv6.sh /docker-entrypoint.d/99-disable-ipv6.sh
-COPY --chown=nginx:nginx --chmod=755 nginx-noindex.sh /docker-entrypoint.d/98-noindex.sh
-RUN mkdir -p /etc/nginx/tmp && chown -R nginx:nginx /etc/nginx/tmp || true
+LABEL org.opencontainers.image.source="https://github.com/tashifkhan/bentopdf"
+LABEL org.opencontainers.image.url="https://pdf.taf.sh"
+LABEL org.opencontainers.image.description="BentoPDF browser-first PDF toolkit with the redesigned document workspace"
 
-ENV DISABLE_IPV6=false
-ENV PORT=8080
-EXPOSE 8080
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOST=0.0.0.0
+
+COPY --from=builder /app/.output ./.output
+COPY --from=builder /app/package.json ./package.json
+
+USER bun
+EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD ["wget", "--spider", "-q", "http://127.0.0.1:8080/"]
-CMD ["nginx", "-g", "daemon off;"]
+  CMD ["bun", "-e", "fetch('http://127.0.0.1:3000/').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))"]
+CMD ["bun", ".output/server/index.mjs"]

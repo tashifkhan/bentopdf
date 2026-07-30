@@ -5,6 +5,7 @@ import { getTool } from '~/data/tools'
 import { MergePdfTool } from '~/features/tools/MergePdfTool'
 import { MultiToolPage } from '~/features/tools/MultiToolPage'
 import { ToolWorkspace } from '~/features/tools/ToolWorkspace'
+import { getToolEntry } from '~/features/tools/processors'
 
 export const Route = createFileRoute('/tools/$slug')({
   component: ToolPage,
@@ -26,13 +27,14 @@ export const Route = createFileRoute('/tools/$slug')({
 
 function ToolPage() {
   const { tool } = Route.useLoaderData()
+  const entry = getToolEntry(tool.slug)
 
-  // Full-screen multi-tool workspace
-  if (tool.slug === 'pdf-multi-tool') {
+  // Full-screen multi-tool workspace (also backs Organize PDF).
+  if (entry.status === 'workspace' && entry.kind === 'multi-tool') {
     return <MultiToolPage />
   }
 
-  // Polished dedicated UIs where we have them
+  // Polished dedicated UI for merging.
   if (tool.slug === 'merge-pdf') {
     return (
       <div className="pt-6">
@@ -44,7 +46,7 @@ function ToolPage() {
     )
   }
 
-  // Every other catalog tool → beUI workspace + real client processor
+  // Everything else → beUI workspace, which also renders the unavailable state.
   return (
     <div className="pt-6">
       <BackLink />
