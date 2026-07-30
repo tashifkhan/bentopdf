@@ -1,0 +1,252 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/dm-sans/wght.css';
+
+/* Tailwind dark mode: driven by html.dark (set by ThemeProvider) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+  Design tokens
+  -------------
+  Raw palette lives on :root / .dark as --ws-*.
+  @theme maps them into Tailwind utilities (bg-background, text-primary, …)
+  so beUI + app code share one system.
+*/
+:root {
+  color-scheme: light;
+
+  --ws-bg: #f2f0eb;
+  --ws-surface: #fffcf8;
+  --ws-surface-2: #f6f3ed;
+  --ws-surface-3: #ebe7df;
+  --ws-ink: #151b18;
+  --ws-ink-2: #3f4843;
+  --ws-ink-3: #6a746e;
+  --ws-ink-4: #939c96;
+  --ws-line: #e4dfd5;
+  --ws-line-strong: #cfc8bb;
+  --ws-brand: #1a3d35;
+  --ws-brand-hover: #255249;
+  --ws-brand-soft: rgb(26 61 53 / 0.1);
+  --ws-accent: #d24a33;
+  --ws-accent-soft: rgb(210 74 51 / 0.1);
+  --ws-success: #2d8f62;
+  --ws-success-soft: rgb(45 143 98 / 0.12);
+  --ws-danger: #c93b2c;
+  --ws-danger-soft: rgb(201 59 44 / 0.1);
+  --ws-on-brand: #f7f4ee;
+  --ws-shadow-sm: 0 6px 18px rgb(21 27 24 / 0.05);
+  --ws-shadow-md: 0 14px 36px rgb(21 27 24 / 0.08);
+  --ws-radius: 1rem;
+  --ws-radius-sm: 0.75rem;
+  --ws-radius-lg: 1.25rem;
+}
+
+.dark,
+html[data-theme='dark'] {
+  color-scheme: dark;
+
+  --ws-bg: #0d110f;
+  --ws-surface: #161c19;
+  --ws-surface-2: #1c231f;
+  --ws-surface-3: #252e29;
+  --ws-ink: #f1eee7;
+  --ws-ink-2: #c5ccc7;
+  --ws-ink-3: #8f9892;
+  --ws-ink-4: #66706a;
+  --ws-line: #2a342f;
+  --ws-line-strong: #3c4a43;
+  --ws-brand: #7dcfb6;
+  --ws-brand-hover: #9bdbc8;
+  --ws-brand-soft: rgb(125 207 182 / 0.12);
+  --ws-accent: #ff7a5c;
+  --ws-accent-soft: rgb(255 122 92 / 0.14);
+  --ws-success: #4ecf8c;
+  --ws-success-soft: rgb(78 207 140 / 0.14);
+  --ws-danger: #e85d4c;
+  --ws-danger-soft: rgb(232 93 76 / 0.14);
+  --ws-on-brand: #0d110f;
+  --ws-shadow-sm: 0 6px 18px rgb(0 0 0 / 0.3);
+  --ws-shadow-md: 0 14px 36px rgb(0 0 0 / 0.36);
+}
+
+@theme inline {
+  --font-sans: 'DM Sans Variable', 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+
+  /* Semantic colors → Tailwind utilities: bg-background, text-primary, border-border… */
+  --color-background: var(--ws-bg);
+  --color-foreground: var(--ws-ink);
+  --color-card: var(--ws-surface);
+  --color-card-foreground: var(--ws-ink);
+  --color-popover: var(--ws-surface);
+  --color-popover-foreground: var(--ws-ink);
+  --color-primary: var(--ws-brand);
+  --color-primary-foreground: var(--ws-on-brand);
+  --color-secondary: var(--ws-surface-2);
+  --color-secondary-foreground: var(--ws-ink);
+  --color-muted: var(--ws-surface-2);
+  --color-muted-foreground: var(--ws-ink-3);
+  --color-accent: var(--ws-accent);
+  --color-accent-foreground: #fff;
+  --color-destructive: var(--ws-danger);
+  --color-destructive-foreground: #fff;
+  --color-success: var(--ws-success);
+  --color-border: var(--ws-line);
+  --color-input: var(--ws-line);
+  --color-ring: var(--ws-accent);
+
+  /* Named palette (optional explicit utilities: bg-brand, text-ink-3…) */
+  --color-brand: var(--ws-brand);
+  --color-brand-hover: var(--ws-brand-hover);
+  --color-brand-soft: var(--ws-brand-soft);
+  --color-ink: var(--ws-ink);
+  --color-ink-2: var(--ws-ink-2);
+  --color-ink-3: var(--ws-ink-3);
+  --color-ink-4: var(--ws-ink-4);
+  --color-surface: var(--ws-surface);
+  --color-surface-2: var(--ws-surface-2);
+  --color-surface-3: var(--ws-surface-3);
+  --color-line: var(--ws-line);
+  --color-line-strong: var(--ws-line-strong);
+
+  --radius-sm: var(--ws-radius-sm);
+  --radius-md: var(--ws-radius);
+  --radius-lg: var(--ws-radius-lg);
+  --radius-xl: 1.5rem;
+
+  /* Concrete shadow values (Tailwind needs real values for shadow-* utils) */
+  --shadow-card: 0 6px 18px rgb(21 27 24 / 0.05);
+  --shadow-panel: 0 14px 36px rgb(21 27 24 / 0.08);
+}
+
+.dark {
+  --shadow-card: 0 6px 18px rgb(0 0 0 / 0.3);
+  --shadow-panel: 0 14px 36px rgb(0 0 0 / 0.36);
+}
+
+/* View-transition / theme-switch: freeze CSS color transitions so we don't
+   double-animate (flicker) under the beUI clip-path reveal. */
+html[data-theme-switching='1'],
+html[data-theme-switching='1'] * {
+  transition: none !important;
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    border-color: var(--color-border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Smooth token changes when VT API is unavailable */
+  html:not([data-theme-switching='1']) body {
+    transition:
+      background-color 220ms ease,
+      color 220ms ease;
+  }
+
+  html,
+  body {
+    min-height: 100%;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    background-color: var(--color-background);
+    background-image:
+      radial-gradient(
+        ellipse 70% 40% at 0% -10%,
+        color-mix(in srgb, var(--ws-brand) 10%, transparent),
+        transparent
+      ),
+      radial-gradient(
+        ellipse 50% 35% at 100% 0%,
+        color-mix(in srgb, var(--ws-accent) 8%, transparent),
+        transparent
+      );
+    background-attachment: fixed;
+    color: var(--color-foreground);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .app-shell {
+    @apply flex min-h-dvh flex-col;
+  }
+
+  .app-main {
+    @apply mx-auto w-full max-w-[1120px] flex-1 px-4 pb-12;
+  }
+
+  .surface-card {
+    @apply rounded-lg border border-border bg-card text-card-foreground shadow-card;
+  }
+
+  .chip {
+    @apply inline-flex h-8 shrink-0 cursor-pointer items-center whitespace-nowrap rounded-full border border-transparent bg-transparent px-3.5 text-[0.78rem] font-semibold text-muted-foreground transition-colors;
+  }
+
+  .chip:hover {
+    @apply bg-card text-foreground;
+  }
+
+  .chip.is-active {
+    @apply bg-primary text-primary-foreground;
+  }
+
+  .tool-grid {
+    @apply grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3;
+  }
+
+  .tool-card {
+    @apply flex items-start gap-3.5 rounded-lg border border-border bg-card p-4 text-left transition-[transform,border-color,box-shadow] duration-150;
+  }
+
+  .tool-card:hover {
+    @apply -translate-y-px border-brand/40 shadow-card;
+  }
+
+  .tool-card-icon {
+    @apply grid size-9 shrink-0 place-items-center rounded-[11px] bg-brand-soft text-brand;
+  }
+
+  .tool-card h3 {
+    @apply m-0 text-[0.9rem] font-bold tracking-tight text-foreground;
+  }
+
+  .tool-card p {
+    @apply mt-1 line-clamp-2 text-xs leading-snug text-muted-foreground;
+  }
+
+  .tool-dropzone {
+    @apply relative flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-line-strong bg-secondary px-4 py-8 text-center transition-colors;
+  }
+
+  .tool-dropzone:hover {
+    @apply border-brand bg-brand-soft/40;
+  }
+}

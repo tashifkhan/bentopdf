@@ -1,0 +1,799 @@
+[
+  {
+    "name": "Popular Tools",
+    "tools": [
+      {
+        "slug": "pdf-workflow",
+        "name": "PDF Workflow Builder",
+        "icon": "tree-structure",
+        "subtitle": "Build custom PDF processing pipelines with a visual node editor."
+      },
+      {
+        "slug": "pdf-multi-tool",
+        "name": "PDF Multi Tool",
+        "icon": "pencil-ruler",
+        "subtitle": "Merge, Split, Organize, Delete, Rotate, Add Blank Pages, Extract and Duplicate in an unified interface."
+      },
+      {
+        "slug": "merge-pdf",
+        "name": "Merge PDF",
+        "icon": "browsers",
+        "subtitle": "Combine multiple PDFs into one file. Preserves Bookmarks."
+      },
+      {
+        "slug": "split-pdf",
+        "name": "Split PDF",
+        "icon": "scissors",
+        "subtitle": "Extract a range of pages into a new PDF."
+      },
+      {
+        "slug": "compress-pdf",
+        "name": "Compress PDF",
+        "icon": "lightning",
+        "subtitle": "Reduce the file size of your PDF."
+      },
+      {
+        "slug": "edit-pdf",
+        "name": "PDF Editor",
+        "icon": "pencil-simple",
+        "subtitle": "Annotate, highlight, redact, comment, add shapes/images, search, and view PDFs"
+      },
+      {
+        "slug": "jpg-to-pdf",
+        "name": "JPG to PDF",
+        "icon": "file-jpg",
+        "subtitle": "Create a PDF from one or more JPG images."
+      },
+      {
+        "slug": "sign-pdf",
+        "name": "Sign PDF",
+        "icon": "pen-nib",
+        "subtitle": "Draw, type, or upload your signature."
+      },
+      {
+        "slug": "crop-pdf",
+        "name": "Crop PDF",
+        "icon": "crop",
+        "subtitle": "Trim the margins of every page in your PDF."
+      },
+      {
+        "slug": "extract-pages",
+        "name": "Extract Pages",
+        "icon": "squares-four",
+        "subtitle": "Save a selection of pages as new files."
+      },
+      {
+        "slug": "organize-pdf",
+        "name": "Duplicate & Organize",
+        "icon": "files",
+        "subtitle": "Duplicate, reorder, and delete pages."
+      },
+      {
+        "slug": "delete-pages",
+        "name": "Delete Pages",
+        "icon": "trash",
+        "subtitle": "Remove specific pages from your document."
+      }
+    ]
+  },
+  {
+    "name": "Edit & Annotate",
+    "tools": [
+      {
+        "slug": "edit-pdf",
+        "name": "PDF Editor",
+        "icon": "pencil-simple",
+        "subtitle": "Annotate, highlight, redact, comment, add shapes/images, search, and view PDFs."
+      },
+      {
+        "slug": "bookmark",
+        "name": "Edit Bookmarks",
+        "icon": "bookmark",
+        "subtitle": "Add, edit, import, delete and extract PDF bookmarks."
+      },
+      {
+        "slug": "table-of-contents",
+        "name": "Table of Contents",
+        "icon": "list",
+        "subtitle": "Generate a table of contents page from PDF bookmarks."
+      },
+      {
+        "slug": "page-numbers",
+        "name": "Page Numbers",
+        "icon": "list-numbers",
+        "subtitle": "Insert page numbers into your document."
+      },
+      {
+        "slug": "add-page-labels",
+        "name": "Add Page Labels",
+        "icon": "text-aa",
+        "subtitle": "Apply PDF page labels with Roman numerals, prefixes, and custom starts."
+      },
+      {
+        "slug": "bates-numbering",
+        "name": "Bates Numbering",
+        "icon": "hash",
+        "subtitle": "Add sequential Bates numbers across one or more PDF files."
+      },
+      {
+        "slug": "add-watermark",
+        "name": "Add Watermark",
+        "icon": "drop",
+        "subtitle": "Stamp text or an image over your PDF pages."
+      },
+      {
+        "slug": "header-footer",
+        "name": "Header & Footer",
+        "icon": "paragraph",
+        "subtitle": "Add text to the top and bottom of pages."
+      },
+      {
+        "slug": "invert-colors",
+        "name": "Invert Colors",
+        "icon": "circle-half",
+        "subtitle": "Create a \"dark mode\" version of your PDF."
+      },
+      {
+        "slug": "scanner-effect",
+        "name": "Scanner Effect",
+        "icon": "scan",
+        "subtitle": "Make your PDF look like a scanned document."
+      },
+      {
+        "slug": "adjust-colors",
+        "name": "Adjust Colors",
+        "icon": "sliders-horizontal",
+        "subtitle": "Fine-tune brightness, contrast, saturation and more."
+      },
+      {
+        "slug": "background-color",
+        "name": "Background Color",
+        "icon": "palette",
+        "subtitle": "Change the background color of your PDF."
+      },
+      {
+        "slug": "text-color",
+        "name": "Change Text Color",
+        "icon": "eyedropper",
+        "subtitle": "Change the color of text in your PDF."
+      },
+      {
+        "slug": "sign-pdf",
+        "name": "Sign PDF",
+        "icon": "pen-nib",
+        "subtitle": "Draw, type, or upload your signature."
+      },
+      {
+        "slug": "add-stamps",
+        "name": "Add Stamps",
+        "icon": "stamp",
+        "subtitle": "Add image stamps to your PDF using the annotation toolbar."
+      },
+      {
+        "slug": "remove-annotations",
+        "name": "Remove Annotations",
+        "icon": "eraser",
+        "subtitle": "Strip comments, highlights, and links."
+      },
+      {
+        "slug": "crop-pdf",
+        "name": "Crop PDF",
+        "icon": "crop",
+        "subtitle": "Trim the margins of every page in your PDF."
+      },
+      {
+        "slug": "form-filler",
+        "name": "PDF Form Filler",
+        "icon": "pencil-line",
+        "subtitle": "Fill in forms directly in the browser. Also supports XFA forms."
+      },
+      {
+        "slug": "form-creator",
+        "name": "Create PDF Form",
+        "icon": "file-plus",
+        "subtitle": "Create fillable PDF forms with drag-and-drop text fields."
+      },
+      {
+        "slug": "remove-blank-pages",
+        "name": "Remove Blank Pages",
+        "icon": "file-minus",
+        "subtitle": "Automatically detect and delete blank pages."
+      }
+    ]
+  },
+  {
+    "name": "Convert to PDF",
+    "tools": [
+      {
+        "slug": "image-to-pdf",
+        "name": "Images to PDF",
+        "icon": "images",
+        "subtitle": "Convert JPG, PNG, BMP, GIF, TIFF, PNM, PGM, PBM, PPM, PAM, JXR, JPX, JP2, PSD, SVG, HEIC, WebP to PDF."
+      },
+      {
+        "slug": "jpg-to-pdf",
+        "name": "JPG to PDF",
+        "icon": "file-jpg",
+        "subtitle": "Create a PDF from one or more JPG images."
+      },
+      {
+        "slug": "png-to-pdf",
+        "name": "PNG to PDF",
+        "icon": "file-png",
+        "subtitle": "Create a PDF from one or more PNG images."
+      },
+      {
+        "slug": "webp-to-pdf",
+        "name": "WebP to PDF",
+        "icon": "image",
+        "subtitle": "Create a PDF from one or more WebP images."
+      },
+      {
+        "slug": "svg-to-pdf",
+        "name": "SVG to PDF",
+        "icon": "file-svg",
+        "subtitle": "Create a PDF from one or more SVG images."
+      },
+      {
+        "slug": "bmp-to-pdf",
+        "name": "BMP to PDF",
+        "icon": "image",
+        "subtitle": "Create a PDF from one or more BMP images."
+      },
+      {
+        "slug": "heic-to-pdf",
+        "name": "HEIC to PDF",
+        "icon": "device-mobile",
+        "subtitle": "Create a PDF from one or more HEIC images."
+      },
+      {
+        "slug": "tiff-to-pdf",
+        "name": "TIFF to PDF",
+        "icon": "image",
+        "subtitle": "Create a PDF from one or more TIFF images."
+      },
+      {
+        "slug": "txt-to-pdf",
+        "name": "Text to PDF",
+        "icon": "text-t",
+        "subtitle": "Convert a plain text file into a PDF."
+      },
+      {
+        "slug": "markdown-to-pdf",
+        "name": "Markdown to PDF",
+        "icon": "markdown-logo",
+        "subtitle": "Convert Markdown to PDF with live preview and syntax highlighting."
+      },
+      {
+        "slug": "json-to-pdf",
+        "name": "JSON to PDF",
+        "icon": "file-code",
+        "subtitle": "Convert JSON files to PDF format."
+      },
+      {
+        "slug": "odt-to-pdf",
+        "name": "ODT to PDF",
+        "icon": "file",
+        "subtitle": "Convert ODT (OpenDocument Text) files to PDF."
+      },
+      {
+        "slug": "csv-to-pdf",
+        "name": "CSV to PDF",
+        "icon": "file-csv",
+        "subtitle": "Convert CSV (Comma-Separated Values) spreadsheets to PDF."
+      },
+      {
+        "slug": "rtf-to-pdf",
+        "name": "RTF to PDF",
+        "icon": "file-text",
+        "subtitle": "Convert RTF (Rich Text Format) documents to PDF."
+      },
+      {
+        "slug": "word-to-pdf",
+        "name": "Word to PDF",
+        "icon": "microsoft-word-logo",
+        "subtitle": "Convert Word documents (DOCX, DOC, ODT) to PDF."
+      },
+      {
+        "slug": "excel-to-pdf",
+        "name": "Excel to PDF",
+        "icon": "microsoft-excel-logo",
+        "subtitle": "Convert Excel spreadsheets (XLSX, XLS, ODS) to PDF."
+      },
+      {
+        "slug": "powerpoint-to-pdf",
+        "name": "PowerPoint to PDF",
+        "icon": "microsoft-powerpoint-logo",
+        "subtitle": "Convert PowerPoint presentations (PPTX, PPT, ODP) to PDF."
+      },
+      {
+        "slug": "xps-to-pdf",
+        "name": "XPS to PDF",
+        "icon": "scan",
+        "subtitle": "Convert XPS/OXPS documents to PDF."
+      },
+      {
+        "slug": "mobi-to-pdf",
+        "name": "MOBI to PDF",
+        "icon": "book-open-text",
+        "subtitle": "Convert MOBI e-books to PDF."
+      },
+      {
+        "slug": "epub-to-pdf",
+        "name": "EPUB to PDF",
+        "icon": "book-open-text",
+        "subtitle": "Convert EPUB e-books to PDF."
+      },
+      {
+        "slug": "fb2-to-pdf",
+        "name": "FB2 to PDF",
+        "icon": "book-bookmark",
+        "subtitle": "Convert FictionBook (FB2) e-books to PDF."
+      },
+      {
+        "slug": "cbz-to-pdf",
+        "name": "CBZ to PDF",
+        "icon": "book-open",
+        "subtitle": "Convert comic book archives (CBZ/CBR) to PDF."
+      },
+      {
+        "slug": "wpd-to-pdf",
+        "name": "WPD to PDF",
+        "icon": "file-text",
+        "subtitle": "Convert WordPerfect documents (WPD) to PDF."
+      },
+      {
+        "slug": "wps-to-pdf",
+        "name": "WPS to PDF",
+        "icon": "file-text",
+        "subtitle": "Convert WPS Office documents to PDF."
+      },
+      {
+        "slug": "xml-to-pdf",
+        "name": "XML to PDF",
+        "icon": "file-code",
+        "subtitle": "Convert XML documents to PDF."
+      },
+      {
+        "slug": "pages-to-pdf",
+        "name": "Pages to PDF",
+        "icon": "file-text",
+        "subtitle": "Convert Apple Pages documents to PDF."
+      },
+      {
+        "slug": "odg-to-pdf",
+        "name": "ODG to PDF",
+        "icon": "image",
+        "subtitle": "Convert OpenDocument Graphics (ODG) to PDF."
+      },
+      {
+        "slug": "ods-to-pdf",
+        "name": "ODS to PDF",
+        "icon": "table",
+        "subtitle": "Convert OpenDocument Spreadsheet (ODS) to PDF."
+      },
+      {
+        "slug": "odp-to-pdf",
+        "name": "ODP to PDF",
+        "icon": "presentation",
+        "subtitle": "Convert OpenDocument Presentation (ODP) to PDF."
+      },
+      {
+        "slug": "pub-to-pdf",
+        "name": "PUB to PDF",
+        "icon": "book-open",
+        "subtitle": "Convert Microsoft Publisher (PUB) to PDF."
+      },
+      {
+        "slug": "vsd-to-pdf",
+        "name": "VSD to PDF",
+        "icon": "git-branch",
+        "subtitle": "Convert Microsoft Visio (VSD, VSDX) to PDF."
+      },
+      {
+        "slug": "psd-to-pdf",
+        "name": "PSD to PDF",
+        "icon": "image",
+        "subtitle": "Convert Adobe Photoshop (PSD) files to PDF. Multiple files supported."
+      },
+      {
+        "slug": "email-to-pdf",
+        "name": "Email to PDF",
+        "icon": "envelope",
+        "subtitle": "Convert email files (EML, MSG) to PDF format."
+      }
+    ]
+  },
+  {
+    "name": "Convert from PDF",
+    "tools": [
+      {
+        "slug": "pdf-to-jpg",
+        "name": "PDF to JPG",
+        "icon": "file-image",
+        "subtitle": "Convert each PDF page into a JPG image."
+      },
+      {
+        "slug": "pdf-to-png",
+        "name": "PDF to PNG",
+        "icon": "file-image",
+        "subtitle": "Convert each PDF page into a PNG image."
+      },
+      {
+        "slug": "pdf-to-webp",
+        "name": "PDF to WebP",
+        "icon": "file-image",
+        "subtitle": "Convert each PDF page into a WebP image."
+      },
+      {
+        "slug": "pdf-to-bmp",
+        "name": "PDF to BMP",
+        "icon": "file-image",
+        "subtitle": "Convert each PDF page into a BMP image."
+      },
+      {
+        "slug": "pdf-to-tiff",
+        "name": "PDF to TIFF",
+        "icon": "file-image",
+        "subtitle": "Convert each PDF page into a TIFF image."
+      },
+      {
+        "slug": "pdf-to-cbz",
+        "name": "PDF to CBZ",
+        "icon": "book-open",
+        "subtitle": "Convert a PDF into a CBZ (Comic Book Archive) file for comic readers."
+      },
+      {
+        "slug": "pdf-to-svg",
+        "name": "PDF to SVG",
+        "icon": "file-code",
+        "subtitle": "Convert each PDF page into a scalable vector graphic."
+      },
+      {
+        "slug": "pdf-to-csv",
+        "name": "PDF to CSV",
+        "icon": "file-csv",
+        "subtitle": "Extract tables from PDF and convert to CSV format."
+      },
+      {
+        "slug": "pdf-to-excel",
+        "name": "PDF to Excel",
+        "icon": "microsoft-excel-logo",
+        "subtitle": "Extract tables from PDF and convert to Excel (XLSX)."
+      },
+      {
+        "slug": "pdf-to-greyscale",
+        "name": "PDF to Greyscale",
+        "icon": "palette",
+        "subtitle": "Convert all colors to black and white."
+      },
+      {
+        "slug": "pdf-to-json",
+        "name": "PDF to JSON",
+        "icon": "file-code",
+        "subtitle": "Convert PDF files to JSON format."
+      },
+      {
+        "slug": "pdf-to-docx",
+        "name": "PDF to Word",
+        "icon": "microsoft-word-logo",
+        "subtitle": "Convert PDF files to editable Word documents."
+      },
+      {
+        "slug": "extract-images",
+        "name": "Extract Images",
+        "icon": "download-simple",
+        "subtitle": "Extract all embedded images from your PDF files."
+      },
+      {
+        "slug": "pdf-to-markdown",
+        "name": "PDF to Markdown",
+        "icon": "markdown-logo",
+        "subtitle": "Convert PDF text and tables to Markdown format."
+      },
+      {
+        "slug": "prepare-pdf-for-ai",
+        "name": "Prepare PDF for AI",
+        "icon": "sparkle",
+        "subtitle": "Extract PDF content as LlamaIndex JSON for RAG/LLM pipelines."
+      },
+      {
+        "slug": "pdf-to-text",
+        "name": "PDF to Text",
+        "icon": "text-aa",
+        "subtitle": "Extract text from PDF files and save as plain text (.txt)."
+      }
+    ]
+  },
+  {
+    "name": "Organize & Manage",
+    "tools": [
+      {
+        "slug": "ocr-pdf",
+        "name": "OCR PDF",
+        "icon": "barcode",
+        "subtitle": "Make a PDF searchable and copyable."
+      },
+      {
+        "slug": "merge-pdf",
+        "name": "Merge PDF",
+        "icon": "browsers",
+        "subtitle": "Combine multiple PDFs into one file."
+      },
+      {
+        "slug": "alternate-merge",
+        "name": "Alternate & Mix Pages",
+        "icon": "shuffle",
+        "subtitle": "Merge PDFs by alternating pages from each PDF. Preserves Bookmarks"
+      },
+      {
+        "slug": "organize-pdf",
+        "name": "Organize & Duplicate",
+        "icon": "files",
+        "subtitle": "Duplicate, reorder, and delete pages."
+      },
+      {
+        "slug": "overlay-pdf",
+        "name": "PDF Overlay",
+        "icon": "stack-simple",
+        "subtitle": "Overlay or underlay pages from one PDF onto another."
+      },
+      {
+        "slug": "add-attachments",
+        "name": "Add Attachments",
+        "icon": "paperclip",
+        "subtitle": "Embed one or more files into your PDF."
+      },
+      {
+        "slug": "extract-attachments",
+        "name": "Extract Attachments",
+        "icon": "download",
+        "subtitle": "Extract all embedded files from PDF(s) as a ZIP."
+      },
+      {
+        "slug": "edit-attachments",
+        "name": "Edit Attachments",
+        "icon": "paperclip-horizontal",
+        "subtitle": "View or remove attachments in your PDF."
+      },
+      {
+        "slug": "pdf-multi-tool",
+        "name": "PDF Multi Tool",
+        "icon": "pencil-ruler",
+        "subtitle": "Full-featured PDF editor with page management."
+      },
+      {
+        "slug": "pdf-layers",
+        "name": "PDF OCG",
+        "icon": "stack-simple",
+        "subtitle": "View, toggle, add, and delete OCG layers in your PDF."
+      },
+      {
+        "slug": "extract-tables",
+        "name": "Extract Tables",
+        "icon": "table",
+        "subtitle": "Extract tables from PDFs as CSV, JSON, or Markdown."
+      },
+      {
+        "slug": "split-pdf",
+        "name": "Split PDF",
+        "icon": "scissors",
+        "subtitle": "Extract a range of pages into a new PDF."
+      },
+      {
+        "slug": "divide-pages",
+        "name": "Divide Pages",
+        "icon": "columns",
+        "subtitle": "Divide pages horizontally or vertically."
+      },
+      {
+        "slug": "extract-pages",
+        "name": "Extract Pages",
+        "icon": "squares-four",
+        "subtitle": "Save a selection of pages as new files."
+      },
+      {
+        "slug": "delete-pages",
+        "name": "Delete Pages",
+        "icon": "trash",
+        "subtitle": "Remove specific pages from your document."
+      },
+      {
+        "slug": "add-blank-page",
+        "name": "Add Blank Page",
+        "icon": "file-plus",
+        "subtitle": "Insert an empty page anywhere in your PDF."
+      },
+      {
+        "slug": "reverse-pages",
+        "name": "Reverse Pages",
+        "icon": "sort-descending",
+        "subtitle": "Flip the order of all pages in your document."
+      },
+      {
+        "slug": "rotate-pdf",
+        "name": "Rotate PDF",
+        "icon": "arrow-clockwise",
+        "subtitle": "Turn pages in 90-degree increments."
+      },
+      {
+        "slug": "rotate-custom",
+        "name": "Rotate by Custom Degrees",
+        "icon": "arrows-clockwise",
+        "subtitle": "Rotate pages by any custom angle."
+      },
+      {
+        "slug": "n-up-pdf",
+        "name": "N-Up PDF",
+        "icon": "squares-four",
+        "subtitle": "Arrange multiple pages onto a single sheet."
+      },
+      {
+        "slug": "pdf-booklet",
+        "name": "PDF Booklet",
+        "icon": "book-open",
+        "subtitle": "Rearrange pages for double-sided booklet printing."
+      },
+      {
+        "slug": "combine-single-page",
+        "name": "Combine to Single Page",
+        "icon": "arrows-out-line-vertical",
+        "subtitle": "Stitch all pages into one continuous scroll."
+      },
+      {
+        "slug": "view-metadata",
+        "name": "View Metadata",
+        "icon": "info",
+        "subtitle": "Inspect the hidden properties of your PDF."
+      },
+      {
+        "slug": "edit-metadata",
+        "name": "Edit Metadata",
+        "icon": "file-code",
+        "subtitle": "Change the author, title, and other properties."
+      },
+      {
+        "slug": "pdf-to-zip",
+        "name": "PDFs to ZIP",
+        "icon": "file-zip",
+        "subtitle": "Package multiple PDF files into a ZIP archive."
+      },
+      {
+        "slug": "compare-pdfs",
+        "name": "Compare PDFs",
+        "icon": "git-diff",
+        "subtitle": "Compare two PDFs side by side."
+      },
+      {
+        "slug": "posterize-pdf",
+        "name": "Posterize PDF",
+        "icon": "notepad",
+        "subtitle": "Split a large page into multiple smaller pages."
+      }
+    ]
+  },
+  {
+    "name": "Optimize & Repair",
+    "tools": [
+      {
+        "slug": "compress-pdf",
+        "name": "Compress PDF",
+        "icon": "lightning",
+        "subtitle": "Reduce the file size of your PDF."
+      },
+      {
+        "slug": "pdf-to-pdfa",
+        "name": "PDF to PDF/A",
+        "icon": "archive",
+        "subtitle": "Convert PDF to PDF/A for long-term archiving."
+      },
+      {
+        "slug": "fix-page-size",
+        "name": "Fix Page Size",
+        "icon": "ruler",
+        "subtitle": "Standardize all pages to a uniform size."
+      },
+      {
+        "slug": "linearize-pdf",
+        "name": "Linearize PDF",
+        "icon": "gauge",
+        "subtitle": "Optimize PDF for fast web viewing."
+      },
+      {
+        "slug": "page-dimensions",
+        "name": "Page Dimensions",
+        "icon": "ruler",
+        "subtitle": "Analyze page size, orientation, and units."
+      },
+      {
+        "slug": "remove-restrictions",
+        "name": "Remove Restrictions",
+        "icon": "link-break",
+        "subtitle": "Remove password protection and security restrictions associated with digitally signed PDF files."
+      },
+      {
+        "slug": "repair-pdf",
+        "name": "Repair PDF",
+        "icon": "wrench",
+        "subtitle": "Recover data from corrupted or damaged PDF files."
+      },
+      {
+        "slug": "rasterize-pdf",
+        "name": "Rasterize PDF",
+        "icon": "image",
+        "subtitle": "Convert PDF to image-based PDF. Flatten layers and remove selectable text."
+      },
+      {
+        "slug": "deskew-pdf",
+        "name": "Deskew PDF",
+        "icon": "perspective",
+        "subtitle": "Automatically straighten tilted scanned pages using OpenCV."
+      },
+      {
+        "slug": "font-to-outline",
+        "name": "Font to Outline",
+        "icon": "text-outdent",
+        "subtitle": "Convert all fonts to vector outlines for consistent rendering."
+      }
+    ]
+  },
+  {
+    "name": "Secure PDF",
+    "tools": [
+      {
+        "slug": "encrypt-pdf",
+        "name": "Encrypt PDF",
+        "icon": "lock",
+        "subtitle": "Lock your PDF by adding a password."
+      },
+      {
+        "slug": "sanitize-pdf",
+        "name": "Sanitize PDF",
+        "icon": "broom",
+        "subtitle": "Remove metadata, annotations, scripts, and more."
+      },
+      {
+        "slug": "decrypt-pdf",
+        "name": "Decrypt PDF",
+        "icon": "lock-open",
+        "subtitle": "Unlock PDF by removing password protection."
+      },
+      {
+        "slug": "flatten-pdf",
+        "name": "Flatten PDF",
+        "icon": "stack",
+        "subtitle": "Make form fields and annotations non-editable."
+      },
+      {
+        "slug": "remove-metadata",
+        "name": "Remove Metadata",
+        "icon": "file-x",
+        "subtitle": "Strip hidden data from your PDF."
+      },
+      {
+        "slug": "change-permissions",
+        "name": "Change Permissions",
+        "icon": "shield-check",
+        "subtitle": "Set or change user permissions on a PDF."
+      },
+      {
+        "slug": "digital-sign-pdf",
+        "name": "Digital Signature",
+        "icon": "certificate",
+        "subtitle": "Add a cryptographic digital signature using X.509 certificates."
+      },
+      {
+        "slug": "validate-signature-pdf",
+        "name": "Validate Signature",
+        "icon": "seal-check",
+        "subtitle": "Verify digital signatures and view certificate details."
+      },
+      {
+        "slug": "timestamp-pdf",
+        "name": "Timestamp PDF",
+        "icon": "clock",
+        "subtitle": "Add an RFC 3161 document timestamp using a trusted TSA server."
+      }
+    ]
+  }
+]
