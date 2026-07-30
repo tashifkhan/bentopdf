@@ -6,6 +6,8 @@ on:
       - main
     tags:
       - 'v*'
+  schedule:
+    - cron: '15 1 * * 1'
   workflow_dispatch:
 
 permissions:
