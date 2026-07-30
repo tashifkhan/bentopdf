@@ -10,8 +10,8 @@ RUN bun install --frozen-lockfile
 COPY web/ ./
 RUN bun run build
 
-# Production — Nitro server via Bun
-FROM oven/bun:1.3.9 AS runner
+# Production — minimal Nitro server via Bun
+FROM oven/bun:1.3.9-alpine AS runner
 WORKDIR /app
 
 LABEL org.opencontainers.image.source="https://github.com/tashifkhan/bentopdf"
