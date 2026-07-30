@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+    paths:
+      - '.dockerignore'
+      - 'Dockerfile'
+      - 'web/**'
     tags:
       - 'v*'
   schedule:

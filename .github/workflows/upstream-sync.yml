@@ -30,14 +30,12 @@ jobs:
           fi
 
           title="Upstream BentoPDF release $latest is available"
-          existing="$(gh issue list \
+          if ! gh issue list \
             --repo "$REPOSITORY" \
             --state all \
             --search "\"$title\" in:title" \
             --json title \
-            --jq --arg title "$title" '[.[] | select(.title == $title)] | length')"
-
-          if [ "$existing" = "0" ]; then
+            --jq '.[].title' | grep -Fxq "$title"; then
             gh issue create \
               --repo "$REPOSITORY" \
               --title "$title" \
