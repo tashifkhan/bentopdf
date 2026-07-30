@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Primary Meta Tags -->
+    <title>PDF Tools</title>
+    <meta name="title" content="PDF Tools" />
+    <meta
+      name="description"
+      content="Free online PDF tools - Merge, split, compress, convert PDFs. 100% browser-based, no signup required, unlimited files."
+    />
+
+    <!-- Mobile Web App -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="PDF Tools" />
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/svg+xml" href="/images/favicon.svg" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="/images/favicon-192x192.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="512x512"
+      href="/images/favicon-512x512.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="/images/apple-touch-icon.png"
+    />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+
+    {{> theme-boot }}
+
+    <link href="src/css/styles.css" rel="stylesheet" />
+  </head>
+
+  <body class="antialiased workspace-shell">
+    {{> navbar }}
+
+    <div id="app" class="workspace-app min-h-screen container mx-auto">
+      <header id="tools-header" class="workspace-hero">
+        <div class="workspace-hero-copy">
+          <p class="workspace-eyebrow">
+            <i data-lucide="shield-check"></i>
+            Private · Local · Instant
+          </p>
+          <h1>Every PDF tool you need, <span>in the browser</span></h1>
+          <p class="workspace-hero-summary">
+            Merge, split, convert, sign, and edit — files never leave this
+            device. Search a tool below or browse by category.
+          </p>
+          <ul class="workspace-pill-row" aria-label="Highlights">
+            <li><strong>70+</strong> tools</li>
+            <li><strong>0</strong> uploads</li>
+            <li><strong>100%</strong> local</li>
+          </ul>
+        </div>
+      </header>
+
+      <div id="grid-view" class="workspace-grid-view">
+        <div class="workspace-toolbar">
+          <div class="workspace-search">
+            <span class="workspace-search-icon" aria-hidden="true">
+              <i data-lucide="search"></i>
+            </span>
+            <input
+              type="text"
+              id="search-bar"
+              placeholder="Search tools — merge, OCR, compress, sign…"
+              data-i18n-placeholder="tools.searchPlaceholder"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <span class="workspace-search-actions">
+              <kbd id="shortcut"></kbd>
+              <button
+                id="open-shortcuts-btn"
+                type="button"
+                title="Keyboard Shortcuts"
+                aria-label="Open settings and keyboard shortcuts"
+              >
+                <i data-lucide="settings-2" class="w-4 h-4"></i>
+              </button>
+            </span>
+          </div>
+
+          <div class="workspace-toolbar-row">
+            <div
+              id="category-filters"
+              class="workspace-filters"
+              role="toolbar"
+              aria-label="Filter tools by category"
+            ></div>
+            <div class="workspace-toolbar-meta">
+              <p class="workspace-search-hint">
+                <kbd>/</kbd> or <kbd id="shortcut-hint">⌘K</kbd>
+              </p>
+              <p id="tool-result-count" class="workspace-result-count"></p>
+            </div>
+          </div>
+        </div>
+
+        <div id="recent-tools" class="recent-tools hidden"></div>
+
+        <div id="tool-grid"></div>
+      </div>
+
+      <div id="tool-interface" class="workspace-panel hidden">
+        <button id="back-to-grid" class="workspace-back-btn" type="button">
+          <i data-lucide="arrow-left"></i>
+          <span data-i18n="tools.backToTools">Back to Tools</span>
+        </button>
+        <div id="tool-content"></div>
+      </div>
+
+      <div
+        id="loader-modal"
+        class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+      >
+        <div
+          class="bg-gray-800 p-8 rounded-lg flex flex-col items-center gap-4 border border-gray-700 shadow-xl"
+        >
+          <div class="solid-spinner"></div>
+          <p
+            id="loader-text"
+            class="text-white text-lg font-medium"
+            data-i18n="loader.processing"
+          >
+            Processing...
+          </p>
+        </div>
+      </div>
+
+      <div
+        id="alert-modal"
+        class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+      >
+        <div
+          class="bg-gray-800 max-w-sm w-full p-6 rounded-lg border border-gray-700 shadow-xl text-center"
+        >
+          <h3 id="alert-title" class="text-xl font-bold text-white mb-2">
+            Alert
+          </h3>
+          <p id="alert-message" class="text-gray-300 mb-6 whitespace-pre-line">
+            This is an alert message.
+          </p>
+          <button
+            id="alert-ok"
+            class="btn bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-indigo-700"
+          >
+            OK
+          </button>
+        </div>
+      </div>
+
+      <div
+        id="preview-modal"
+        class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-40 p-4"
+      >
+        <div
+          class="bg-white text-black rounded-lg shadow-xl w-full max-w-4xl h-[90vh] flex flex-col"
+        >
+          <div class="p-4 border-b flex justify-between items-center">
+            <h3 class="text-xl font-bold">Document Preview</h3>
+            <div class="flex gap-4">
+              <button
+                id="preview-download-btn"
+                class="btn bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-indigo-700"
+              >
+                Download as PDF
+              </button>
+              <button
+                id="preview-close-btn"
+                class="btn bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-gray-700"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+          <div id="preview-content" class="p-8 overflow-y-auto flex-grow"></div>
+        </div>
+      </div>
+
+      <!-- Shortcuts Modal -->
+      {{> settings-modal }}
+
+      <!-- Warning Modal -->
+      {{> warning-modal }}
+
+      <div id="signature-ghost" class="hidden"></div>
+
+      <!-- Scroll to Top Button -->
+      <button
+        id="scroll-to-top-btn"
+        class="fixed bottom-12 right-8 bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-full shadow-lg transition-all duration-300 opacity-0 translate-y-10 invisible z-40"
+        aria-label="Scroll to top"
+      >
+        <i data-lucide="arrow-up" class="w-6 h-6"></i>
+      </button>
+    </div>
+
+    {{> footer }}
+
+    <script type="module" src="src/js/utils/lucide-init.ts"></script>
+    <script type="module" src="src/js/utils/simple-mode-footer.ts"></script>
+    <script type="module" src="src/js/main.ts"></script>
+    <script type="module" src="src/js/sw-register.ts"></script>
+  </body>
+</html>

@@ -3,8 +3,8 @@ import { ToolIcon } from '~/components/icons'
 import { Upload } from 'reicon-react'
 
 /**
- * Shared shell for tools not yet ported to React UIs.
- * Keeps every catalog route reachable while implementations land tool-by-tool.
+ * Experimental shell only. The shipping product is the root Vite SIMPLE_MODE app
+ * (all processors). This React rewrite does not embed HTML tools.
  */
 export function GenericToolShell({ tool }: { tool: Tool }) {
   return (
@@ -23,12 +23,13 @@ export function GenericToolShell({ tool }: { tool: Tool }) {
         <span className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-[var(--ws-brand-soft)] text-[var(--ws-brand)]">
           <Upload size={22} color="currentColor" />
         </span>
-        <p className="text-sm font-semibold">Coming soon in this workspace</p>
+        <p className="text-sm font-semibold">Not ported to React yet</p>
         <p className="mt-1 max-w-sm text-xs leading-relaxed text-[var(--ws-ink-4)]">
-          The full processor for{' '}
-          <strong className="text-[var(--ws-ink-2)]">{tool.name}</strong> is
-          next in the porting queue. Merge PDF and PDF Multi Tool are the
-          reference implementations.
+          Use the main app for the full{' '}
+          <strong className="text-[var(--ws-ink-2)]">{tool.name}</strong>{' '}
+          processor:{' '}
+          <code className="rounded bg-[var(--ws-surface)] px-1">bun run dev</code>{' '}
+          at the repo root (not <code className="rounded bg-[var(--ws-surface)] px-1">web/</code>).
         </p>
       </div>
     </div>

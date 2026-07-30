@@ -7,6 +7,7 @@ import { nitro } from 'nitro/vite'
 export default defineConfig({
   server: {
     port: 3000,
+    host: '127.0.0.1',
   },
   resolve: {
     tsconfigPaths: true,
@@ -17,27 +18,6 @@ export default defineConfig({
       srcDirectory: 'src',
     }),
     viteReact(),
-    nitro({
-      routeRules: {
-        '**': {
-          headers: {
-            'cache-control': 'no-store',
-            'cross-origin-embedder-policy': 'require-corp',
-            'cross-origin-opener-policy': 'same-origin',
-            'cross-origin-resource-policy': 'same-origin',
-            'permissions-policy':
-              'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
-            'referrer-policy': 'no-referrer',
-            'x-content-type-options': 'nosniff',
-            'x-frame-options': 'DENY',
-          },
-        },
-        '/assets/**': {
-          headers: {
-            'cache-control': 'public, max-age=31536000, immutable',
-          },
-        },
-      },
-    }),
+    nitro(),
   ],
 })

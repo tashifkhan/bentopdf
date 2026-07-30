@@ -1,0 +1,45 @@
+<footer class="workspace-footer" data-simple-footer="true">
+  <div class="workspace-footer-inner">
+    <div class="workspace-footer-brand">
+      <div>
+        <span class="workspace-footer-mark">
+          <img
+            id="footer-logo"
+            src="{{baseUrl}}{{#if brandLogo}}{{brandLogo}}{{else}}images/taf-pdf-mark.svg{{/if}}"
+            alt="{{#if brandName}}{{brandName}}{{else}}Bento PDF{{/if}} Logo"
+            width="24"
+            height="24"
+          />
+        </span>
+        <div>
+          <strong id="footer-brand"
+            >{{#if brandName}}{{brandName}}{{else}}BentoPDF{{/if}}</strong
+          >
+          <p id="footer-copyright">
+            {{#if footerText}}{{footerText}}{{else}}Privacy-first PDF tools.
+            Files stay in your browser.{{/if}}
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="workspace-footer-meta">
+      <a
+        href="https://github.com/alam00000/bentopdf"
+        target="_blank"
+        rel="noopener noreferrer"
+        >Upstream</a
+      >
+      <a
+        href="https://github.com/tashifkhan/bentopdf"
+        target="_blank"
+        rel="noopener noreferrer"
+        >UI fork</a
+      >
+      <span>
+        <span data-i18n="footer.version">Version</span>
+        <span id="app-version">{{appVersion}}</span>
+      </span>
+      <div id="simple-mode-lang-switcher"></div>
+    </div>
+  </div>
+</footer>

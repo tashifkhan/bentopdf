@@ -1,0 +1,68 @@
+<script>
+  (function () {
+    var root = document.documentElement;
+    // Idempotent — safe if injected from both <head> and the simple navbar.
+    if (root.dataset.wsBoot === '1') return;
+    root.dataset.wsBoot = '1';
+    try {
+      var key = 'taf-pdf-theme';
+      var stored = localStorage.getItem(key);
+      var theme =
+        stored === 'light' || stored === 'dark'
+          ? stored
+          : window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'dark'
+            : 'light';
+      var path = location.pathname || '';
+      var isHome =
+        /\/$/.test(path) ||
+        /\/index\.html$/.test(path) ||
+        /\/simple-index\.html$/.test(path);
+      root.dataset.theme = theme;
+      root.style.colorScheme = theme;
+      root.classList.add(
+        'workspace',
+        isHome ? 'workspace-home' : 'workspace-tool'
+      );
+      root.classList.remove(isHome ? 'workspace-tool' : 'workspace-home');
+    } catch (e) {
+      root.dataset.theme = 'light';
+      root.classList.add('workspace', 'workspace-home');
+    }
+  })();
+</script>
+<style id="ws-boot-css">
+  /* Critical paint styles — kill the purple→green FOUC before CSS modules load */
+  html.workspace {
+    --ws-bg: #f3f1ec;
+    --ws-surface: #fffcf7;
+    --ws-ink: #141a17;
+    --ws-ink-3: #6b756f;
+    --ws-line: #e2ddd3;
+    --ws-brand: #1a3d35;
+    --ws-accent: #d94b32;
+    --ws-on-brand: #f7f4ee;
+    color-scheme: light;
+    background: var(--ws-bg);
+  }
+  html.workspace[data-theme='dark'] {
+    --ws-bg: #0e1210;
+    --ws-surface: #171d1a;
+    --ws-ink: #f0ede6;
+    --ws-ink-3: #8e9892;
+    --ws-line: #2a342f;
+    --ws-brand: #7dcfb6;
+    --ws-accent: #ff7a5c;
+    --ws-on-brand: #0e1210;
+    color-scheme: dark;
+  }
+  html.workspace,
+  html.workspace body {
+    background-color: var(--ws-bg) !important;
+    color: var(--ws-ink) !important;
+  }
+  html.workspace body {
+    margin: 0;
+    min-height: 100vh;
+  }
+</style>

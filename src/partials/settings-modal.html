@@ -1,0 +1,184 @@
+<div
+  id="shortcuts-modal"
+  class="settings-modal-root hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="settings-modal-title"
+>
+  <div class="settings-modal-backdrop absolute inset-0" data-settings-dismiss></div>
+
+  <div class="settings-modal relative flex flex-col w-full max-w-xl max-h-[92dvh] sm:max-h-[80vh]">
+    <header class="settings-modal-header">
+      <div class="settings-modal-title-wrap">
+        <span class="settings-modal-icon" aria-hidden="true">
+          <i data-lucide="settings-2"></i>
+        </span>
+        <div>
+          <h3 id="settings-modal-title" data-i18n="settings.title">Settings</h3>
+          <p class="settings-modal-subtitle">Display and keyboard preferences</p>
+        </div>
+      </div>
+      <button
+        id="close-shortcuts-modal"
+        type="button"
+        class="settings-icon-btn"
+        aria-label="Close settings"
+      >
+        <i data-lucide="x"></i>
+      </button>
+    </header>
+
+    <div class="settings-tabs" role="tablist" aria-label="Settings sections">
+      <button
+        id="preferences-tab-btn"
+        type="button"
+        class="settings-tab is-active"
+        role="tab"
+        aria-selected="true"
+        aria-controls="preferences-tab-content"
+      >
+        <i data-lucide="sliders-horizontal"></i>
+        <span data-i18n="settings.preferences">Preferences</span>
+      </button>
+      <button
+        id="shortcuts-tab-btn"
+        type="button"
+        class="settings-tab"
+        role="tab"
+        aria-selected="false"
+        aria-controls="shortcuts-tab-content"
+      >
+        <i data-lucide="keyboard"></i>
+        <span data-i18n="settings.shortcuts">Shortcuts</span>
+      </button>
+    </div>
+
+    <!-- Preferences first (default) -->
+    <div
+      id="preferences-tab-content"
+      class="settings-panel overflow-y-auto flex-grow"
+      role="tabpanel"
+    >
+      <section class="settings-group">
+        <h4 data-i18n="settings.displayPreferences">Display</h4>
+
+        <div class="settings-row">
+          <div class="settings-row-copy">
+            <label for="full-width-toggle" data-i18n="settings.fullWidthMode">
+              Full width mode
+            </label>
+            <p data-i18n="settings.fullWidthDescription">
+              Stretch tools across the full screen instead of a centered column.
+            </p>
+          </div>
+          <label class="settings-switch">
+            <input type="checkbox" id="full-width-toggle" class="sr-only peer" />
+            <span class="settings-switch-track" aria-hidden="true"></span>
+          </label>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-row-copy">
+            <label for="compact-mode-toggle" data-i18n="settings.compactMode">
+              Compact mode
+            </label>
+            <p data-i18n="settings.compactModeDescription">
+              Show tools as a denser list instead of large cards.
+            </p>
+          </div>
+          <label class="settings-switch">
+            <input
+              type="checkbox"
+              id="compact-mode-toggle"
+              class="sr-only peer"
+            />
+            <span class="settings-switch-track" aria-hidden="true"></span>
+          </label>
+        </div>
+      </section>
+
+      <section class="settings-group">
+        <h4>Advanced</h4>
+        <a href="wasm-settings.html" class="settings-link-row">
+          <div class="settings-row-copy">
+            <span data-i18n="settings.advancedSettings">WASM modules</span>
+            <p data-i18n="settings.advancedSettingsDescription">
+              Configure PyMuPDF, Ghostscript, and CoherentPDF processing.
+            </p>
+          </div>
+          <i data-lucide="chevron-right" class="settings-chevron"></i>
+        </a>
+      </section>
+    </div>
+
+    <!-- Shortcuts -->
+    <div
+      id="shortcuts-tab-content"
+      class="settings-panel overflow-y-auto flex-grow hidden"
+      role="tabpanel"
+      hidden
+    >
+      <div class="settings-search">
+        <i data-lucide="search" class="settings-search-icon"></i>
+        <input
+          type="text"
+          id="shortcut-search"
+          data-i18n-placeholder="settings.searchShortcuts"
+          placeholder="Search tools…"
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="settings-callout">
+        <i data-lucide="info"></i>
+        <div>
+          <p data-i18n="settings.shortcutsInfo">
+            Click a field, then press a key combination. Changes save
+            automatically.
+          </p>
+          <p class="settings-callout-warn" data-i18n="settings.shortcutsWarning">
+            Avoid browser shortcuts like Cmd/Ctrl+W, T, or N — they often won’t
+            bind reliably.
+          </p>
+        </div>
+      </div>
+
+      <div id="shortcuts-list" class="settings-shortcut-list">
+        <!-- Populated by main.ts -->
+      </div>
+    </div>
+
+    <footer class="settings-modal-footer">
+      <div id="shortcuts-tab-footer" class="settings-footer-actions hidden">
+        <button
+          id="import-shortcuts-btn"
+          type="button"
+          class="settings-text-btn"
+        >
+          <i data-lucide="upload"></i>
+          <span data-i18n="settings.import">Import</span>
+        </button>
+        <button
+          id="export-shortcuts-btn"
+          type="button"
+          class="settings-text-btn"
+        >
+          <i data-lucide="download"></i>
+          <span data-i18n="settings.export">Export</span>
+        </button>
+        <button
+          id="reset-shortcuts-btn"
+          type="button"
+          class="settings-text-btn settings-text-btn-danger"
+        >
+          <span data-i18n="settings.resetToDefaults">Reset</span>
+        </button>
+      </div>
+      <div id="preferences-tab-footer" class="settings-footer-note">
+        <p data-i18n="settings.settingsAutoSaved">
+          Preferences save automatically
+        </p>
+      </div>
+    </footer>
+  </div>
+</div>

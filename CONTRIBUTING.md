@@ -82,7 +82,7 @@ When submitting code contributions, please use our [pull request template](.gith
     ```bash
     git clone https://github.com/alam00000/bentopdf.git
     cd bento-pdf
-    bun install
+    npm install
     ```
 
 2.  **Create a New Branch**

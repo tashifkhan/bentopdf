@@ -1,11 +1,16 @@
 services:
   bentopdf:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    # Or pull a published image:
-    # image: ghcr.io/tashifkhan/bentopdf-ui:edge
+    # GitHub Container Registry (Recommended)
+    # Self-Hosted build - ghcr.io/alam00000/bentopdf-simple:latest
+    # Commercial build  - ghcr.io/alam00000/bentopdf:latest
+    # Docker Hub (Alternative)
+    # Self-Hosted build - bentopdfteam/bentopdf-simple:latest
+    # Commercial build  - bentopdfteam/bentopdf:latest
+    image: ghcr.io/alam00000/bentopdf-simple:latest
     container_name: bentopdf
     restart: unless-stopped
     ports:
-      - '3000:3000'
+      - '8080:8080'
+    # For IPv4-only environments
+    #environment:
+    #  - DISABLE_IPV6=true

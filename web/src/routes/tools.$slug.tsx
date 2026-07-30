@@ -4,7 +4,7 @@ import { ScaleIn } from '~/components/Motion'
 import { getTool } from '~/data/tools'
 import { MergePdfTool } from '~/features/tools/MergePdfTool'
 import { MultiToolPage } from '~/features/tools/MultiToolPage'
-import { GenericToolShell } from '~/features/tools/GenericToolShell'
+import { ToolWorkspace } from '~/features/tools/ToolWorkspace'
 
 export const Route = createFileRoute('/tools/$slug')({
   component: ToolPage,
@@ -27,10 +27,12 @@ export const Route = createFileRoute('/tools/$slug')({
 function ToolPage() {
   const { tool } = Route.useLoaderData()
 
+  // Full-screen multi-tool workspace
   if (tool.slug === 'pdf-multi-tool') {
     return <MultiToolPage />
   }
 
+  // Polished dedicated UIs where we have them
   if (tool.slug === 'merge-pdf') {
     return (
       <div className="pt-6">
@@ -42,11 +44,12 @@ function ToolPage() {
     )
   }
 
+  // Every other catalog tool → beUI workspace + real client processor
   return (
     <div className="pt-6">
       <BackLink />
       <ScaleIn>
-        <GenericToolShell tool={tool} />
+        <ToolWorkspace tool={tool} />
       </ScaleIn>
     </div>
   )

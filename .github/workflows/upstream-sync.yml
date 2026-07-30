@@ -6,40 +6,71 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   issues: write
+  pull-requests: write
 
 jobs:
-  check:
-    name: Notify about upstream releases
+  sync:
+    name: Prepare upstream update
     runs-on: ubuntu-latest
     steps:
-      - name: Check out release baseline
+      - name: Check out fork
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Open one issue per new upstream release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPOSITORY: ${{ github.repository }}
+      - name: Fetch BentoPDF upstream
         run: |
-          known="$(tr -d '[:space:]' < .github/upstream-version)"
-          latest="$(gh api repos/alam00000/bentopdf/releases/latest --jq '.tag_name')"
+          git remote add upstream https://github.com/alam00000/bentopdf.git
+          git fetch upstream main
 
-          if [ -z "$latest" ] || [ "$latest" = "$known" ]; then
-            exit 0
+      - name: Detect changes
+        id: changes
+        run: |
+          if git merge-base --is-ancestor upstream/main HEAD; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=true" >> "$GITHUB_OUTPUT"
           fi
 
-          title="Upstream BentoPDF release $latest is available"
-          if ! gh issue list \
-            --repo "$REPOSITORY" \
-            --state all \
-            --search "\"$title\" in:title" \
-            --json title \
-            --jq '.[].title' | grep -Fxq "$title"; then
-            gh issue create \
-              --repo "$REPOSITORY" \
-              --title "$title" \
-              --body "BentoPDF upstream released [$latest](https://github.com/alam00000/bentopdf/releases/tag/$latest).
+      - name: Create update branch
+        id: merge
+        if: steps.changes.outputs.available == 'true'
+        continue-on-error: true
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin chore/sync-upstream:refs/remotes/origin/chore/sync-upstream || true
+          git switch -C chore/sync-upstream
+          git merge --no-edit upstream/main
+          git push --force-with-lease origin chore/sync-upstream
 
-          This fork has a separate TanStack frontend, so upstream changes are intentionally reviewed instead of merged automatically. Port relevant processor and security fixes, update \`.github/upstream-version\`, then close this issue."
+      - name: Open or refresh pull request
+        if: steps.changes.outputs.available == 'true' && steps.merge.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh pr view chore/sync-upstream >/dev/null 2>&1; then
+            gh pr edit chore/sync-upstream \
+              --title "chore: sync BentoPDF upstream" \
+              --body "Automated weekly upstream sync. Review UI conflicts and release notes before merging."
+          else
+            gh pr create \
+              --base main \
+              --head chore/sync-upstream \
+              --title "chore: sync BentoPDF upstream" \
+              --body "Automated weekly upstream sync. Review UI conflicts and release notes before merging."
+          fi
+
+      - name: Notify about merge conflicts
+        if: steps.changes.outputs.available == 'true' && steps.merge.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          title="Upstream BentoPDF update requires manual conflict resolution"
+          if ! gh issue list --state open --search "$title in:title" --json title --jq '.[].title' | grep -Fxq "$title"; then
+            gh issue create \
+              --title "$title" \
+              --body "The scheduled upstream sync could not merge \`alam00000/bentopdf:main\`. Resolve the conflicts manually and close this issue after the fork is current."
           fi

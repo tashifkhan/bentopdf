@@ -1,11 +1,11 @@
-# Default values for the BentoPDF chart (TanStack Start / Nitro Node server).
+# Default values for the BentoPDF chart (single nginx static frontend).
 replicaCount: 1
 
 image:
-  # Image built from this repo's `Dockerfile` (Node Nitro server).
-  repository: ghcr.io/tashifkhan/bentopdf-ui
+  # Image built from this repo's `Dockerfile` (nginx serving static frontend).
+  repository: ghcr.io/alam00000/bentopdf-simple
   pullPolicy: IfNotPresent
-  tag: 'edge'
+  tag: ''
 
 imagePullSecrets: []
 nameOverride: ''
@@ -17,8 +17,8 @@ service:
   type: ClusterIP
   port: 80
 
-# Container listen port (Nitro listens on 3000).
-containerPort: 3000
+# Container listen port (BentoPDF nginx image listens on 8080).
+containerPort: 8080
 
 env: []
 

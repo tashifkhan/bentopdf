@@ -4,14 +4,8 @@ on:
   push:
     branches:
       - main
-    paths:
-      - '.dockerignore'
-      - 'Dockerfile'
-      - 'web/**'
     tags:
       - 'v*'
-  schedule:
-    - cron: '15 1 * * 1'
   workflow_dispatch:
 
 permissions:
@@ -54,7 +48,7 @@ jobs:
             type=sha,prefix=sha-
           labels: |
             org.opencontainers.image.title=Taf PDF
-            org.opencontainers.image.description=BentoPDF TanStack Start UI — privacy-first browser PDF tools
+            org.opencontainers.image.description=BentoPDF with a redesigned document-workspace interface
             org.opencontainers.image.source=https://github.com/tashifkhan/bentopdf
             org.opencontainers.image.licenses=AGPL-3.0-only
 
@@ -63,9 +57,14 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
+          build-args: |
+            SIMPLE_MODE=true
+            SITE_URL=https://pdf.taf.sh
+            VITE_BRAND_NAME=Taf PDF
+            VITE_BRAND_LOGO=images/taf-pdf-mark.svg
+            VITE_FOOTER_TEXT=Private PDF tools powered by BentoPDF.
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

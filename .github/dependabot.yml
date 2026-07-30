@@ -1,9 +1,7 @@
 version: 2
 updates:
-  # Dependabot has no native "bun" ecosystem; npm updates package.json in /web.
-  # After merge, regenerate the lockfile: `cd web && bun install`
   - package-ecosystem: 'npm'
-    directory: '/web'
+    directory: '/'
     schedule:
       interval: 'weekly'
       day: 'monday'
