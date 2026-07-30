@@ -1,0 +1,47 @@
+name: Check upstream updates
+
+on:
+  schedule:
+    - cron: '30 0 * * 2'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    name: Notify about upstream releases
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out release baseline
+        uses: actions/checkout@v4
+
+      - name: Open one issue per new upstream release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          known="$(tr -d '[:space:]' < .github/upstream-version)"
+          latest="$(gh api repos/alam00000/bentopdf/releases/latest --jq '.tag_name')"
+
+          if [ -z "$latest" ] || [ "$latest" = "$known" ]; then
+            exit 0
+          fi
+
+          title="Upstream BentoPDF release $latest is available"
+          existing="$(gh issue list \
+            --repo "$REPOSITORY" \
+            --state all \
+            --search "\"$title\" in:title" \
+            --json title \
+            --jq --arg title "$title" '[.[] | select(.title == $title)] | length')"
+
+          if [ "$existing" = "0" ]; then
+            gh issue create \
+              --repo "$REPOSITORY" \
+              --title "$title" \
+              --body "BentoPDF upstream released [$latest](https://github.com/alam00000/bentopdf/releases/tag/$latest).
+
+          This fork has a separate TanStack frontend, so upstream changes are intentionally reviewed instead of merged automatically. Port relevant processor and security fixes, update \`.github/upstream-version\`, then close this issue."
+          fi

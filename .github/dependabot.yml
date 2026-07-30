@@ -1,20 +1,47 @@
 version: 2
 updates:
+  # Dependabot has no native "bun" ecosystem; npm updates package.json in /web.
+  # After merge, regenerate the lockfile: `cd web && bun install`
   - package-ecosystem: 'npm'
-    directory: '/'
+    directory: '/web'
     schedule:
-      interval: 'daily'
+      interval: 'weekly'
+      day: 'monday'
+      time: '04:30'
+      timezone: 'Asia/Kolkata'
+    open-pull-requests-limit: 10
     groups:
-      npm-dependencies:
+      npm-production-minor-and-patch:
+        dependency-type: 'production'
         patterns:
           - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
+      npm-development-minor-and-patch:
+        dependency-type: 'development'
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
 
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:
-      interval: 'daily'
+      interval: 'weekly'
+      day: 'monday'
+      time: '04:45'
+      timezone: 'Asia/Kolkata'
+    groups:
+      github-actions:
+        patterns:
+          - '*'
 
   - package-ecosystem: 'docker'
     directory: '/'
     schedule:
       interval: 'weekly'
+      day: 'monday'
+      time: '05:00'
+      timezone: 'Asia/Kolkata'
