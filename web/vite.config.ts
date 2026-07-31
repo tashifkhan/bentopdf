@@ -97,6 +97,17 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
+  optimizeDeps: {
+    /**
+     * EmbedPDF ships its PDFium engine as a web worker. Vite's dep pre-bundling
+     * rewrites the main module and the worker chunk separately, so the two end
+     * up with different copies of the request/response bridge and every call
+     * comes back as "Received response for unknown request" — the viewer then
+     * hangs on "Loading document…". Leaving it unbundled keeps both halves on
+     * one module instance.
+     */
+    exclude: ['embedpdf-snippet'],
+  },
   plugins: [
     tailwindcss(),
     tanstackStart({
