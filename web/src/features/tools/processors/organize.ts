@@ -56,9 +56,28 @@ export const organizeProcessors: Record<string, ToolProcessor> = {
     multiple: true,
     minFiles: 2,
     note: 'Interleaves pages: file A page 1, file B page 1, file A page 2, and so on. Useful for recombining single-sided scans.',
+    fields: [
+      checkbox(
+        'reverseSecond',
+        'Reverse the second file first',
+        false,
+        'Use this when the back sides were scanned in reverse order.'
+      ),
+    ],
     async process(ctx) {
       requireFiles(ctx, 2);
-      return onePdf(await pdf.alternateMerge(ctx.files), 'alternate-merge.pdf');
+      let files = ctx.files;
+      if (ctx.values.reverseSecond === 'true' && files[1]) {
+        const reversed = new Uint8Array(await pdf.reversePages(files[1]));
+        files = [
+          files[0]!,
+          new File([reversed.buffer as ArrayBuffer], files[1].name, {
+            type: 'application/pdf',
+          }),
+          ...files.slice(2),
+        ];
+      }
+      return onePdf(await pdf.alternateMerge(files), 'alternate-merge.pdf');
     },
   }),
 
@@ -70,6 +89,9 @@ export const organizeProcessors: Record<string, ToolProcessor> = {
         { value: 'range', label: 'Extract a page range' },
         { value: 'each', label: 'One PDF per page' },
         { value: 'every', label: 'Every N pages' },
+        { value: 'even', label: 'Even pages only' },
+        { value: 'odd', label: 'Odd pages only' },
+        { value: 'even-odd', label: 'Split into even and odd documents' },
       ]),
       { ...rangeField, showWhen: { key: 'mode', equals: ['range'] } },
       {
@@ -80,14 +102,57 @@ export const organizeProcessors: Record<string, ToolProcessor> = {
         min: 1,
         showWhen: { key: 'mode', equals: ['every'] },
       },
+      {
+        ...checkbox('zip', 'Bundle the output into a single ZIP', false),
+        showWhen: { key: 'mode', equals: ['each', 'every', 'even-odd'] },
+      },
     ],
     async process(ctx) {
       const file = first(ctx);
       const mode = str(ctx, 'mode', 'range');
+      const base = stem(file.name);
 
-      if (mode === 'each') {
-        return { files: await pdf.splitEachPage(file) };
+      const bundle = async (files: { name: string; bytes: Uint8Array }[]) => {
+        if (ctx.values.zip !== 'true' || files.length < 2) return { files };
+        const zip = new JSZip();
+        for (const f of files) zip.file(f.name, f.bytes);
+        return {
+          files: [
+            {
+              name: `${base}-split.zip`,
+              bytes: await zip.generateAsync({ type: 'uint8array' }),
+              mime: 'application/zip',
+            },
+          ],
+          message: `Bundled ${files.length} documents.`,
+        };
+      };
+
+      if (mode === 'each') return bundle(await pdf.splitEachPage(file));
+
+      if (mode === 'even' || mode === 'odd') {
+        const bytes = await pdf.splitByParity(file, mode);
+        return onePdf(bytes, derive(file, `${mode}-pages`));
       }
+
+      if (mode === 'even-odd') {
+        // A one-page document has no even half; emit whichever halves exist
+        // rather than failing the whole operation.
+        const halves = [];
+        for (const parity of ['odd', 'even'] as const) {
+          try {
+            halves.push({
+              name: `${base}-${parity}.pdf`,
+              bytes: await pdf.splitByParity(file, parity),
+            });
+          } catch {
+            // No pages of this parity.
+          }
+        }
+        if (halves.length === 0) throw new Error('The PDF has no pages');
+        return bundle(halves);
+      }
+
       if (mode === 'every') {
         const size = Math.max(1, int(ctx, 'chunk', 10));
         const doc = await pdf.loadPdf(file);
@@ -100,12 +165,13 @@ export const organizeProcessors: Record<string, ToolProcessor> = {
           );
           const part = await pdf.copyPagesToNew(doc, indices);
           out.push({
-            name: `${stem(file.name)}-${start + 1}-${start + indices.length}.pdf`,
+            name: `${base}-${start + 1}-${start + indices.length}.pdf`,
             bytes: await part.save(),
           });
         }
-        return { files: out };
+        return bundle(out);
       }
+
       const bytes = await pdf.extractPages(file, str(ctx, 'range'));
       return onePdf(bytes, derive(file, 'split'));
     },
@@ -136,10 +202,22 @@ export const organizeProcessors: Record<string, ToolProcessor> = {
   'divide-pages': processor({
     accept: PDF,
     multiple: false,
-    note: 'Splits each page down the middle into two pages — for scans of facing book pages.',
+    note: 'Splits each page in half — for scans of facing book pages.',
+    fields: [
+      selectField('direction', 'Split direction', [
+        { value: 'vertical', label: 'Vertical (left / right halves)' },
+        { value: 'horizontal', label: 'Horizontal (top / bottom halves)' },
+      ]),
+      rangeField,
+    ],
     async process(ctx) {
       const file = first(ctx);
-      return onePdf(await pdf.splitInHalf(file), derive(file, 'divided'));
+      const bytes = await struct.dividePages(
+        file,
+        str(ctx, 'direction', 'vertical') as 'vertical' | 'horizontal',
+        str(ctx, 'range')
+      );
+      return onePdf(bytes, derive(file, 'divided'));
     },
   }),
 
@@ -208,18 +286,37 @@ export const organizeProcessors: Record<string, ToolProcessor> = {
     accept: PDF,
     multiple: false,
     fields: [
+      selectField('position', 'Insert', [
+        { value: 'end', label: 'At the end' },
+        { value: 'start', label: 'At the beginning' },
+        { value: 'after', label: 'After a specific page' },
+        { value: 'every', label: 'After every page' },
+      ]),
       {
         key: 'after',
-        label: 'Insert blank page after page number',
+        label: 'After page number',
         type: 'number',
-        defaultValue: '0',
-        min: 0,
-        help: '0 inserts at the very beginning.',
+        defaultValue: '1',
+        min: 1,
+        showWhen: { key: 'position', equals: ['after'] },
+      },
+      {
+        key: 'count',
+        label: 'How many blank pages',
+        type: 'number',
+        defaultValue: '1',
+        min: 1,
+        max: 50,
       },
     ],
     async process(ctx) {
       const file = first(ctx);
-      const bytes = await pdf.addBlankPage(file, int(ctx, 'after', 0));
+      const bytes = await pdf.addBlankPages(
+        file,
+        str(ctx, 'position', 'end') as 'start' | 'end' | 'after' | 'every',
+        int(ctx, 'after', 1),
+        Math.max(1, int(ctx, 'count', 1))
+      );
       return onePdf(bytes, derive(file, 'with-blank'));
     },
   }),
@@ -259,19 +356,61 @@ export const organizeProcessors: Record<string, ToolProcessor> = {
     multiple: false,
     fields: [
       selectField(
-        'n',
+        'perSheet',
         'Pages per sheet',
         [
           { value: '2', label: '2-up' },
           { value: '4', label: '4-up' },
+          { value: '6', label: '6-up' },
+          { value: '9', label: '9-up' },
+          { value: '16', label: '16-up' },
         ],
         '4'
       ),
+      selectField('sheetSize', 'Sheet size', struct.PAGE_SIZE_OPTIONS, 'a4'),
+      selectField(
+        'orientation',
+        'Orientation',
+        [
+          { value: 'auto', label: 'Automatic' },
+          { value: 'portrait', label: 'Portrait' },
+          { value: 'landscape', label: 'Landscape' },
+        ],
+        'auto'
+      ),
+      {
+        key: 'margin',
+        label: 'Sheet margin (pt)',
+        type: 'number',
+        defaultValue: '18',
+        min: 0,
+      },
+      checkbox('border', 'Draw a border around each page', false),
+      {
+        key: 'borderColor',
+        label: 'Border colour',
+        type: 'color',
+        defaultValue: '#b4b4b4',
+        showWhen: { key: 'border', equals: ['true'] },
+      },
+      rangeField,
     ],
     async process(ctx) {
       const file = first(ctx);
-      const n = str(ctx, 'n') === '2' ? 2 : 4;
-      return onePdf(await pdf.nUpPdf(file, n), derive(file, `${n}up`));
+      const perSheet = int(ctx, 'perSheet', 4);
+      const bytes = await struct.nUpPdf(file, {
+        perSheet,
+        sheetSize: str(ctx, 'sheetSize', 'a4'),
+        orientation: str(ctx, 'orientation', 'auto') as
+          | 'auto'
+          | 'portrait'
+          | 'landscape',
+        margin: num(ctx, 'margin', 18),
+        border: ctx.values.border === 'true',
+        borderColor: str(ctx, 'borderColor', '#b4b4b4'),
+        range: str(ctx, 'range'),
+      });
+      return onePdf(bytes, derive(file, `${perSheet}up`));
     },
   }),
 
@@ -279,22 +418,79 @@ export const organizeProcessors: Record<string, ToolProcessor> = {
     accept: PDF,
     multiple: false,
     note: 'Reorders pages for saddle-stitch printing: fold the printed stack in half and the pages read in order.',
+    fields: [
+      selectField(
+        'paperSize',
+        'Paper size',
+        [
+          { value: 'auto', label: 'Match the source pages' },
+          ...struct.PAGE_SIZE_OPTIONS,
+        ],
+        'auto'
+      ),
+    ],
     async process(ctx) {
       const file = first(ctx);
-      return onePdf(await struct.bookletPdf(file), derive(file, 'booklet'));
+      const bytes = await struct.bookletPdf(
+        file,
+        str(ctx, 'paperSize', 'auto')
+      );
+      return onePdf(bytes, derive(file, 'booklet'));
     },
   }),
 
   'combine-single-page': processor({
     accept: PDF,
     multiple: false,
-    note: 'Stacks every page onto one continuous tall page.',
+    note: 'Stacks every page onto one continuous sheet.',
+    fields: [
+      selectField('orientation', 'Direction', [
+        { value: 'vertical', label: 'Vertical (one tall page)' },
+        { value: 'horizontal', label: 'Horizontal (one wide page)' },
+      ]),
+      {
+        key: 'spacing',
+        label: 'Gap between pages (pt)',
+        type: 'number',
+        defaultValue: '0',
+        min: 0,
+      },
+      {
+        key: 'background',
+        label: 'Background colour',
+        type: 'color',
+        defaultValue: '#ffffff',
+      },
+      checkbox('separator', 'Draw a separator line between pages', false),
+      {
+        key: 'separatorThickness',
+        label: 'Separator thickness (pt)',
+        type: 'number',
+        defaultValue: '1',
+        min: 0.25,
+        showWhen: { key: 'separator', equals: ['true'] },
+      },
+      {
+        key: 'separatorColor',
+        label: 'Separator colour',
+        type: 'color',
+        defaultValue: '#c8c8c8',
+        showWhen: { key: 'separator', equals: ['true'] },
+      },
+    ],
     async process(ctx) {
       const file = first(ctx);
-      return onePdf(
-        await struct.combineToSinglePage(file),
-        derive(file, 'single-page')
-      );
+      const bytes = await struct.combineToSinglePage(file, {
+        orientation: str(ctx, 'orientation', 'vertical') as
+          | 'vertical'
+          | 'horizontal',
+        spacing: num(ctx, 'spacing', 0),
+        background: str(ctx, 'background', '#ffffff'),
+        separator: ctx.values.separator === 'true',
+        separatorThickness: num(ctx, 'separatorThickness', 1),
+        separatorColor: str(ctx, 'separatorColor', '#c8c8c8'),
+      });
+      return onePdf(bytes, derive(file, 'single-page'));
     },
   }),
 
@@ -320,20 +516,62 @@ export const organizeProcessors: Record<string, ToolProcessor> = {
       },
       {
         key: 'overlap',
-        label: 'Overlap (points)',
+        label: 'Overlap',
         type: 'number',
         defaultValue: '18',
         min: 0,
-        help: 'Extra margin on each tile to give you something to trim and glue.',
       },
+      selectField(
+        'overlapUnit',
+        'Overlap units',
+        [
+          { value: 'pt', label: 'Points' },
+          { value: 'mm', label: 'Millimetres' },
+          { value: 'in', label: 'Inches' },
+        ],
+        'pt'
+      ),
+      selectField(
+        'sheetSize',
+        'Sheet size',
+        [
+          { value: '', label: 'Tile size (no fixed paper)' },
+          ...struct.PAGE_SIZE_OPTIONS,
+        ],
+        ''
+      ),
+      selectField(
+        'orientation',
+        'Orientation',
+        [
+          { value: 'auto', label: 'Automatic' },
+          { value: 'portrait', label: 'Portrait' },
+          { value: 'landscape', label: 'Landscape' },
+        ],
+        'auto'
+      ),
+      rangeField,
     ],
+    note: 'Blows one page up across a grid of sheets for large-format printing.',
     async process(ctx) {
       const file = first(ctx);
+      const overlap = struct.toPoints(
+        num(ctx, 'overlap', 18),
+        str(ctx, 'overlapUnit', 'pt')
+      );
       const bytes = await struct.posterizePdf(
         file,
         Math.max(1, int(ctx, 'cols', 2)),
         Math.max(1, int(ctx, 'rows', 2)),
-        num(ctx, 'overlap', 18)
+        overlap,
+        {
+          range: str(ctx, 'range'),
+          sheetSize: str(ctx, 'sheetSize') || undefined,
+          orientation: str(ctx, 'orientation', 'auto') as
+            | 'auto'
+            | 'portrait'
+            | 'landscape',
+        }
       );
       return onePdf(bytes, derive(file, 'poster'));
     },
@@ -346,17 +584,22 @@ export const organizeProcessors: Record<string, ToolProcessor> = {
       fileField('overlay', 'Overlay PDF', PDF, {
         help: 'Its pages are stamped onto the base document.',
       }),
+      selectField('mode', 'Mode', [
+        { value: 'overlay', label: 'Overlay (on top of the content)' },
+        { value: 'underlay', label: 'Underlay (behind the content)' },
+      ]),
       rangeSlider('opacity', 'Overlay opacity', 0, 1, 0.05, 1),
-      checkbox('behind', 'Place overlay behind the page content'),
       checkbox('repeat', 'Repeat the overlay if it has fewer pages', true),
+      rangeField,
     ],
     async process(ctx) {
       const base = first(ctx);
       const overlay = requiredExtra(ctx, 'overlay', 'an overlay PDF');
       const bytes = await struct.overlayPdf(base, overlay, {
         opacity: num(ctx, 'opacity', 1),
-        behind: ctx.values.behind === 'true',
+        behind: str(ctx, 'mode', 'overlay') === 'underlay',
         repeat: ctx.values.repeat === 'true',
+        range: str(ctx, 'range'),
       });
       return onePdf(bytes, derive(base, 'overlaid'));
     },
@@ -389,6 +632,14 @@ export const organizeProcessors: Record<string, ToolProcessor> = {
     multiple: false,
     fields: [
       fileField('attachments', 'Files to attach', '*/*', { multiple: true }),
+      {
+        key: 'page',
+        label: 'Anchor to page (optional)',
+        type: 'number',
+        defaultValue: '',
+        min: 1,
+        help: 'Leave blank to attach at document level. A page number adds a visible paperclip annotation there.',
+      },
     ],
     async process(ctx) {
       const file = first(ctx);
@@ -490,6 +741,20 @@ export const organizeProcessors: Record<string, ToolProcessor> = {
       },
       { key: 'creator', label: 'Creator', type: 'text', defaultValue: '' },
       { key: 'producer', label: 'Producer', type: 'text', defaultValue: '' },
+      {
+        key: 'creationDate',
+        label: 'Creation date',
+        type: 'text',
+        defaultValue: '',
+        placeholder: 'YYYY-MM-DD or ISO timestamp',
+      },
+      {
+        key: 'modDate',
+        label: 'Modification date',
+        type: 'text',
+        defaultValue: '',
+        placeholder: 'YYYY-MM-DD or ISO timestamp',
+      },
     ],
     note: 'Blank fields are left untouched. Use "Remove metadata" to clear everything.',
     async process(ctx) {
@@ -504,6 +769,17 @@ export const organizeProcessors: Record<string, ToolProcessor> = {
       set('subject', (v) => doc.setSubject(v));
       set('creator', (v) => doc.setCreator(v));
       set('producer', (v) => doc.setProducer(v));
+      const setDate = (key: string, apply: (d: Date) => void) => {
+        const raw = str(ctx, key);
+        if (!raw) return;
+        const parsed = new Date(raw);
+        if (Number.isNaN(parsed.getTime())) {
+          throw new Error(`"${raw}" is not a valid date`);
+        }
+        apply(parsed);
+      };
+      setDate('creationDate', (d) => doc.setCreationDate(d));
+      setDate('modDate', (d) => doc.setModificationDate(d));
       const keywords = str(ctx, 'keywords');
       if (keywords) {
         doc.setKeywords(

@@ -13,19 +13,33 @@ export type ColorAdjustments = {
   brightness: number;
   contrast: number;
   saturation: number;
+  /** Degrees, -180..180. */
+  hueShift: number;
+  /** -100..100; positive is warmer. */
+  temperature: number;
+  /** -100..100; positive is greener. */
+  tint: number;
+  gamma: number;
+  /** 0..1 sepia blend. */
+  sepia: number;
 };
 
 function clamp(v: number) {
   return v < 0 ? 0 : v > 255 ? 255 : v;
 }
 
-/** Brightness / contrast / saturation, each expressed as a multiplier or offset. */
+/** Full colour pipeline: brightness → contrast → temp/tint → saturation → hue → gamma → sepia. */
 export function adjustPdfColors(
   file: File,
   adj: ColorAdjustments
 ): Promise<Uint8Array> {
   // Standard contrast factor curve, centred on mid-grey.
   const contrast = (259 * (adj.contrast + 255)) / (255 * (259 - adj.contrast));
+  const gamma = adj.gamma > 0 ? 1 / adj.gamma : 1;
+  const hue = (adj.hueShift * Math.PI) / 180;
+  const cosH = Math.cos(hue);
+  const sinH = Math.sin(hue);
+
   return rasterizePdf(file, {
     edit: (image) => {
       const d = image.data;
@@ -38,10 +52,49 @@ export function adjustPdfColors(
         g = contrast * (g - 128) + 128;
         b = contrast * (b - 128) + 128;
 
+        // Temperature shifts red against blue; tint shifts green.
+        r += adj.temperature * 0.6;
+        b -= adj.temperature * 0.6;
+        g += adj.tint * 0.6;
+
         const grey = 0.299 * r + 0.587 * g + 0.114 * b;
         r = grey + (r - grey) * adj.saturation;
         g = grey + (g - grey) * adj.saturation;
         b = grey + (b - grey) * adj.saturation;
+
+        if (adj.hueShift !== 0) {
+          // Luminance-preserving hue rotation matrix.
+          const m0 = 0.213 + cosH * 0.787 - sinH * 0.213;
+          const m1 = 0.715 - cosH * 0.715 - sinH * 0.715;
+          const m2 = 0.072 - cosH * 0.072 + sinH * 0.928;
+          const m3 = 0.213 - cosH * 0.213 + sinH * 0.143;
+          const m4 = 0.715 + cosH * 0.285 + sinH * 0.14;
+          const m5 = 0.072 - cosH * 0.072 - sinH * 0.283;
+          const m6 = 0.213 - cosH * 0.213 - sinH * 0.787;
+          const m7 = 0.715 - cosH * 0.715 + sinH * 0.715;
+          const m8 = 0.072 + cosH * 0.928 + sinH * 0.072;
+          const nr = r * m0 + g * m1 + b * m2;
+          const ng = r * m3 + g * m4 + b * m5;
+          const nb = r * m6 + g * m7 + b * m8;
+          r = nr;
+          g = ng;
+          b = nb;
+        }
+
+        if (adj.gamma !== 1) {
+          r = 255 * Math.pow(Math.max(r, 0) / 255, gamma);
+          g = 255 * Math.pow(Math.max(g, 0) / 255, gamma);
+          b = 255 * Math.pow(Math.max(b, 0) / 255, gamma);
+        }
+
+        if (adj.sepia > 0) {
+          const sr = 0.393 * r + 0.769 * g + 0.189 * b;
+          const sg = 0.349 * r + 0.686 * g + 0.168 * b;
+          const sb = 0.272 * r + 0.534 * g + 0.131 * b;
+          r += (sr - r) * adj.sepia;
+          g += (sg - g) * adj.sepia;
+          b += (sb - b) * adj.sepia;
+        }
 
         d[i] = clamp(r);
         d[i + 1] = clamp(g);
@@ -58,6 +111,17 @@ export type ScannerOptions = {
   strength: number;
   grain: number;
   yellowing: number;
+  greyscale: boolean;
+  /** Blur radius in pixels; softens like a cheap scanner lens. */
+  blur: number;
+  /** Random page skew, in degrees. */
+  rotateVariance: number;
+  brightness: number;
+  contrast: number;
+  /** Dark scan edge, in pixels. */
+  border: number;
+  /** Render scale — the effective scan resolution. */
+  scale: number;
 };
 
 /** Make a clean digital PDF look like a photocopy/scan. */
@@ -65,23 +129,70 @@ export function scannerEffect(
   file: File,
   opts: ScannerOptions
 ): Promise<Uint8Array> {
+  const contrast =
+    (259 * (opts.contrast + 255)) / (255 * (259 - opts.contrast));
   return rasterizePdf(file, {
     quality: 0.8,
-    edit: (image) => {
+    scale: opts.scale,
+    edit: (image, ctx) => {
       const d = image.data;
       const threshold = 128 + (1 - opts.strength) * 60;
       for (let i = 0; i < d.length; i += 4) {
-        let grey = 0.299 * d[i]! + 0.587 * d[i + 1]! + 0.114 * d[i + 2]!;
+        let r = d[i]! + opts.brightness;
+        let g = d[i + 1]! + opts.brightness;
+        let b = d[i + 2]! + opts.brightness;
+        r = contrast * (r - 128) + 128;
+        g = contrast * (g - 128) + 128;
+        b = contrast * (b - 128) + 128;
 
-        // Push contrast around the threshold to mimic scanner tone response.
+        let grey = 0.299 * r + 0.587 * g + 0.114 * b;
         grey = grey + (grey - threshold) * opts.strength;
         if (opts.grain > 0) grey += (Math.random() - 0.5) * opts.grain * 40;
 
-        const value = clamp(grey);
-        d[i] = clamp(value + opts.yellowing * 18);
-        d[i + 1] = clamp(value + opts.yellowing * 10);
-        d[i + 2] = clamp(value - opts.yellowing * 8);
+        if (opts.greyscale) {
+          const v = clamp(grey);
+          r = v;
+          g = v;
+          b = v;
+        } else {
+          const shift = grey - (0.299 * r + 0.587 * g + 0.114 * b);
+          r += shift;
+          g += shift;
+          b += shift;
+        }
+
+        d[i] = clamp(r + opts.yellowing * 18);
+        d[i + 1] = clamp(g + opts.yellowing * 10);
+        d[i + 2] = clamp(b - opts.yellowing * 8);
       }
+      ctx.putImageData(image, 0, 0);
+
+      if (opts.blur > 0) {
+        // Re-draw through a canvas filter; cheaper and better than a manual kernel.
+        ctx.filter = `blur(${opts.blur}px)`;
+        ctx.drawImage(ctx.canvas, 0, 0);
+        ctx.filter = 'none';
+      }
+
+      if (opts.border > 0) {
+        ctx.strokeStyle = 'rgba(40,40,40,0.85)';
+        ctx.lineWidth = opts.border;
+        ctx.strokeRect(
+          opts.border / 2,
+          opts.border / 2,
+          ctx.canvas.width - opts.border,
+          ctx.canvas.height - opts.border
+        );
+      }
+
+      // Copy the mutated canvas back so rasterizePdf's putImageData is a no-op.
+      const refreshed = ctx.getImageData(
+        0,
+        0,
+        ctx.canvas.width,
+        ctx.canvas.height
+      );
+      image.data.set(refreshed.data);
     },
   });
 }

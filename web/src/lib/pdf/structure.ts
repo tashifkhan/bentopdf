@@ -56,22 +56,74 @@ export async function cropPdf(
 
 /* ------------------------------------------------------- page dimensions */
 
-const NAMED_SIZES: Record<string, [number, number]> = {
-  a4: [...PageSizes.A4] as [number, number],
+export const NAMED_SIZES: Record<string, [number, number]> = {
+  a0: [...PageSizes.A0] as [number, number],
+  a1: [...PageSizes.A1] as [number, number],
+  a2: [...PageSizes.A2] as [number, number],
   a3: [...PageSizes.A3] as [number, number],
+  a4: [...PageSizes.A4] as [number, number],
   a5: [...PageSizes.A5] as [number, number],
+  a6: [...PageSizes.A6] as [number, number],
+  b4: [...PageSizes.B4] as [number, number],
+  b5: [...PageSizes.B5] as [number, number],
   letter: [...PageSizes.Letter] as [number, number],
   legal: [...PageSizes.Legal] as [number, number],
   tabloid: [...PageSizes.Tabloid] as [number, number],
+  // pdf-lib has no Ledger constant — it is Tabloid in landscape.
+  ledger: [PageSizes.Tabloid[1], PageSizes.Tabloid[0]] as [number, number],
+  executive: [...PageSizes.Executive] as [number, number],
+  folio: [...PageSizes.Folio] as [number, number],
 };
+
+export const PAGE_SIZE_OPTIONS = [
+  { value: 'a4', label: 'A4' },
+  { value: 'letter', label: 'Letter' },
+  { value: 'legal', label: 'Legal' },
+  { value: 'a3', label: 'A3' },
+  { value: 'a5', label: 'A5' },
+  { value: 'tabloid', label: 'Tabloid' },
+  { value: 'ledger', label: 'Ledger' },
+  { value: 'executive', label: 'Executive' },
+  { value: 'folio', label: 'Folio' },
+];
+
+/** Convert a length in the given unit to PDF points. */
+export function toPoints(value: number, unit: string): number {
+  if (unit === 'in') return value * 72;
+  if (unit === 'mm') return (value * 72) / 25.4;
+  if (unit === 'cm') return (value * 72) / 2.54;
+  if (unit === 'px') return value * 0.75;
+  return value;
+}
+
+export function fromPoints(value: number, unit: string): number {
+  if (unit === 'in') return value / 72;
+  if (unit === 'mm') return (value * 25.4) / 72;
+  if (unit === 'cm') return (value * 2.54) / 72;
+  if (unit === 'px') return value / 0.75;
+  return value;
+}
 
 /** Re-impose every page onto a uniform sheet, scaling to fit and centring. */
 export async function fixPageSize(
   file: File,
   sizeName: string,
-  orientation: 'portrait' | 'landscape' | 'auto' = 'auto'
+  orientation: 'portrait' | 'landscape' | 'auto' = 'auto',
+  opts: {
+    custom?: { width: number; height: number; unit: string };
+    background?: string;
+  } = {}
 ): Promise<Uint8Array> {
-  const base = NAMED_SIZES[sizeName] ?? NAMED_SIZES.a4!;
+  const base =
+    sizeName === 'custom' && opts.custom
+      ? ([
+          toPoints(opts.custom.width, opts.custom.unit),
+          toPoints(opts.custom.height, opts.custom.unit),
+        ] as [number, number])
+      : (NAMED_SIZES[sizeName] ?? NAMED_SIZES.a4!);
+  if (base[0] <= 0 || base[1] <= 0) {
+    throw new Error('Page width and height must be greater than zero');
+  }
   const src = await loadPdf(file);
   const out = await PDFDocument.create();
   for (let i = 0; i < src.getPageCount(); i++) {
@@ -83,6 +135,16 @@ export async function fixPageSize(
       (orientation === 'auto' && embedded.width > embedded.height);
     if (wantLandscape) [w, h] = [h, w];
     const sheet = out.addPage([w, h]);
+    if (opts.background) {
+      const bg = hexToRgb(opts.background);
+      sheet.drawRectangle({
+        x: 0,
+        y: 0,
+        width: w,
+        height: h,
+        color: rgb(bg.r, bg.g, bg.b),
+      });
+    }
     const scale = Math.min(w / embedded.width, h / embedded.height);
     const dw = embedded.width * scale;
     const dh = embedded.height * scale;
@@ -96,19 +158,20 @@ export async function fixPageSize(
   return out.save();
 }
 
-export async function readPageDimensions(file: File): Promise<string> {
+export async function readPageDimensions(
+  file: File,
+  unit = 'pt'
+): Promise<string> {
   const doc = await loadPdf(file);
-  const lines = ['page,width_pt,height_pt,width_mm,height_mm,rotation'];
+  const lines = [`page,width_${unit},height_${unit},orientation,rotation`];
   doc.getPages().forEach((page, i) => {
     const { width, height } = page.getSize();
-    const mm = (pt: number) => (pt * 25.4) / 72;
     lines.push(
       [
         i + 1,
-        width.toFixed(2),
-        height.toFixed(2),
-        mm(width).toFixed(1),
-        mm(height).toFixed(1),
+        fromPoints(width, unit).toFixed(2),
+        fromPoints(height, unit).toFixed(2),
+        width > height ? 'landscape' : 'portrait',
         page.getRotation().angle,
       ].join(',')
     );
@@ -154,6 +217,11 @@ export type SanitizeOptions = {
   embeddedFiles: boolean;
   launchActions: boolean;
   metadata: boolean;
+  annotations: boolean;
+  links: boolean;
+  flattenForms: boolean;
+  layers: boolean;
+  structureTree: boolean;
 };
 
 /**
@@ -203,6 +271,39 @@ export async function sanitizePdf(
         return true;
       });
     }
+  }
+
+  if (opts.links) {
+    for (const page of doc.getPages()) {
+      filterAnnots(doc, page, (annot) => {
+        return String(annot.get(PDFName.of('Subtype'))) !== '/Link';
+      });
+    }
+  }
+
+  if (opts.flattenForms) {
+    try {
+      doc.getForm().flatten();
+    } catch {
+      // No form, or a form pdf-lib cannot flatten — carry on.
+    }
+  }
+
+  if (opts.annotations) {
+    for (const page of doc.getPages()) {
+      page.node.set(PDFName.of('Annots'), doc.context.obj([]));
+    }
+    catalog.delete(PDFName.of('AcroForm'));
+  }
+
+  if (opts.layers) {
+    // Optional content groups: dropping these removes layer toggles.
+    catalog.delete(PDFName.of('OCProperties'));
+  }
+
+  if (opts.structureTree) {
+    catalog.delete(PDFName.of('StructTreeRoot'));
+    catalog.delete(PDFName.of('MarkInfo'));
   }
 
   if (opts.metadata) {
@@ -547,7 +648,13 @@ export async function addPageLabels(
 export async function overlayPdf(
   base: File,
   overlay: File,
-  opts: { opacity: number; behind: boolean; repeat: boolean }
+  opts: {
+    opacity: number;
+    behind: boolean;
+    repeat: boolean;
+    /** Limit stamping to these pages of the base document. */
+    range?: string;
+  }
 ): Promise<Uint8Array> {
   const doc = await loadPdf(base);
   const overlayDoc = await loadPdf(overlay);
@@ -555,7 +662,9 @@ export async function overlayPdf(
   if (count === 0) throw new Error('The overlay PDF has no pages');
 
   const pages = doc.getPages();
+  const target = new Set(parsePageRange(opts.range ?? '', pages.length));
   for (let i = 0; i < pages.length; i++) {
+    if (!target.has(i)) continue;
     const sourceIndex = opts.repeat ? i % count : i;
     if (sourceIndex >= count) break;
     const embedded = await doc.embedPage(overlayDoc.getPage(sourceIndex));
@@ -586,7 +695,10 @@ export async function overlayPdf(
 /* ---------------------------------------------------------- imposition */
 
 /** Reorder pages for saddle-stitch booklet printing (2-up, sheet order). */
-export async function bookletPdf(file: File): Promise<Uint8Array> {
+export async function bookletPdf(
+  file: File,
+  paperSize = 'auto'
+): Promise<Uint8Array> {
   const src = await loadPdf(file);
   const count = src.getPageCount();
   // Booklets need a multiple of 4; pad with blanks.
@@ -601,8 +713,10 @@ export async function bookletPdf(file: File): Promise<Uint8Array> {
   }
 
   const sample = src.getPage(0);
-  const sheetW = sample.getWidth() * 2;
-  const sheetH = sample.getHeight();
+  const paper = NAMED_SIZES[paperSize];
+  // A booklet sheet is two pages side by side, so use the landscape paper.
+  const sheetW = paper ? Math.max(paper[0], paper[1]) : sample.getWidth() * 2;
+  const sheetH = paper ? Math.min(paper[0], paper[1]) : sample.getHeight();
   const out = await PDFDocument.create();
 
   for (let i = 0; i < order.length; i += 2) {
@@ -632,24 +746,49 @@ export async function posterizePdf(
   file: File,
   cols: number,
   rows: number,
-  overlapPt: number
+  overlapPt: number,
+  opts: {
+    range?: string;
+    sheetSize?: string;
+    orientation?: 'auto' | 'portrait' | 'landscape';
+  } = {}
 ): Promise<Uint8Array> {
   const src = await loadPdf(file);
   const out = await PDFDocument.create();
+  const wanted = new Set(parsePageRange(opts.range ?? '', src.getPageCount()));
   for (let p = 0; p < src.getPageCount(); p++) {
+    if (!wanted.has(p)) continue;
     const page = src.getPage(p);
     const embedded = await out.embedPage(page);
     const tileW = embedded.width / cols;
     const tileH = embedded.height / rows;
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
-        const sheet = out.addPage([tileW + overlapPt, tileH + overlapPt]);
+        // Either emit a tile-sized sheet, or fit the tile onto fixed paper.
+        let sheetW = tileW + overlapPt;
+        let sheetH = tileH + overlapPt;
+        const paper = opts.sheetSize ? NAMED_SIZES[opts.sheetSize] : undefined;
+        if (paper) {
+          const landscape =
+            opts.orientation === 'landscape' ||
+            (opts.orientation === 'auto' && sheetW > sheetH);
+          sheetW = landscape
+            ? Math.max(paper[0], paper[1])
+            : Math.min(paper[0], paper[1]);
+          sheetH = landscape
+            ? Math.min(paper[0], paper[1])
+            : Math.max(paper[0], paper[1]);
+        }
+        const sheet = out.addPage([sheetW, sheetH]);
+        const fit = paper
+          ? Math.min(sheetW / (tileW + overlapPt), sheetH / (tileH + overlapPt))
+          : 1;
         sheet.drawPage(embedded, {
-          x: -c * tileW + overlapPt / 2,
+          x: (-c * tileW + overlapPt / 2) * fit,
           // PDF origin is bottom-left, so rows count up from the bottom.
-          y: -(rows - 1 - r) * tileH + overlapPt / 2,
-          width: embedded.width,
-          height: embedded.height,
+          y: (-(rows - 1 - r) * tileH + overlapPt / 2) * fit,
+          width: embedded.width * fit,
+          height: embedded.height * fit,
         });
       }
     }
@@ -657,27 +796,98 @@ export async function posterizePdf(
   return out.save();
 }
 
-/** Stack every page onto one tall continuous page. */
-export async function combineToSinglePage(file: File): Promise<Uint8Array> {
+export type CombineOptions = {
+  orientation: 'vertical' | 'horizontal';
+  spacing: number;
+  background: string;
+  separator: boolean;
+  separatorThickness: number;
+  separatorColor: string;
+};
+
+/** Stack every page onto one continuous page, vertically or horizontally. */
+export async function combineToSinglePage(
+  file: File,
+  opts: CombineOptions = {
+    orientation: 'vertical',
+    spacing: 0,
+    background: '#ffffff',
+    separator: false,
+    separatorThickness: 1,
+    separatorColor: '#c8c8c8',
+  }
+): Promise<Uint8Array> {
   const src = await loadPdf(file);
   const count = src.getPageCount();
   if (count === 0) throw new Error('The PDF has no pages');
-  const width = Math.max(...src.getPages().map((p) => p.getWidth()));
-  const heights = src.getPages().map((p) => p.getHeight());
-  const total = heights.reduce((a, b) => a + b, 0);
+
+  const pages = src.getPages();
+  const widths = pages.map((p) => p.getWidth());
+  const heights = pages.map((p) => p.getHeight());
+  const gaps = opts.spacing * Math.max(0, count - 1);
+  const vertical = opts.orientation === 'vertical';
+
+  const sheetW = vertical
+    ? Math.max(...widths)
+    : widths.reduce((a, b) => a + b, 0) + gaps;
+  const sheetH = vertical
+    ? heights.reduce((a, b) => a + b, 0) + gaps
+    : Math.max(...heights);
 
   const out = await PDFDocument.create();
-  const sheet = out.addPage([width, total]);
-  let y = total;
+  const sheet = out.addPage([sheetW, sheetH]);
+
+  const bg = hexToRgb(opts.background);
+  sheet.drawRectangle({
+    x: 0,
+    y: 0,
+    width: sheetW,
+    height: sheetH,
+    color: rgb(bg.r, bg.g, bg.b),
+  });
+
+  const sep = hexToRgb(opts.separatorColor);
+  let cursor = vertical ? sheetH : 0;
+
   for (let i = 0; i < count; i++) {
-    const embedded = await out.embedPage(src.getPage(i));
-    y -= heights[i]!;
-    sheet.drawPage(embedded, {
-      x: (width - embedded.width) / 2,
-      y,
-      width: embedded.width,
-      height: embedded.height,
-    });
+    const embedded = await out.embedPage(pages[i]!);
+    if (vertical) {
+      cursor -= embedded.height;
+      sheet.drawPage(embedded, {
+        x: (sheetW - embedded.width) / 2,
+        y: cursor,
+        width: embedded.width,
+        height: embedded.height,
+      });
+      if (opts.separator && i < count - 1) {
+        sheet.drawRectangle({
+          x: 0,
+          y: cursor - opts.spacing / 2 - opts.separatorThickness / 2,
+          width: sheetW,
+          height: opts.separatorThickness,
+          color: rgb(sep.r, sep.g, sep.b),
+        });
+      }
+      cursor -= opts.spacing;
+    } else {
+      sheet.drawPage(embedded, {
+        x: cursor,
+        y: (sheetH - embedded.height) / 2,
+        width: embedded.width,
+        height: embedded.height,
+      });
+      cursor += embedded.width;
+      if (opts.separator && i < count - 1) {
+        sheet.drawRectangle({
+          x: cursor + opts.spacing / 2 - opts.separatorThickness / 2,
+          y: 0,
+          width: opts.separatorThickness,
+          height: sheetH,
+          color: rgb(sep.r, sep.g, sep.b),
+        });
+      }
+      cursor += opts.spacing;
+    }
   }
   return out.save();
 }
@@ -900,3 +1110,118 @@ export function textFile(name: string, content: string, mime: string): OutFile {
 }
 
 export { stem };
+
+/* --------------------------------------------------------------- n-up */
+
+export type NUpOptions = {
+  perSheet: number;
+  sheetSize: string;
+  orientation: 'auto' | 'portrait' | 'landscape';
+  margin: number;
+  border: boolean;
+  borderColor: string;
+  range: string;
+};
+
+/** Grid layouts for each supported pages-per-sheet value. */
+const NUP_GRID: Record<number, [number, number]> = {
+  2: [2, 1],
+  4: [2, 2],
+  6: [3, 2],
+  9: [3, 3],
+  16: [4, 4],
+};
+
+/** Place N source pages onto each output sheet. */
+export async function nUpPdf(
+  file: File,
+  opts: NUpOptions
+): Promise<Uint8Array> {
+  const src = await loadPdf(file);
+  const indices = parsePageRange(opts.range, src.getPageCount());
+  if (indices.length === 0) throw new Error('No pages matched the range');
+
+  const [cols, rows] = NUP_GRID[opts.perSheet] ?? NUP_GRID[4]!;
+  const paper = NAMED_SIZES[opts.sheetSize] ?? NAMED_SIZES.a4!;
+  let [sheetW, sheetH] = paper;
+  // 2-up and 6-up read better on landscape paper by default.
+  const wantLandscape =
+    opts.orientation === 'landscape' ||
+    (opts.orientation === 'auto' && cols > rows);
+  if (wantLandscape) [sheetW, sheetH] = [sheetH, sheetW];
+
+  const cellW = (sheetW - opts.margin * 2) / cols;
+  const cellH = (sheetH - opts.margin * 2) / rows;
+  const border = hexToRgb(opts.borderColor);
+
+  const out = await PDFDocument.create();
+  for (let i = 0; i < indices.length; i += opts.perSheet) {
+    const sheet = out.addPage([sheetW, sheetH]);
+    for (let k = 0; k < opts.perSheet && i + k < indices.length; k++) {
+      const embedded = await out.embedPage(src.getPage(indices[i + k]!));
+      const col = k % cols;
+      const row = Math.floor(k / cols);
+      const scale =
+        Math.min(cellW / embedded.width, cellH / embedded.height) * 0.95;
+      const w = embedded.width * scale;
+      const h = embedded.height * scale;
+      const cellX = opts.margin + col * cellW;
+      const cellY = opts.margin + (rows - 1 - row) * cellH;
+      const x = cellX + (cellW - w) / 2;
+      const y = cellY + (cellH - h) / 2;
+      sheet.drawPage(embedded, { x, y, width: w, height: h });
+      if (opts.border) {
+        sheet.drawRectangle({
+          x,
+          y,
+          width: w,
+          height: h,
+          borderColor: rgb(border.r, border.g, border.b),
+          borderWidth: 0.75,
+        });
+      }
+    }
+  }
+  return out.save();
+}
+
+/* ------------------------------------------------------- divide pages */
+
+/** Cut every page in half, vertically (two columns) or horizontally. */
+export async function dividePages(
+  file: File,
+  direction: 'vertical' | 'horizontal',
+  range: string
+): Promise<Uint8Array> {
+  const src = await loadPdf(file);
+  const target = new Set(parsePageRange(range, src.getPageCount()));
+  const out = await PDFDocument.create();
+
+  for (let i = 0; i < src.getPageCount(); i++) {
+    const page = src.getPage(i);
+    const w = page.getWidth();
+    const h = page.getHeight();
+    const embedded = await out.embedPage(page);
+
+    if (!target.has(i)) {
+      const keep = out.addPage([w, h]);
+      keep.drawPage(embedded, { x: 0, y: 0, width: w, height: h });
+      continue;
+    }
+
+    if (direction === 'vertical') {
+      // Left half, then right half.
+      const left = out.addPage([w / 2, h]);
+      left.drawPage(embedded, { x: 0, y: 0, width: w, height: h });
+      const right = out.addPage([w / 2, h]);
+      right.drawPage(embedded, { x: -w / 2, y: 0, width: w, height: h });
+    } else {
+      // Top half, then bottom half.
+      const top = out.addPage([w, h / 2]);
+      top.drawPage(embedded, { x: 0, y: -h / 2, width: w, height: h });
+      const bottom = out.addPage([w, h / 2]);
+      bottom.drawPage(embedded, { x: 0, y: 0, width: w, height: h });
+    }
+  }
+  return out.save();
+}

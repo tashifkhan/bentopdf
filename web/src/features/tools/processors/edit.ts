@@ -1,6 +1,7 @@
 import * as pdf from '~/lib/pdf/core';
 import * as struct from '~/lib/pdf/structure';
 import * as enhance from '~/lib/pdf/enhance';
+import * as stamp from '~/lib/pdf/stamp';
 import { rasterizePdf } from '~/lib/pdf/render';
 import {
   applyImageSignature,
@@ -26,32 +27,84 @@ import {
   textResult,
 } from './common';
 
-const POSITIONS = [
-  { value: 'bottom-right', label: 'Bottom right' },
-  { value: 'bottom-left', label: 'Bottom left' },
-  { value: 'bottom-center', label: 'Bottom centre' },
-  { value: 'top-right', label: 'Top right' },
-];
+const fontFamilyField = selectField(
+  'fontFamily',
+  'Font',
+  stamp.FONT_FAMILIES,
+  'Helvetica'
+);
 
 export const editProcessors: Record<string, ToolProcessor> = {
   'add-watermark': processor({
     accept: PDF,
     multiple: false,
     fields: [
+      selectField('mode', 'Watermark type', [
+        { value: 'text', label: 'Text' },
+        { value: 'image', label: 'Image' },
+      ]),
       {
         key: 'text',
         label: 'Watermark text',
         type: 'text',
         defaultValue: 'CONFIDENTIAL',
+        showWhen: { key: 'mode', equals: ['text'] },
       },
+      { ...fontFamilyField, showWhen: { key: 'mode', equals: ['text'] } },
+      {
+        key: 'fontSize',
+        label: 'Font size',
+        type: 'number',
+        defaultValue: '48',
+        min: 6,
+        showWhen: { key: 'mode', equals: ['text'] },
+      },
+      {
+        key: 'color',
+        label: 'Text colour',
+        type: 'color',
+        defaultValue: '#808080',
+        showWhen: { key: 'mode', equals: ['text'] },
+      },
+      fileField('image', 'Watermark image', IMAGES, {
+        help: 'A transparent PNG works best.',
+      }),
+      rangeSlider(
+        'imageScale',
+        'Image width (fraction of page)',
+        0.05,
+        1,
+        0.05,
+        0.4
+      ),
       rangeSlider('opacity', 'Opacity', 0.05, 1, 0.05, 0.25),
+      {
+        key: 'angle',
+        label: 'Rotation (degrees)',
+        type: 'number',
+        defaultValue: '35',
+      },
+      checkbox('tile', 'Tile across the whole page', false),
+      rangeField,
     ],
     async process(ctx) {
       const file = first(ctx);
-      const bytes = await pdf.watermarkPdf(
+      const mode = str(ctx, 'mode', 'text') as 'text' | 'image';
+      const bytes = await stamp.watermarkPdf(
         file,
-        str(ctx, 'text', 'WATERMARK'),
-        num(ctx, 'opacity', 0.25)
+        {
+          mode,
+          text: str(ctx, 'text', 'WATERMARK'),
+          fontFamily: str(ctx, 'fontFamily', 'HelveticaBold'),
+          fontSize: num(ctx, 'fontSize', 48),
+          color: str(ctx, 'color', '#808080'),
+          opacity: num(ctx, 'opacity', 0.25),
+          angle: num(ctx, 'angle', 35),
+          imageScale: num(ctx, 'imageScale', 0.4),
+          range: str(ctx, 'range'),
+          tile: ctx.values.tile === 'true',
+        },
+        ctx.extraFiles.image?.[0]
       );
       return onePdf(bytes, derive(file, 'watermarked'));
     },
@@ -62,13 +115,49 @@ export const editProcessors: Record<string, ToolProcessor> = {
     multiple: false,
     fields: [
       selectField('format', 'Format', [
-        { value: 'n', label: '1, 2, 3…' },
-        { value: 'n/N', label: '1 / 10' },
+        { value: 'page_only', label: '1, 2, 3…' },
+        { value: 'page_x_of_y', label: '1 / 10' },
+        { value: 'page_x_of_y_words', label: 'Page 1 of 10' },
+        { value: '{n}.', label: '1., 2., 3.' },
+        { value: '- {n} -', label: '- 1 -' },
       ]),
+      selectField('position', 'Position', stamp.POSITIONS, 'bottom-center'),
+      fontFamilyField,
+      {
+        key: 'fontSize',
+        label: 'Font size',
+        type: 'number',
+        defaultValue: '10',
+        min: 4,
+      },
+      { key: 'color', label: 'Colour', type: 'color', defaultValue: '#333333' },
+      {
+        key: 'startAt',
+        label: 'Start numbering at',
+        type: 'number',
+        defaultValue: '1',
+      },
+      {
+        key: 'margin',
+        label: 'Margin (pt)',
+        type: 'number',
+        defaultValue: '36',
+        min: 0,
+      },
+      rangeField,
     ],
     async process(ctx) {
       const file = first(ctx);
-      const bytes = await pdf.pageNumbersPdf(file, str(ctx, 'format', 'n'));
+      const bytes = await stamp.pageNumbersPdf(file, {
+        format: str(ctx, 'format', 'page_only'),
+        position: str(ctx, 'position', 'bottom-center') as stamp.Position,
+        fontFamily: str(ctx, 'fontFamily', 'Helvetica'),
+        fontSize: num(ctx, 'fontSize', 10),
+        color: str(ctx, 'color', '#333333'),
+        startAt: int(ctx, 'startAt', 1),
+        range: str(ctx, 'range'),
+        margin: num(ctx, 'margin', 36),
+      });
       return onePdf(bytes, derive(file, 'numbered'));
     },
   }),
@@ -78,13 +167,24 @@ export const editProcessors: Record<string, ToolProcessor> = {
     multiple: false,
     fields: [
       {
-        key: 'prefix',
-        label: 'Prefix',
+        key: 'template',
+        label: 'Template',
         type: 'text',
-        defaultValue: 'BATES',
-        placeholder: 'e.g. ACME',
+        defaultValue: 'BATES{n}',
+        help: 'Use {n} where the counter should go, e.g. "ACME-{n}-2026".',
       },
-      { key: 'suffix', label: 'Suffix', type: 'text', defaultValue: '' },
+      selectField(
+        'padding',
+        'Zero padding',
+        [
+          { value: '0', label: 'None' },
+          { value: '3', label: '3 digits' },
+          { value: '4', label: '4 digits' },
+          { value: '5', label: '5 digits' },
+          { value: '6', label: '6 digits' },
+        ],
+        '6'
+      ),
       {
         key: 'start',
         label: 'Starting number',
@@ -92,28 +192,37 @@ export const editProcessors: Record<string, ToolProcessor> = {
         defaultValue: '1',
         min: 0,
       },
+      selectField('position', 'Position', stamp.POSITIONS, 'bottom-right'),
+      fontFamilyField,
       {
-        key: 'digits',
-        label: 'Zero-padded digits',
+        key: 'fontSize',
+        label: 'Font size',
         type: 'number',
-        defaultValue: '6',
-        min: 1,
-        max: 12,
+        defaultValue: '10',
+        min: 4,
       },
-      selectField('position', 'Position', POSITIONS),
+      { key: 'color', label: 'Colour', type: 'color', defaultValue: '#1a1a1a' },
+      {
+        key: 'margin',
+        label: 'Margin (pt)',
+        type: 'number',
+        defaultValue: '36',
+        min: 0,
+      },
+      rangeField,
     ],
     async process(ctx) {
       const file = first(ctx);
-      const bytes = await struct.batesNumber(file, {
-        prefix: str(ctx, 'prefix'),
-        suffix: str(ctx, 'suffix'),
+      const bytes = await stamp.batesNumber(file, {
+        template: str(ctx, 'template', 'BATES{n}'),
+        padding: int(ctx, 'padding', 6),
         start: int(ctx, 'start', 1),
-        digits: Math.max(1, int(ctx, 'digits', 6)),
-        position: str(
-          ctx,
-          'position',
-          'bottom-right'
-        ) as struct.BatesOptions['position'],
+        position: str(ctx, 'position', 'bottom-right') as stamp.Position,
+        fontFamily: str(ctx, 'fontFamily', 'Helvetica'),
+        fontSize: num(ctx, 'fontSize', 10),
+        color: str(ctx, 'color', '#1a1a1a'),
+        range: str(ctx, 'range'),
+        margin: num(ctx, 'margin', 36),
       });
       return onePdf(bytes, derive(file, 'bates'));
     },
@@ -122,17 +231,87 @@ export const editProcessors: Record<string, ToolProcessor> = {
   'header-footer': processor({
     accept: PDF,
     multiple: false,
+    note: 'Each of the six slots is independent. Use {n} for the page number and {N} for the total.',
     fields: [
-      { key: 'header', label: 'Header text', type: 'text', defaultValue: '' },
-      { key: 'footer', label: 'Footer text', type: 'text', defaultValue: '' },
+      {
+        key: 'headerLeft',
+        label: 'Header left',
+        type: 'text',
+        defaultValue: '',
+      },
+      {
+        key: 'headerCenter',
+        label: 'Header centre',
+        type: 'text',
+        defaultValue: '',
+      },
+      {
+        key: 'headerRight',
+        label: 'Header right',
+        type: 'text',
+        defaultValue: '',
+      },
+      {
+        key: 'footerLeft',
+        label: 'Footer left',
+        type: 'text',
+        defaultValue: '',
+      },
+      {
+        key: 'footerCenter',
+        label: 'Footer centre',
+        type: 'text',
+        defaultValue: '',
+      },
+      {
+        key: 'footerRight',
+        label: 'Footer right',
+        type: 'text',
+        defaultValue: '',
+      },
+      fontFamilyField,
+      {
+        key: 'fontSize',
+        label: 'Font size',
+        type: 'number',
+        defaultValue: '10',
+        min: 4,
+      },
+      { key: 'color', label: 'Colour', type: 'color', defaultValue: '#404040' },
+      {
+        key: 'margin',
+        label: 'Margin (pt)',
+        type: 'number',
+        defaultValue: '36',
+        min: 0,
+      },
+      rangeField,
     ],
     async process(ctx) {
       const file = first(ctx);
-      const bytes = await pdf.headerFooterPdf(
-        file,
-        str(ctx, 'header'),
-        str(ctx, 'footer')
-      );
+      const opts = {
+        headerLeft: str(ctx, 'headerLeft'),
+        headerCenter: str(ctx, 'headerCenter'),
+        headerRight: str(ctx, 'headerRight'),
+        footerLeft: str(ctx, 'footerLeft'),
+        footerCenter: str(ctx, 'footerCenter'),
+        footerRight: str(ctx, 'footerRight'),
+        fontFamily: str(ctx, 'fontFamily', 'Helvetica'),
+        fontSize: num(ctx, 'fontSize', 10),
+        color: str(ctx, 'color', '#404040'),
+        range: str(ctx, 'range'),
+        margin: num(ctx, 'margin', 36),
+      };
+      const anySlot = [
+        opts.headerLeft,
+        opts.headerCenter,
+        opts.headerRight,
+        opts.footerLeft,
+        opts.footerCenter,
+        opts.footerRight,
+      ].some((v) => v.trim());
+      if (!anySlot) throw new Error('Fill at least one header or footer slot');
+      const bytes = await stamp.headerFooterPdf(file, opts);
       return onePdf(bytes, derive(file, 'header-footer'));
     },
   }),
@@ -309,6 +488,19 @@ export const editProcessors: Record<string, ToolProcessor> = {
       rangeSlider('brightness', 'Brightness', -100, 100, 1, 0),
       rangeSlider('contrast', 'Contrast', -100, 100, 1, 0),
       rangeSlider('saturation', 'Saturation', 0, 2, 0.05, 1),
+      rangeSlider('hueShift', 'Hue shift (°)', -180, 180, 1, 0),
+      rangeSlider(
+        'temperature',
+        'Temperature',
+        -100,
+        100,
+        1,
+        0,
+        'Positive is warmer.'
+      ),
+      rangeSlider('tint', 'Tint', -100, 100, 1, 0, 'Positive is greener.'),
+      rangeSlider('gamma', 'Gamma', 0.2, 3, 0.05, 1),
+      rangeSlider('sepia', 'Sepia', 0, 1, 0.05, 0),
     ],
     async process(ctx) {
       const file = first(ctx);
@@ -317,6 +509,11 @@ export const editProcessors: Record<string, ToolProcessor> = {
         brightness: num(ctx, 'brightness', 0),
         contrast: num(ctx, 'contrast', 0),
         saturation: num(ctx, 'saturation', 1),
+        hueShift: num(ctx, 'hueShift', 0),
+        temperature: num(ctx, 'temperature', 0),
+        tint: num(ctx, 'tint', 0),
+        gamma: num(ctx, 'gamma', 1),
+        sepia: num(ctx, 'sepia', 0),
       });
       return onePdf(bytes, derive(file, 'adjusted'));
     },
@@ -328,8 +525,24 @@ export const editProcessors: Record<string, ToolProcessor> = {
     rasterizes: true,
     fields: [
       rangeSlider('strength', 'Contrast punch', 0, 1, 0.05, 0.5),
-      rangeSlider('grain', 'Grain', 0, 1, 0.05, 0.15),
+      rangeSlider('grain', 'Grain / noise', 0, 1, 0.05, 0.15),
       rangeSlider('yellowing', 'Paper warmth', 0, 1, 0.05, 0.2),
+      rangeSlider('brightness', 'Brightness', -60, 60, 1, 0),
+      rangeSlider('contrast', 'Contrast', -60, 60, 1, 10),
+      rangeSlider('blur', 'Softness (px)', 0, 3, 0.25, 0.3),
+      rangeSlider('border', 'Scan edge (px)', 0, 30, 1, 0),
+      checkbox('greyscale', 'Greyscale (photocopy look)', false),
+      selectField(
+        'scale',
+        'Scan resolution',
+        [
+          { value: '1', label: 'Low (72 dpi)' },
+          { value: '1.5', label: 'Medium (108 dpi)' },
+          { value: '2', label: 'High (144 dpi)' },
+          { value: '3', label: 'Very high (216 dpi)' },
+        ],
+        '1.5'
+      ),
     ],
     async process(ctx) {
       const file = first(ctx);
@@ -338,6 +551,13 @@ export const editProcessors: Record<string, ToolProcessor> = {
         strength: num(ctx, 'strength', 0.5),
         grain: num(ctx, 'grain', 0.15),
         yellowing: num(ctx, 'yellowing', 0.2),
+        greyscale: ctx.values.greyscale === 'true',
+        blur: num(ctx, 'blur', 0.3),
+        rotateVariance: 0,
+        brightness: num(ctx, 'brightness', 0),
+        contrast: num(ctx, 'contrast', 10),
+        border: num(ctx, 'border', 0),
+        scale: num(ctx, 'scale', 1.5),
       });
       return onePdf(bytes, derive(file, 'scanned'));
     },

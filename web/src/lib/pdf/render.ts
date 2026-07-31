@@ -67,10 +67,11 @@ export async function rasterizePdf(
   opts: {
     scale?: number;
     quality?: number;
+    format?: 'jpeg' | 'png';
     edit?: (data: ImageData, ctx: CanvasRenderingContext2D) => void;
   } = {}
 ): Promise<Uint8Array> {
-  const { scale = 1.5, quality = 0.9, edit } = opts;
+  const { scale = 1.5, quality = 0.9, format = 'jpeg', edit } = opts;
   const doc = await openWithPdfjs(file);
   const out = await PDFDocument.create();
   for (let i = 1; i <= doc.numPages; i++) {
@@ -81,8 +82,10 @@ export async function rasterizePdf(
       edit(data, ctx);
       ctx.putImageData(data, 0, 0);
     }
-    const bytes = await canvasToBytes(canvas, 'image/jpeg', quality);
-    const img = await out.embedJpg(bytes);
+    const mime = format === 'png' ? 'image/png' : 'image/jpeg';
+    const bytes = await canvasToBytes(canvas, mime, quality);
+    const img =
+      format === 'png' ? await out.embedPng(bytes) : await out.embedJpg(bytes);
     const page = out.addPage([img.width, img.height]);
     page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
   }

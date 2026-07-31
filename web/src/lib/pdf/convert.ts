@@ -23,15 +23,16 @@ class DocWriter {
   private page!: PDFPage;
   private y = 0;
   readonly margin = 54;
-  readonly pageSize: [number, number] = [...PageSizes.A4] as [number, number];
+  pageSize: [number, number] = [...PageSizes.A4] as [number, number];
 
-  private constructor(doc: PDFDocument) {
+  private constructor(doc: PDFDocument, pageSize?: [number, number]) {
     this.doc = doc;
+    if (pageSize) this.pageSize = pageSize;
   }
 
-  static async create(): Promise<DocWriter> {
+  static async create(pageSize?: [number, number]): Promise<DocWriter> {
     const doc = await PDFDocument.create();
-    const writer = new DocWriter(doc);
+    const writer = new DocWriter(doc, pageSize);
     writer.fonts = {
       regular: await doc.embedFont(StandardFonts.Helvetica),
       bold: await doc.embedFont(StandardFonts.HelveticaBold),
@@ -462,15 +463,43 @@ export async function xmlToPdf(
 
 /* --------------------------------------------------------------- plain */
 
+export type TextPdfOptions = {
+  font?: 'regular' | 'bold' | 'italic' | 'mono';
+  fontSize?: number;
+  color?: string;
+  pageSize?: [number, number];
+};
+
+function hexToRgbLocal(hex: string) {
+  const clean = hex.replace('#', '').trim();
+  const full =
+    clean.length === 3
+      ? clean
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : clean;
+  if (!/^[0-9a-fA-F]{6}$/.test(full)) return { r: 0, g: 0, b: 0 };
+  return {
+    r: parseInt(full.slice(0, 2), 16) / 255,
+    g: parseInt(full.slice(2, 4), 16) / 255,
+    b: parseInt(full.slice(4, 6), 16) / 255,
+  };
+}
+
 export async function plainTextToPdf(
   source: string,
   filename = 'document.pdf',
-  monospace = false
+  opts: TextPdfOptions = {}
 ): Promise<OutFile> {
   if (!source.trim()) throw new Error('There is no text to convert');
-  const writer = await DocWriter.create();
-  if (monospace) writer.codeBlock(source);
-  else writer.text(source);
+  const writer = await DocWriter.create(opts.pageSize);
+  const c = opts.color ? hexToRgbLocal(opts.color) : undefined;
+  writer.text(source, {
+    font: opts.font ?? 'regular',
+    size: opts.fontSize ?? 11,
+    ...(c ? { color: rgb(c.r, c.g, c.b) } : {}),
+  });
   return {
     name: filename,
     bytes: await writer.save(),
@@ -481,9 +510,18 @@ export async function plainTextToPdf(
 /* ---------------------------------------------------------------- email */
 
 /** Convert .eml / .msg to PDF, headers first then the plain-text body. */
-export async function emailToPdf(file: File): Promise<OutFile> {
+export type EmailPdfOptions = {
+  includeCcBcc: boolean;
+  listAttachments: boolean;
+  pageSize?: [number, number];
+};
+
+export async function emailToPdf(
+  file: File,
+  opts: EmailPdfOptions = { includeCcBcc: true, listAttachments: true }
+): Promise<OutFile> {
   const name = file.name.toLowerCase();
-  const writer = await DocWriter.create();
+  const writer = await DocWriter.create(opts.pageSize);
 
   if (name.endsWith('.msg')) {
     const MsgReader = await loadMsgReader();
@@ -517,7 +555,12 @@ export async function emailToPdf(file: File): Promise<OutFile> {
   const meta = [
     `From: ${email.from?.name ?? ''} <${email.from?.address ?? ''}>`,
     `To: ${(email.to ?? []).map((t) => t.address).join(', ')}`,
-    email.cc?.length ? `Cc: ${email.cc.map((t) => t.address).join(', ')}` : '',
+    opts.includeCcBcc && email.cc?.length
+      ? `Cc: ${email.cc.map((t) => t.address).join(', ')}`
+      : '',
+    opts.includeCcBcc && email.bcc?.length
+      ? `Bcc: ${email.bcc.map((t) => t.address).join(', ')}`
+      : '',
     email.date ? `Date: ${email.date}` : '',
   ].filter(Boolean);
   for (const line of meta) {
@@ -532,7 +575,7 @@ export async function emailToPdf(file: File): Promise<OutFile> {
       : '');
   writer.text(body || '(empty message)');
 
-  if (email.attachments?.length) {
+  if (opts.listAttachments && email.attachments?.length) {
     writer.space(10);
     writer.text('Attachments', { size: 13, font: 'bold' });
     for (const att of email.attachments) {
@@ -756,19 +799,73 @@ export async function cbzToPdf(file: File): Promise<Uint8Array> {
   return doc.save();
 }
 
-export async function pdfToCbz(file: File, scale = 2): Promise<OutFile> {
+export type CbzOptions = {
+  scale: number;
+  format: 'jpeg' | 'png' | 'webp';
+  quality: number;
+  greyscale: boolean;
+  /** Right-to-left reading order, written into ComicInfo.xml. */
+  manga: boolean;
+  metadata?: Record<string, string>;
+};
+
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+export async function pdfToCbz(
+  file: File,
+  opts: CbzOptions = {
+    scale: 2,
+    format: 'jpeg',
+    quality: 0.9,
+    greyscale: false,
+    manga: false,
+  }
+): Promise<OutFile> {
   const JSZip = (await import('jszip')).default;
+  const { renderPage } = await import('./render');
   const doc = await openWithPdfjs(file);
   const zip = new JSZip();
   const pad = String(doc.numPages).length;
+  const ext = opts.format === 'jpeg' ? 'jpg' : opts.format;
+  const mime = `image/${opts.format}`;
+
   for (let i = 1; i <= doc.numPages; i++) {
-    const { renderPage } = await import('./render');
-    const canvas = await renderPage(doc, i, scale);
+    const canvas = await renderPage(doc, i, opts.scale);
+    if (opts.greyscale) {
+      const ctx = canvas.getContext('2d')!;
+      const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const d = image.data;
+      for (let p = 0; p < d.length; p += 4) {
+        const g = 0.299 * d[p]! + 0.587 * d[p + 1]! + 0.114 * d[p + 2]!;
+        d[p] = d[p + 1] = d[p + 2] = g;
+      }
+      ctx.putImageData(image, 0, 0);
+    }
     zip.file(
-      `${String(i).padStart(pad, '0')}.jpg`,
-      await canvasToBytes(canvas, 'image/jpeg', 0.9)
+      `${String(i).padStart(pad, '0')}.${ext}`,
+      await canvasToBytes(canvas, mime, opts.quality)
     );
   }
+
+  const meta = opts.metadata ?? {};
+  const entries = Object.entries(meta).filter(([, v]) => v);
+  if (entries.length > 0 || opts.manga) {
+    // ComicInfo.xml is the de-facto metadata sidecar comic readers look for.
+    const tags = entries
+      .map(([k, v]) => `  <${k}>${escapeXml(v)}</${k}>`)
+      .join('\n');
+    zip.file(
+      'ComicInfo.xml',
+      `<?xml version="1.0" encoding="utf-8"?>\n<ComicInfo>\n${tags}\n  <PageCount>${doc.numPages}</PageCount>\n  <Manga>${opts.manga ? 'YesAndRightToLeft' : 'No'}</Manga>\n</ComicInfo>\n`
+    );
+  }
+
   return {
     name: `${stem(file.name)}.cbz`,
     bytes: await zip.generateAsync({ type: 'uint8array' }),

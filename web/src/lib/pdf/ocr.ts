@@ -33,7 +33,33 @@ export const OCR_LANGUAGES: { value: string; label: string }[] = [
 
 type ProgressFn = (message: string, fraction: number) => void;
 
-async function createOcrWorker(language: string, onProgress?: ProgressFn) {
+export type OcrTuning = {
+  /** Hard black/white threshold before recognition. */
+  binarize?: boolean;
+  /** Restrict recognition to these characters. */
+  whitelist?: string;
+};
+
+/** Apply pre-processing that helps tesseract on poor scans. */
+function preprocess(canvas: HTMLCanvasElement, binarize?: boolean) {
+  if (!binarize) return canvas;
+  const ctx = canvas.getContext('2d')!;
+  const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const d = image.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const g = 0.299 * d[i]! + 0.587 * d[i + 1]! + 0.114 * d[i + 2]!;
+    const v = g < 160 ? 0 : 255;
+    d[i] = d[i + 1] = d[i + 2] = v;
+  }
+  ctx.putImageData(image, 0, 0);
+  return canvas;
+}
+
+async function createOcrWorker(
+  language: string,
+  onProgress?: ProgressFn,
+  whitelist?: string
+) {
   if (typeof window === 'undefined') {
     throw new Error('OCR is only available in the browser');
   }
@@ -46,6 +72,11 @@ async function createOcrWorker(language: string, onProgress?: ProgressFn) {
     logger: (m: { status: string; progress: number }) => {
       onProgress?.(m.status, m.progress);
     },
+  }).then(async (worker) => {
+    if (whitelist) {
+      await worker.setParameters({ tessedit_char_whitelist: whitelist });
+    }
+    return worker;
   });
 }
 
@@ -56,10 +87,10 @@ async function createOcrWorker(language: string, onProgress?: ProgressFn) {
 export async function ocrPdf(
   file: File,
   language: string,
-  opts: { scale?: number; onProgress?: ProgressFn } = {}
+  opts: { scale?: number; onProgress?: ProgressFn } & OcrTuning = {}
 ): Promise<Uint8Array> {
   const { scale = 2, onProgress } = opts;
-  const worker = await createOcrWorker(language, onProgress);
+  const worker = await createOcrWorker(language, onProgress, opts.whitelist);
   try {
     const rendered = await openWithPdfjs(file);
     const original = await loadPdf(file);
@@ -71,7 +102,10 @@ export async function ocrPdf(
         `Recognising page ${i} of ${pageCount}`,
         (i - 1) / pageCount
       );
-      const canvas = await renderPage(rendered, i, scale);
+      const canvas = preprocess(
+        await renderPage(rendered, i, scale),
+        opts.binarize
+      );
       const { data } = await worker.recognize(
         canvas,
         {},
@@ -112,10 +146,10 @@ export async function ocrPdf(
 export async function ocrToText(
   file: File,
   language: string,
-  opts: { scale?: number; onProgress?: ProgressFn } = {}
+  opts: { scale?: number; onProgress?: ProgressFn } & OcrTuning = {}
 ): Promise<string> {
   const { scale = 2, onProgress } = opts;
-  const worker = await createOcrWorker(language, onProgress);
+  const worker = await createOcrWorker(language, onProgress, opts.whitelist);
   try {
     const doc = await openWithPdfjs(file);
     const parts: string[] = [];
@@ -124,7 +158,7 @@ export async function ocrToText(
         `Recognising page ${i} of ${doc.numPages}`,
         (i - 1) / doc.numPages
       );
-      const canvas = await renderPage(doc, i, scale);
+      const canvas = preprocess(await renderPage(doc, i, scale), opts.binarize);
       const { data } = await worker.recognize(canvas);
       parts.push(data.text.trim());
     }

@@ -2,6 +2,7 @@ import * as pdf from '~/lib/pdf/core';
 import * as conv from '~/lib/pdf/convert';
 import * as office from '~/lib/pdf/office';
 import * as text from '~/lib/pdf/text';
+import * as struct from '~/lib/pdf/structure';
 import {
   canvasToBmp,
   canvasToBytes,
@@ -179,12 +180,23 @@ export const convertProcessors: Record<string, ToolProcessor> = {
     accept: '.eml,.msg,message/rfc822',
     multiple: true,
     note: 'Renders headers and the plain-text body. Attachments are listed, not embedded.',
+    fields: [
+      selectField('pageSize', 'Page size', struct.PAGE_SIZE_OPTIONS, 'a4'),
+      checkbox('includeCcBcc', 'Include Cc and Bcc headers', true),
+      checkbox('listAttachments', 'List attachments', true),
+    ],
     async process(ctx) {
       requireFiles(ctx);
       const files = [];
       for (const file of ctx.files) {
         ctx.onProgress(`Converting ${file.name}`);
-        files.push(await conv.emailToPdf(file));
+        files.push(
+          await conv.emailToPdf(file, {
+            includeCcBcc: ctx.values.includeCcBcc !== 'false',
+            listAttachments: ctx.values.listAttachments !== 'false',
+            pageSize: struct.NAMED_SIZES[str(ctx, 'pageSize', 'a4')],
+          })
+        );
       }
       return { files };
     },
@@ -204,7 +216,31 @@ export const convertProcessors: Record<string, ToolProcessor> = {
         defaultValue: '',
         placeholder: 'Paste text, or drop a .txt file below…',
       },
-      checkbox('mono', 'Use a monospace font', false),
+      selectField(
+        'font',
+        'Font',
+        [
+          { value: 'regular', label: 'Helvetica' },
+          { value: 'bold', label: 'Helvetica Bold' },
+          { value: 'italic', label: 'Helvetica Oblique' },
+          { value: 'mono', label: 'Courier (monospace)' },
+        ],
+        'regular'
+      ),
+      {
+        key: 'fontSize',
+        label: 'Font size',
+        type: 'number',
+        defaultValue: '11',
+        min: 4,
+      },
+      {
+        key: 'color',
+        label: 'Text colour',
+        type: 'color',
+        defaultValue: '#1a1a1f',
+      },
+      selectField('pageSize', 'Page size', struct.PAGE_SIZE_OPTIONS, 'a4'),
     ],
     async process(ctx) {
       const source = await textInput(ctx);
@@ -213,7 +249,16 @@ export const convertProcessors: Record<string, ToolProcessor> = {
         : 'document.pdf';
       return {
         files: [
-          await conv.plainTextToPdf(source, name, ctx.values.mono === 'true'),
+          await conv.plainTextToPdf(source, name, {
+            font: str(ctx, 'font', 'regular') as
+              | 'regular'
+              | 'bold'
+              | 'italic'
+              | 'mono',
+            fontSize: num(ctx, 'fontSize', 11),
+            color: str(ctx, 'color', '#1a1a1f'),
+            pageSize: struct.NAMED_SIZES[str(ctx, 'pageSize', 'a4')],
+          }),
         ],
       };
     },
@@ -371,17 +416,54 @@ export const convertProcessors: Record<string, ToolProcessor> = {
   'pdf-to-tiff': processor({
     accept: PDF,
     multiple: false,
-    fields: [rangeSlider('scale', 'Resolution', 1, 4, 0.5, 2)],
+    note: 'TIFF output is uncompressed, so files are large. Greyscale and bitonal modes cut the size considerably.',
+    fields: [
+      selectField(
+        'dpi',
+        'Resolution',
+        [
+          { value: '1', label: '72 dpi' },
+          { value: '2.08', label: '150 dpi' },
+          { value: '2.78', label: '200 dpi' },
+          { value: '4.17', label: '300 dpi' },
+        ],
+        '2.08'
+      ),
+      selectField(
+        'colorMode',
+        'Colour mode',
+        [
+          { value: 'rgb', label: 'Full colour' },
+          { value: 'greyscale', label: 'Greyscale' },
+          { value: 'bw', label: 'Black and white (bitonal)' },
+        ],
+        'rgb'
+      ),
+      {
+        ...rangeSlider('threshold', 'Black/white threshold', 40, 220, 5, 160),
+        showWhen: { key: 'colorMode', equals: ['bw'] },
+      },
+    ],
     async process(ctx) {
       const file = first(ctx);
       const UTIF = await conv.loadUtif();
+      const mode = str(ctx, 'colorMode', 'rgb');
+      const threshold = num(ctx, 'threshold', 160);
       ctx.onProgress('Rendering pages');
       const doc = await openWithPdfjs(file);
       const files = [];
       for (let i = 1; i <= doc.numPages; i++) {
-        const canvas = await renderPage(doc, i, num(ctx, 'scale', 2));
+        const canvas = await renderPage(doc, i, num(ctx, 'dpi', 2.08));
         const ctx2d = canvas.getContext('2d')!;
         const image = ctx2d.getImageData(0, 0, canvas.width, canvas.height);
+        if (mode !== 'rgb') {
+          const d = image.data;
+          for (let k = 0; k < d.length; k += 4) {
+            const g = 0.299 * d[k]! + 0.587 * d[k + 1]! + 0.114 * d[k + 2]!;
+            const v = mode === 'bw' ? (g < threshold ? 0 : 255) : g;
+            d[k] = d[k + 1] = d[k + 2] = v;
+          }
+        }
         const encoded = UTIF.encodeImage(
           new Uint8Array(image.data.buffer.slice(0)),
           canvas.width,
@@ -400,11 +482,58 @@ export const convertProcessors: Record<string, ToolProcessor> = {
   'pdf-to-cbz': processor({
     accept: PDF,
     multiple: false,
-    fields: [rangeSlider('scale', 'Resolution', 1, 4, 0.5, 2)],
+    note: 'Builds a comic archive. Metadata is written to ComicInfo.xml, which comic readers pick up automatically.',
+    fields: [
+      rangeSlider('scale', 'Resolution', 1, 4, 0.5, 2),
+      selectField('format', 'Image format', [
+        { value: 'jpeg', label: 'JPEG (smallest)' },
+        { value: 'png', label: 'PNG (lossless)' },
+        { value: 'webp', label: 'WebP' },
+      ]),
+      rangeSlider('quality', 'Quality', 0.3, 1, 0.05, 0.9),
+      checkbox('greyscale', 'Convert to greyscale', false),
+      checkbox('manga', 'Right-to-left (manga) reading order', false),
+      { key: 'title', label: 'Title', type: 'text', defaultValue: '' },
+      { key: 'series', label: 'Series', type: 'text', defaultValue: '' },
+      { key: 'number', label: 'Issue number', type: 'text', defaultValue: '' },
+      { key: 'volume', label: 'Volume', type: 'text', defaultValue: '' },
+      {
+        key: 'writer',
+        label: 'Author / writer',
+        type: 'text',
+        defaultValue: '',
+      },
+      { key: 'publisher', label: 'Publisher', type: 'text', defaultValue: '' },
+      { key: 'genre', label: 'Tags / genre', type: 'text', defaultValue: '' },
+      { key: 'year', label: 'Year', type: 'text', defaultValue: '' },
+      { key: 'rating', label: 'Age rating', type: 'text', defaultValue: '' },
+    ],
     async process(ctx) {
       const file = first(ctx);
+      const format = str(ctx, 'format', 'jpeg') as 'jpeg' | 'png' | 'webp';
+      if (!supportsMime(`image/${format}`)) {
+        throw new Error(`This browser cannot export ${format.toUpperCase()}.`);
+      }
       ctx.onProgress('Building archive');
-      return { files: [await conv.pdfToCbz(file, num(ctx, 'scale', 2))] };
+      const out = await conv.pdfToCbz(file, {
+        scale: num(ctx, 'scale', 2),
+        format,
+        quality: num(ctx, 'quality', 0.9),
+        greyscale: ctx.values.greyscale === 'true',
+        manga: ctx.values.manga === 'true',
+        metadata: {
+          Title: str(ctx, 'title'),
+          Series: str(ctx, 'series'),
+          Number: str(ctx, 'number'),
+          Volume: str(ctx, 'volume'),
+          Writer: str(ctx, 'writer'),
+          Publisher: str(ctx, 'publisher'),
+          Genre: str(ctx, 'genre'),
+          Year: str(ctx, 'year'),
+          AgeRating: str(ctx, 'rating'),
+        },
+      });
+      return { files: [out] };
     },
   }),
 
@@ -458,16 +587,49 @@ export const convertProcessors: Record<string, ToolProcessor> = {
     accept: PDF,
     multiple: false,
     note: 'Headings are inferred from relative font size.',
+    fields: [
+      checkbox(
+        'includeImages',
+        'Extract embedded images alongside the markdown',
+        false,
+        'Images are written as separate PNG files and referenced from the markdown.'
+      ),
+    ],
     async process(ctx) {
       const file = first(ctx);
       ctx.onProgress('Extracting text');
-      const content = await text.pdfToMarkdown(file);
-      return textResult(
+      let content = await text.pdfToMarkdown(file);
+      const files = [];
+
+      if (ctx.values.includeImages === 'true') {
+        ctx.onProgress('Extracting images');
+        try {
+          const images = await conv.extractEmbeddedImages(file);
+          if (images.length > 0) {
+            const refs = images
+              .map((img) => `![${img.name}](${img.name})`)
+              .join('\n\n');
+            content += `\n\n## Images\n\n${refs}\n`;
+            files.push(...images);
+          }
+        } catch {
+          // No embedded images — the markdown alone is still valid.
+        }
+      }
+
+      const md = textResult(
         derive(file, '', 'md'),
         content,
         'text/markdown',
         'Markdown'
       );
+      return {
+        files: [...md.files, ...files],
+        preview: md.preview,
+        ...(files.length
+          ? { message: `Included ${files.length} image(s).` }
+          : {}),
+      };
     },
   }),
 
@@ -567,16 +729,53 @@ export const rasterizeProcessor = processor({
   multiple: false,
   rasterizes: true,
   fields: [
-    rangeSlider('scale', 'Resolution', 1, 4, 0.5, 2),
-    rangeSlider('quality', 'JPEG quality', 0.3, 1, 0.05, 0.85),
+    selectField(
+      'dpi',
+      'Resolution',
+      [
+        { value: '1', label: '72 dpi — screen' },
+        { value: '2.08', label: '150 dpi — draft print' },
+        { value: '2.78', label: '200 dpi' },
+        { value: '4.17', label: '300 dpi — print' },
+      ],
+      '2.08'
+    ),
+    selectField(
+      'format',
+      'Page image format',
+      [
+        { value: 'jpeg', label: 'JPEG (smaller)' },
+        { value: 'png', label: 'PNG (lossless, larger)' },
+      ],
+      'jpeg'
+    ),
+    {
+      ...rangeSlider('quality', 'JPEG quality', 0.3, 1, 0.05, 0.85),
+      showWhen: { key: 'format', equals: ['jpeg'] },
+    },
+    checkbox('greyscale', 'Convert to greyscale', false),
   ],
+  note: 'Replaces every page with a flat image — removes fonts, layers and interactivity.',
   async process(ctx) {
     const file = first(ctx);
     ctx.onProgress('Rasterizing pages');
     const { rasterizePdf } = await import('~/lib/pdf/render');
+    const greyscale = ctx.values.greyscale === 'true';
     const bytes = await rasterizePdf(file, {
-      scale: num(ctx, 'scale', 2),
+      scale: num(ctx, 'dpi', 2.08),
       quality: num(ctx, 'quality', 0.85),
+      format: str(ctx, 'format', 'jpeg') as 'jpeg' | 'png',
+      ...(greyscale
+        ? {
+            edit: (image: ImageData) => {
+              const d = image.data;
+              for (let i = 0; i < d.length; i += 4) {
+                const g = 0.299 * d[i]! + 0.587 * d[i + 1]! + 0.114 * d[i + 2]!;
+                d[i] = d[i + 1] = d[i + 2] = g;
+              }
+            },
+          }
+        : {}),
     });
     return onePdf(bytes, derive(file, 'rasterized'));
   },

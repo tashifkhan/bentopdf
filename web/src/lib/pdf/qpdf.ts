@@ -77,15 +77,27 @@ export type Permissions = {
   modify: 'all' | 'annotate' | 'form' | 'assembly' | 'none';
   extract: boolean;
   accessibility: boolean;
+  /** Fine-grained overrides, applied on top of `modify`. */
+  annotate?: boolean;
+  fillForms?: boolean;
+  assemble?: boolean;
+  modifyOther?: boolean;
 };
 
 function permissionArgs(p: Permissions): string[] {
-  return [
+  const args = [
     `--print=${p.print}`,
     `--modify=${p.modify}`,
     `--extract=${p.extract ? 'y' : 'n'}`,
     `--accessibility=${p.accessibility ? 'y' : 'n'}`,
   ];
+  // Only send a fine-grained flag when it narrows the permission — qpdf
+  // rejects widening one beyond what --modify already allows.
+  if (p.annotate === false) args.push('--annotate=n');
+  if (p.fillForms === false) args.push('--form=n');
+  if (p.assemble === false) args.push('--assemble=n');
+  if (p.modifyOther === false) args.push('--modify-other=n');
+  return args;
 }
 
 /** Encrypt with 256-bit AES. */

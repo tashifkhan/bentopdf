@@ -244,8 +244,22 @@ export type SignatureInfo = {
  * Verify embedded signatures: re-hash the signed byte ranges and check them
  * against the PKCS#7 message digest, then report what the signature covers.
  */
-export async function verifySignatures(file: File): Promise<SignatureInfo[]> {
+export async function verifySignatures(
+  file: File,
+  trustedIssuerPem?: string
+): Promise<SignatureInfo[]> {
   const forge = await getForge();
+  // Parse the optional trust anchor once, up front.
+  let trusted: unknown = null;
+  if (trustedIssuerPem?.trim()) {
+    try {
+      trusted = forge.pki.certificateFromPem(trustedIssuerPem);
+    } catch {
+      throw new Error(
+        'Could not read the trusted issuer certificate (PEM expected)'
+      );
+    }
+  }
   const bytes = new Uint8Array(await file.arrayBuffer());
   const doc = await loadPdf(file);
   const form = doc.getForm();
@@ -295,6 +309,30 @@ export async function verifySignatures(file: File): Promise<SignatureInfo[]> {
         const described = describeCert(cert);
         signer = described.subject;
         issuer = described.issuer;
+
+        // Expiry is independent of the trust check and worth surfacing.
+        const now = new Date();
+        if (cert.validity.notAfter < now) {
+          notes.push(
+            `Signing certificate expired on ${cert.validity.notAfter.toISOString().slice(0, 10)}`
+          );
+        } else if (cert.validity.notBefore > now) {
+          notes.push('Signing certificate is not valid yet');
+        }
+
+        if (trusted) {
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const issuedByTrusted = (trusted as any).verify(cert);
+            notes.push(
+              issuedByTrusted
+                ? 'Chains to the supplied trusted issuer'
+                : 'Does NOT chain to the supplied trusted issuer'
+            );
+          } catch {
+            notes.push('Does NOT chain to the supplied trusted issuer');
+          }
+        }
       }
 
       // Compare the signed-attribute messageDigest with our own hash.

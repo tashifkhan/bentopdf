@@ -45,6 +45,10 @@ const permissionFields: ToolField[] = [
   ),
   checkbox('extract', 'Allow copying text and images', true),
   checkbox('accessibility', 'Allow screen readers', true),
+  checkbox('annotate', 'Allow adding comments and annotations', true),
+  checkbox('fillForms', 'Allow filling in form fields', true),
+  checkbox('assemble', 'Allow page assembly (insert, rotate, delete)', true),
+  checkbox('modifyOther', 'Allow other modifications', true),
 ];
 
 function readPermissions(values: Record<string, string>): qpdf.Permissions {
@@ -53,6 +57,10 @@ function readPermissions(values: Record<string, string>): qpdf.Permissions {
     modify: (values.modify ?? 'all') as qpdf.Permissions['modify'],
     extract: values.extract !== 'false',
     accessibility: values.accessibility !== 'false',
+    annotate: values.annotate !== 'false',
+    fillForms: values.fillForms !== 'false',
+    assemble: values.assemble !== 'false',
+    modifyOther: values.modifyOther !== 'false',
   };
 }
 
@@ -177,9 +185,18 @@ export const secureProcessors: Record<string, ToolProcessor> = {
       checkbox('embeddedFiles', 'Remove embedded files and attachments', true),
       checkbox(
         'launchActions',
-        'Remove launch and external-link actions',
+        'Remove launch and external-file actions',
         true
       ),
+      checkbox('links', 'Remove hyperlinks', false),
+      checkbox('annotations', 'Remove all annotations and form fields', false),
+      checkbox(
+        'flattenForms',
+        'Flatten form fields (keep values, drop interactivity)',
+        false
+      ),
+      checkbox('layers', 'Remove optional content layers', false),
+      checkbox('structureTree', 'Remove tagging / structure tree', false),
       checkbox('metadata', 'Remove document metadata', false),
     ],
     note: 'Strips active content that can execute when the document is opened.',
@@ -189,6 +206,11 @@ export const secureProcessors: Record<string, ToolProcessor> = {
         javascript: ctx.values.javascript !== 'false',
         embeddedFiles: ctx.values.embeddedFiles !== 'false',
         launchActions: ctx.values.launchActions !== 'false',
+        links: ctx.values.links === 'true',
+        annotations: ctx.values.annotations === 'true',
+        flattenForms: ctx.values.flattenForms === 'true',
+        layers: ctx.values.layers === 'true',
+        structureTree: ctx.values.structureTree === 'true',
         metadata: ctx.values.metadata === 'true',
       };
       if (!Object.values(opts).some(Boolean)) {
@@ -273,11 +295,24 @@ export const secureProcessors: Record<string, ToolProcessor> = {
   'validate-signature-pdf': processor({
     accept: PDF,
     multiple: false,
-    note: 'Checks cryptographic integrity and reports the embedded certificate. It does not validate the chain against a trust store.',
+    note: 'Checks cryptographic integrity and reports the embedded certificate. Supply an issuer certificate to also check the signer chains up to it.',
+    fields: [
+      {
+        key: 'trustCert',
+        label: 'Trusted issuer certificate (optional)',
+        type: 'file',
+        accept: '.pem,.crt,.cer,.der',
+        help: 'PEM or DER. Used to check that the signing certificate was issued by this authority.',
+      },
+    ],
     async process(ctx) {
       const file = first(ctx);
       ctx.onProgress('Verifying signatures');
-      const signatures = await sign.verifySignatures(file);
+      const trustCert = ctx.extraFiles.trustCert?.[0];
+      const signatures = await sign.verifySignatures(
+        file,
+        trustCert ? await trustCert.text() : undefined
+      );
       const report = sign.formatVerificationReport(file, signatures);
       const summary =
         signatures.length === 0
@@ -348,7 +383,20 @@ export const optimizeProcessors: Record<string, ToolProcessor> = {
         ],
         '0.65'
       ),
-      rangeSlider('scale', 'Render scale', 0.75, 2, 0.25, 1.25),
+      selectField(
+        'dpi',
+        'Target resolution',
+        [
+          { value: '0.75', label: '54 dpi — screen only' },
+          { value: '1', label: '72 dpi — screen' },
+          { value: '1.25', label: '90 dpi — balanced' },
+          { value: '2', label: '144 dpi — print' },
+          { value: '3', label: '216 dpi — high quality' },
+        ],
+        '1.25'
+      ),
+      checkbox('greyscale', 'Convert to greyscale (much smaller)', false),
+      checkbox('stripMetadata', 'Remove document metadata', false),
     ],
     note: 'Pages are re-rendered as JPEG images, which shrinks scanned documents dramatically but makes text unselectable.',
     async process(ctx) {
@@ -357,7 +405,11 @@ export const optimizeProcessors: Record<string, ToolProcessor> = {
       const bytes = await pdf.compressPdfRaster(
         file,
         num(ctx, 'quality', 0.65),
-        num(ctx, 'scale', 1.25)
+        num(ctx, 'dpi', 1.25),
+        {
+          greyscale: ctx.values.greyscale === 'true',
+          stripMetadata: ctx.values.stripMetadata === 'true',
+        }
       );
       const saved = file.size - bytes.length;
       return {
@@ -426,16 +478,38 @@ export const optimizeProcessors: Record<string, ToolProcessor> = {
       selectField(
         'size',
         'Target size',
-        [
-          { value: 'a4', label: 'A4' },
-          { value: 'letter', label: 'Letter' },
-          { value: 'legal', label: 'Legal' },
-          { value: 'a3', label: 'A3' },
-          { value: 'a5', label: 'A5' },
-          { value: 'tabloid', label: 'Tabloid' },
-        ],
+        [...struct.PAGE_SIZE_OPTIONS, { value: 'custom', label: 'Custom…' }],
         'a4'
       ),
+      {
+        key: 'customWidth',
+        label: 'Custom width',
+        type: 'number',
+        defaultValue: '210',
+        min: 1,
+        showWhen: { key: 'size', equals: ['custom'] },
+      },
+      {
+        key: 'customHeight',
+        label: 'Custom height',
+        type: 'number',
+        defaultValue: '297',
+        min: 1,
+        showWhen: { key: 'size', equals: ['custom'] },
+      },
+      {
+        ...selectField(
+          'customUnit',
+          'Custom units',
+          [
+            { value: 'mm', label: 'Millimetres' },
+            { value: 'in', label: 'Inches' },
+            { value: 'pt', label: 'Points' },
+          ],
+          'mm'
+        ),
+        showWhen: { key: 'size', equals: ['custom'] },
+      },
       selectField(
         'orientation',
         'Orientation',
@@ -446,6 +520,12 @@ export const optimizeProcessors: Record<string, ToolProcessor> = {
         ],
         'auto'
       ),
+      {
+        key: 'background',
+        label: 'Background colour',
+        type: 'color',
+        defaultValue: '#ffffff',
+      },
     ],
     note: 'Scales every page to a uniform sheet size, centred, without distorting the aspect ratio.',
     async process(ctx) {
@@ -453,7 +533,15 @@ export const optimizeProcessors: Record<string, ToolProcessor> = {
       const bytes = await struct.fixPageSize(
         file,
         str(ctx, 'size', 'a4'),
-        str(ctx, 'orientation', 'auto') as 'auto' | 'portrait' | 'landscape'
+        str(ctx, 'orientation', 'auto') as 'auto' | 'portrait' | 'landscape',
+        {
+          custom: {
+            width: num(ctx, 'customWidth', 210),
+            height: num(ctx, 'customHeight', 297),
+            unit: str(ctx, 'customUnit', 'mm'),
+          },
+          background: str(ctx, 'background', '#ffffff'),
+        }
       );
       return onePdf(bytes, derive(file, 'resized'));
     },
@@ -462,14 +550,29 @@ export const optimizeProcessors: Record<string, ToolProcessor> = {
   'page-dimensions': processor({
     accept: PDF,
     multiple: false,
+    fields: [
+      selectField(
+        'unit',
+        'Units',
+        [
+          { value: 'pt', label: 'Points' },
+          { value: 'mm', label: 'Millimetres' },
+          { value: 'cm', label: 'Centimetres' },
+          { value: 'in', label: 'Inches' },
+          { value: 'px', label: 'Pixels (96 dpi)' },
+        ],
+        'mm'
+      ),
+    ],
     async process(ctx) {
       const file = first(ctx);
-      const report = await struct.readPageDimensions(file);
+      const unit = str(ctx, 'unit', 'mm');
+      const report = await struct.readPageDimensions(file, unit);
       return textResult(
         derive(file, 'dimensions', 'csv'),
         report,
         'text/csv',
-        'Page dimensions'
+        `Page dimensions (${unit})`
       );
     },
   }),
@@ -531,6 +634,34 @@ export const optimizeProcessors: Record<string, ToolProcessor> = {
         2,
         'Higher values are slower but recognise small type better.'
       ),
+      checkbox(
+        'binarize',
+        'Binarize before recognition',
+        false,
+        'Hard black/white conversion — helps on low-contrast or coloured scans.'
+      ),
+      selectField(
+        'whitelist',
+        'Restrict characters',
+        [
+          { value: '', label: 'No restriction' },
+          { value: '0123456789', label: 'Digits only' },
+          {
+            value: '0123456789.,-$€£',
+            label: 'Numbers and currency',
+          },
+          {
+            value: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
+            label: 'Letters only',
+          },
+          {
+            value:
+              'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
+            label: 'Alphanumeric',
+          },
+        ],
+        ''
+      ),
     ],
     note: 'Recognition runs entirely in your browser. The language model (a few MB) is downloaded on first use.',
     async process(ctx) {
@@ -540,8 +671,17 @@ export const optimizeProcessors: Record<string, ToolProcessor> = {
       const onProgress = (message: string, fraction?: number) =>
         ctx.onProgress(message, fraction);
 
+      const tuning = {
+        binarize: ctx.values.binarize === 'true',
+        whitelist: str(ctx, 'whitelist'),
+      };
+
       if (str(ctx, 'output', 'pdf') === 'text') {
-        const content = await ocrToText(file, language, { scale, onProgress });
+        const content = await ocrToText(file, language, {
+          scale,
+          onProgress,
+          ...tuning,
+        });
         if (!content.trim()) throw new Error('No text could be recognised');
         return textResult(
           derive(file, 'ocr', 'txt'),
@@ -551,7 +691,11 @@ export const optimizeProcessors: Record<string, ToolProcessor> = {
         );
       }
 
-      const bytes = await ocrPdf(file, language, { scale, onProgress });
+      const bytes = await ocrPdf(file, language, {
+        scale,
+        onProgress,
+        ...tuning,
+      });
       return {
         ...onePdf(bytes, derive(file, 'ocr')),
         message:
