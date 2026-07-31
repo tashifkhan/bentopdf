@@ -69,7 +69,15 @@ export type ToolProcessor = {
  * user-visible: a tool that cannot do its job must say so rather than silently
  * running something else.
  */
+/** Tools that take over the whole page instead of using the generic form. */
+export type WorkspaceKind =
+  | 'multi-tool'
+  | 'merge'
+  | 'editor'
+  | 'form-creator'
+  | 'workflow';
+
 export type ToolEntry =
   | { status: 'ready'; processor: ToolProcessor }
-  | { status: 'workspace'; kind: 'multi-tool' | 'merge' }
+  | { status: 'workspace'; kind: WorkspaceKind }
   | { status: 'unavailable'; reason: string };

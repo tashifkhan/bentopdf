@@ -1060,7 +1060,12 @@ export async function readFormFields(file: File): Promise<FormField[]> {
         'getSelected' in field &&
         typeof field.getSelected === 'function'
       ) {
-        value = ((field.getSelected() as string[]) ?? []).join(', ');
+        // Dropdowns/option lists return an array; radio groups return a
+        // single string. Normalise both.
+        const selected = field.getSelected() as string[] | string | undefined;
+        value = Array.isArray(selected)
+          ? selected.join(', ')
+          : (selected ?? '');
       }
       if ('getOptions' in field && typeof field.getOptions === 'function') {
         options = field.getOptions() as string[];

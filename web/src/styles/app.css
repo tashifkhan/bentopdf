@@ -70,7 +70,8 @@ html[data-theme='dark'] {
 }
 
 @theme inline {
-  --font-sans: 'DM Sans Variable', 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-sans:
+    'DM Sans Variable', 'DM Sans', ui-sans-serif, system-ui, sans-serif;
 
   /* Semantic colors → Tailwind utilities: bg-background, text-primary, border-border… */
   --color-background: var(--ws-bg);
@@ -87,6 +88,7 @@ html[data-theme='dark'] {
   --color-muted-foreground: var(--ws-ink-3);
   --color-accent: var(--ws-accent);
   --color-accent-foreground: #fff;
+  --color-accent-soft: var(--ws-accent-soft);
   --color-destructive: var(--ws-danger);
   --color-destructive-foreground: #fff;
   --color-success: var(--ws-success);
@@ -140,6 +142,9 @@ html[data-theme-switching='1'] * {
 
   html {
     scroll-behavior: smooth;
+    /* Avoid iOS zoom-on-focus for inputs ≥16px, and allow text size to settle. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   /* Smooth token changes when VT API is unavailable */
@@ -152,6 +157,7 @@ html[data-theme-switching='1'] * {
   html,
   body {
     min-height: 100%;
+    min-height: 100dvh;
   }
 
   body {
@@ -169,10 +175,25 @@ html[data-theme-switching='1'] * {
         color-mix(in srgb, var(--ws-accent) 8%, transparent),
         transparent
       );
-    background-attachment: fixed;
+    /* fixed backgrounds jank hard on iOS Safari during scroll */
+    background-attachment: scroll;
     color: var(--color-foreground);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Kill horizontal rubber-band overflow from full-bleed tool UIs */
+    overflow-x: clip;
+    /* Comfortable tap highlight */
+    -webkit-tap-highlight-color: color-mix(
+      in srgb,
+      var(--ws-brand) 12%,
+      transparent
+    );
+  }
+
+  @media (min-width: 768px) {
+    body {
+      background-attachment: fixed;
+    }
   }
 
   a {
@@ -187,19 +208,48 @@ html[data-theme-switching='1'] * {
     font: inherit;
   }
 
+  /* Prefer 16px+ inputs on mobile to avoid iOS focus zoom */
+  @media (max-width: 639px) {
+    input:not([type='checkbox']):not([type='radio']):not([type='range']):not(
+        [type='color']
+      ),
+    select,
+    textarea {
+      font-size: 16px;
+    }
+  }
+
   :focus-visible {
     outline: 2px solid var(--color-ring);
     outline-offset: 2px;
+  }
+
+  /* Compact density (settings toggle) */
+  body.density-compact .tool-card {
+    padding: 0.7rem 0.85rem;
+    gap: 0.7rem;
+  }
+
+  body.density-compact .tool-grid {
+    gap: 0.45rem;
+  }
+
+  body.density-compact .tool-card p {
+    display: none;
   }
 }
 
 @layer components {
   .app-shell {
     @apply flex min-h-dvh flex-col;
+    /* Notch / home-indicator safe areas */
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
   }
 
   .app-main {
-    @apply mx-auto w-full max-w-[1120px] flex-1 px-4 pb-12;
+    @apply mx-auto w-full max-w-[1120px] flex-1 px-3 pb-10 sm:px-4 sm:pb-12;
+    padding-bottom: max(2.5rem, env(safe-area-inset-bottom, 0px));
   }
 
   .surface-card {
@@ -207,7 +257,7 @@ html[data-theme-switching='1'] * {
   }
 
   .chip {
-    @apply inline-flex h-8 shrink-0 cursor-pointer items-center whitespace-nowrap rounded-full border border-transparent bg-transparent px-3.5 text-[0.78rem] font-semibold text-muted-foreground transition-colors;
+    @apply inline-flex h-9 shrink-0 cursor-pointer items-center whitespace-nowrap rounded-full border border-transparent bg-transparent px-3.5 text-[0.78rem] font-semibold text-muted-foreground transition-colors sm:h-8;
   }
 
   .chip:hover {
@@ -218,16 +268,40 @@ html[data-theme-switching='1'] * {
     @apply bg-primary text-primary-foreground;
   }
 
+  /* Horizontal chip / toolbar scroller used across pages */
+  .h-scroll {
+    @apply flex gap-1.5 overflow-x-auto overscroll-x-contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+
+  .h-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .h-scroll > * {
+    scroll-snap-align: start;
+  }
+
   .tool-grid {
     @apply grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3;
   }
 
   .tool-card {
-    @apply flex items-start gap-3.5 rounded-lg border border-border bg-card p-4 text-left transition-[transform,border-color,box-shadow] duration-150;
+    @apply flex items-start gap-3 rounded-lg border border-border bg-card p-3.5 text-left transition-[transform,border-color,box-shadow] duration-150 sm:gap-3.5 sm:p-4;
+    /* Comfortable touch target */
+    min-height: 3.25rem;
   }
 
-  .tool-card:hover {
-    @apply -translate-y-px border-brand/40 shadow-card;
+  @media (hover: hover) and (pointer: fine) {
+    .tool-card:hover {
+      @apply -translate-y-px border-brand/40 shadow-card;
+    }
+  }
+
+  .tool-card:active {
+    @apply border-brand/40;
   }
 
   .tool-card-icon {
@@ -243,10 +317,59 @@ html[data-theme-switching='1'] * {
   }
 
   .tool-dropzone {
-    @apply relative flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-line-strong bg-secondary px-4 py-8 text-center transition-colors;
+    @apply relative flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-line-strong bg-secondary px-4 py-7 text-center transition-colors sm:min-h-44 sm:py-8;
   }
 
-  .tool-dropzone:hover {
+  @media (hover: hover) and (pointer: fine) {
+    .tool-dropzone:hover {
+      @apply border-brand bg-brand-soft/40;
+    }
+  }
+
+  .tool-dropzone:active {
     @apply border-brand bg-brand-soft/40;
+  }
+
+  /* Full-bleed workspace shell (multi-tool, editor, form creator, workflow) */
+  .workspace-shell {
+    @apply flex flex-col bg-background;
+    /* Break out of .app-main max-width + padding on all viewports */
+    margin-inline: calc(50% - 50vw);
+    width: 100vw;
+    max-width: 100vw;
+    min-height: calc(100dvh - 3.5rem);
+    min-height: calc(100dvh - 3.5rem - env(safe-area-inset-top, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .workspace-header {
+    @apply sticky top-0 z-30 flex h-12 items-center justify-between gap-2 border-b border-border bg-card/95 px-3 backdrop-blur-md sm:px-4;
+    padding-top: env(safe-area-inset-top, 0px);
+    height: calc(3rem + env(safe-area-inset-top, 0px));
+  }
+
+  .workspace-toolbar {
+    @apply flex items-center gap-2 border-b border-border bg-card px-3 py-2;
+  }
+
+  .workspace-toolbar-scroll {
+    @apply flex w-full gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+
+  .mobile-action-bar {
+    @apply sticky bottom-0 z-20 flex gap-2 border-t border-border bg-card/95 p-3 backdrop-blur-md;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .tool-actions {
+    @apply mt-5 flex flex-col-reverse gap-2 sm:mt-6 sm:flex-row sm:flex-wrap;
+  }
+
+  .tool-actions > .btn-primary-stretch,
+  .tool-actions > [data-primary-action] {
+    @apply w-full sm:w-auto sm:min-w-[8rem];
   }
 }

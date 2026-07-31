@@ -1,4 +1,4 @@
-import type { ToolEntry, ToolProcessor } from '../types';
+import type { ToolEntry, ToolProcessor, WorkspaceKind } from '../types';
 import { convertProcessors, rasterizeProcessor } from './convert';
 import { editProcessors } from './edit';
 import { organizeProcessors } from './organize';
@@ -17,9 +17,12 @@ const processors: Record<string, ToolProcessor> = {
 };
 
 /** Slugs handled by a dedicated full-page UI rather than the generic form. */
-const workspaces: Record<string, 'multi-tool' | 'merge'> = {
+const workspaces: Record<string, WorkspaceKind> = {
   'pdf-multi-tool': 'multi-tool',
   'organize-pdf': 'multi-tool',
+  'edit-pdf': 'editor',
+  'form-creator': 'form-creator',
+  'pdf-workflow': 'workflow',
 };
 
 /**
@@ -36,8 +39,6 @@ const unavailable: Record<string, string> = {
     'The full page editor (freehand drawing, text boxes, redaction) has not been rebuilt yet. Annotation-adjacent tools such as Add Stamps, Sign PDF and Add Watermark work today.',
   'form-creator':
     'Designing new form fields needs an interactive canvas that has not been rebuilt yet. Form Filler can read and fill existing fields.',
-  'font-to-outline':
-    'Converting glyphs to vector outlines means rewriting every content stream against the embedded font programs, which needs a font engine this build does not ship. Rasterize PDF removes font dependencies today, at the cost of selectable text.',
 };
 
 export function getToolEntry(slug: string): ToolEntry {

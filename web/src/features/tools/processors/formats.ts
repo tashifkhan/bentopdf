@@ -3,6 +3,7 @@ import * as formats from '~/lib/pdf/formats';
 import * as layers from '~/lib/pdf/layers';
 import * as pdfa from '~/lib/pdf/pdfa';
 import { pdfToSvg } from '~/lib/pdf/svg';
+import * as gs from '~/lib/pdf/ghostscript';
 import { canvasToBytes } from '~/lib/pdf/render';
 import type { ToolProcessor } from '../types';
 import {
@@ -22,6 +23,40 @@ import {
 } from './common';
 
 export const formatProcessors: Record<string, ToolProcessor> = {
+  /* ------------------------------------------------- font outlining */
+
+  'font-to-outline': processor({
+    accept: PDF,
+    multiple: false,
+    note: 'Converts every glyph to a vector path, so the file renders identically anywhere without needing its fonts. Text stops being selectable or searchable. This needs Ghostscript, which is GPL-licensed and ~10 MB, so it is not bundled — point the field below at a Ghostscript-WASM build you host.',
+    fields: [
+      {
+        key: 'engineUrl',
+        label: 'Ghostscript-WASM base URL',
+        type: 'text',
+        defaultValue: '',
+        placeholder: 'https://example.com/ghostscript/',
+        help: 'A folder containing gs.js and gs.wasm. Remembered in this browser only.',
+      },
+    ],
+    async process(ctx) {
+      const file = first(ctx);
+      const url = str(ctx, 'engineUrl').trim();
+      // An entered URL wins and is persisted; otherwise reuse what is stored.
+      if (url) gs.setGhostscriptUrl(url);
+      if (!gs.isGhostscriptConfigured()) {
+        throw new Error(
+          'No Ghostscript build configured. Paste the base URL of a Ghostscript-WASM build (a folder with gs.js and gs.wasm) above.'
+        );
+      }
+      const bytes = await gs.fontsToOutlines(file, (m) => ctx.onProgress(m));
+      return {
+        ...onePdf(bytes, derive(file, 'outlined')),
+        message: 'Fonts converted to vector outlines.',
+      };
+    },
+  }),
+
   /* ------------------------------------------------------ iWork Pages */
 
   'pages-to-pdf': processor({

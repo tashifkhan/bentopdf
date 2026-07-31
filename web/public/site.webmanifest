@@ -1,6 +1,15 @@
 {
-  "name": "",
-  "short_name": "",
+  "name": "BentoPDF — private PDF toolkit",
+  "short_name": "BentoPDF",
+  "description": "Merge, split, convert, and edit PDFs in your browser. Files never leave your device.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#1a3d35",
+  "background_color": "#0d110f",
+  "categories": ["productivity", "utilities"],
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
@@ -11,9 +20,12 @@
       "src": "/android-chrome-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
-  ],
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
-  "display": "standalone"
+  ]
 }
