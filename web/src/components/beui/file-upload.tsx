@@ -63,6 +63,12 @@ export interface FileUploadProps {
   title?: string;
   description?: string;
   browseLabel?: string;
+  /**
+   * Status applied to newly added items.
+   * Use `"success"` for local / no-network pickers (files stay on device).
+   * @default "uploading"
+   */
+  itemStatus?: FileUploadStatus;
   className?: string;
   classNames?: FileUploadClassNames;
 }
@@ -79,8 +85,8 @@ const STATUS_LABEL: Record<FileUploadStatus, string> = {
 
 const STATUS_TONE: Record<FileUploadStatus, string> = {
   queued: "text-muted-foreground",
-  uploading: "text-foreground",
-  success: "text-emerald-600 dark:text-emerald-400",
+  uploading: "text-accent",
+  success: "text-accent",
   error: "text-destructive",
 };
 
@@ -193,16 +199,41 @@ function getFileIcon(item: FileUploadItem) {
   return FileIcon;
 }
 
-export function createFileUploadItem(file: File, index = 0): FileUploadItem {
+export function createFileUploadItem(
+  file: File,
+  index = 0,
+  status: FileUploadStatus = "uploading",
+): FileUploadItem {
   return {
     id: `${Date.now()}-${index}-${file.name}`,
     name: file.name,
     size: file.size,
     type: file.type,
-    progress: 0,
-    status: "uploading",
+    progress: status === "success" ? 100 : 0,
+    status,
     file,
   };
+}
+
+/** Map items to local-ready (no network upload) success state. */
+export function asLocalReady(items: FileUploadItem[]): FileUploadItem[] {
+  return items.map((item) =>
+    item.status === "error"
+      ? item
+      : {
+          ...item,
+          status: "success" as const,
+          progress: 100,
+          error: undefined,
+        },
+  );
+}
+
+/** Extract underlying File objects from upload items. */
+export function filesFromUploadItems(items: FileUploadItem[]): File[] {
+  return items
+    .map((item) => item.file)
+    .filter((file): file is File => file instanceof File);
 }
 
 function StatusIcon({
@@ -363,9 +394,7 @@ function FileUploadRow({
               <motion.div
                 className={cn(
                   "h-full rounded-full",
-                  status === "success"
-                    ? "bg-emerald-500"
-                    : "bg-foreground",
+                  status === "success" ? "bg-accent" : "bg-accent/70",
                 )}
                 style={{
                   transformOrigin: "left",
@@ -400,6 +429,7 @@ export function FileUpload({
   title = "Drop files here",
   description = "Add files to the upload queue",
   browseLabel = "Browse",
+  itemStatus = "uploading",
   className,
   classNames,
 }: FileUploadProps) {
@@ -433,14 +463,18 @@ export function FileUpload({
         0,
         multiple ? remainingSlots : Math.min(1, remainingSlots),
       );
-      const added = files.map((file, index) => createFileUploadItem(file, index));
+      const added = files.map((file, index) =>
+        createFileUploadItem(file, index, itemStatus),
+      );
 
       if (added.length === 0) return;
 
-      commit([...items, ...added]);
+      // Single-file mode: replace the existing item instead of blocking.
+      const base = multiple ? items : [];
+      commit([...base, ...added]);
       onFilesAdded?.(added, files);
     },
-    [commit, disabled, items, maxFiles, multiple, onFilesAdded],
+    [commit, disabled, itemStatus, items, maxFiles, multiple, onFilesAdded],
   );
 
   const removeItem = useCallback(
@@ -524,10 +558,10 @@ export function FileUpload({
           addFiles(Array.from(event.dataTransfer.files));
         }}
         className={cn(
-          "group relative flex w-full overflow-hidden rounded-3xl border border-dashed border-border bg-background outline-none",
-          "transition-[border-color,transform] duration-200 active:scale-[0.99]",
-          "hover:border-foreground/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-          "data-[dragging=true]:border-foreground",
+          "group relative flex w-full overflow-hidden rounded-3xl border border-dashed border-border bg-card outline-none",
+          "transition-[border-color,background-color,transform] duration-200 active:scale-[0.99]",
+          "hover:border-accent/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          "data-[dragging=true]:border-accent data-[dragging=true]:bg-accent-soft/50",
           "disabled:pointer-events-none disabled:opacity-55",
           centered
             ? "min-h-56 flex-col items-center justify-center gap-3 p-7 text-center"
@@ -538,9 +572,9 @@ export function FileUpload({
         <motion.span
           aria-hidden="true"
           className={cn(
-            "grid shrink-0 place-items-center bg-muted text-foreground",
+            "grid shrink-0 place-items-center bg-accent-soft text-accent",
             centered
-              ? "h-16 w-16 rounded-[1.35rem] border border-border"
+              ? "h-16 w-16 rounded-[1.35rem] border border-accent/20"
               : "h-14 w-14 rounded-[1.25rem]",
           )}
           animate={

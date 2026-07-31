@@ -11,6 +11,7 @@ import {
   Upload,
 } from 'reicon-react';
 import { Button, StatefulButton } from '~/components/beui/button';
+import { FileUpload } from '~/components/beui/file-upload';
 import { cn } from '~/lib/utils';
 
 type PageItem = {
@@ -160,7 +161,6 @@ async function buildPdf(items: PageItem[]): Promise<Uint8Array> {
 }
 
 export function MultiToolPage() {
-  const inputRef = useRef<HTMLInputElement>(null);
   const insertAfterRef = useRef<string | null>(null);
 
   const [pages, setPages] = useState<PageItem[]>([]);
@@ -251,20 +251,25 @@ export function MultiToolPage() {
       } finally {
         insertAfterRef.current = null;
         setLoading(false);
-        if (inputRef.current) inputRef.current.value = '';
       }
     },
     [commit]
   );
 
-  const openPicker = useCallback((insertAfter?: string) => {
-    insertAfterRef.current = insertAfter ?? null;
-    const mounted = inputRef.current;
-    if (mounted) {
-      mounted.value = '';
-      mounted.click();
-    }
-  }, []);
+  const openPicker = useCallback(
+    (insertAfter?: string) => {
+      insertAfterRef.current = insertAfter ?? null;
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = ACCEPT;
+      input.multiple = true;
+      input.onchange = () => {
+        void onFiles(input.files);
+      };
+      input.click();
+    },
+    [onFiles],
+  );
 
   /* ------------------------------------------------------------ editing */
 
@@ -438,17 +443,6 @@ export function MultiToolPage() {
 
   return (
     <div className="workspace-shell">
-      <input
-        ref={inputRef}
-        id="multi-tool-file-input"
-        type="file"
-        accept={ACCEPT}
-        multiple
-        className="pointer-events-none fixed left-0 top-0 h-px w-px opacity-0"
-        tabIndex={-1}
-        onChange={(e) => void onFiles(e.target.files)}
-      />
-
       <header className="workspace-header">
         <div className="flex min-w-0 items-center gap-2">
           <span className="truncate text-sm font-bold text-foreground">
@@ -675,30 +669,32 @@ export function MultiToolPage() {
             <p className="text-sm">Loading pages…</p>
           </div>
         ) : empty ? (
-          <div className="flex flex-1 flex-col items-center justify-center px-4 py-16 text-center">
-            <label
-              htmlFor="multi-tool-file-input"
-              className="mb-4 grid size-16 cursor-pointer place-items-center rounded-3xl bg-brand-soft text-brand transition hover:scale-105"
-              aria-label="Select files"
-            >
-              <Upload size={28} color="currentColor" />
-            </label>
-            <h1 className="text-lg font-bold text-foreground">
-              Select PDF or image files
-            </h1>
-            <p className="mt-1 max-w-md text-sm text-muted-foreground">
-              Drag and drop PDF or image files here, or click to select.
-              Everything stays in your browser.
-            </p>
-            <label
-              htmlFor="multi-tool-file-input"
-              className="mt-5 inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Select Files
-            </label>
-            <p className="mt-3 text-xs text-muted-foreground">
-              PDF, JPG, PNG, WebP supported
-            </p>
+          <div className="flex flex-1 flex-col items-center justify-center px-4 py-16">
+            <div className="w-full max-w-md text-center">
+              <h1 className="text-lg font-bold text-foreground">
+                Select PDF or image files
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Drag and drop PDF or image files here, or browse. Everything
+                stays in your browser.
+              </p>
+              <FileUpload
+                className="mt-6 text-left"
+                value={[]}
+                onValueChange={() => {}}
+                onFilesAdded={(_items, raw) => {
+                  void onFiles(raw);
+                }}
+                accept={ACCEPT}
+                multiple
+                itemStatus="success"
+                variant="centered"
+                title="Drop PDFs or images here"
+                description="PDF, JPG, PNG, WebP · stays on this device"
+                browseLabel="Browse"
+                classNames={{ queue: 'hidden' }}
+              />
+            </div>
           </div>
         ) : (
           <div className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">

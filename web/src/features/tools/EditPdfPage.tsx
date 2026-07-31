@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CloseCircle, Upload } from 'reicon-react';
-import { Button } from '~/components/beui/button';
+import { CloseCircle } from 'reicon-react';
+import { FileUpload } from '~/components/beui/file-upload';
 import { useTheme } from '~/features/theme/theme';
 
 /** BentoPDF palette mapped into EmbedPDF's theme tokens. */
@@ -214,7 +214,6 @@ function waitForLaidOut(
  * creates the viewer.
  */
 export function EditPdfPage() {
-  const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const viewerRef = useRef<any>(null);
@@ -427,19 +426,6 @@ export function EditPdfPage() {
 
   return (
     <div className="workspace-shell">
-      <input
-        ref={inputRef}
-        type="file"
-        accept="application/pdf,.pdf"
-        className="pointer-events-none fixed left-0 top-0 h-px w-px opacity-0"
-        tabIndex={-1}
-        onChange={(e) => {
-          const chosen = e.target.files?.[0];
-          if (chosen) void open(chosen);
-          e.currentTarget.value = '';
-        }}
-      />
-
       <header className="workspace-header">
         <div className="flex min-w-0 items-center gap-2">
           <span className="truncate text-sm font-bold text-foreground">
@@ -459,31 +445,40 @@ export function EditPdfPage() {
       </header>
 
       {!file ? (
-        <div className="flex flex-1 flex-col items-center justify-center px-4 py-16 text-center">
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            className="mb-4 grid size-16 place-items-center rounded-3xl bg-brand-soft text-brand transition hover:scale-105"
-            aria-label="Select a PDF"
-          >
-            <Upload size={28} color="currentColor" />
-          </button>
-          <h1 className="text-lg font-bold text-foreground">
-            Choose a PDF to edit
-          </h1>
-          <p className="mt-1 max-w-md text-sm text-muted-foreground">
-            Draw, highlight, add text and shapes, redact, and comment. The
-            editor engine is a few megabytes and loads once per session — your
-            file never leaves the browser.
-          </p>
-          <Button className="mt-5" onClick={() => inputRef.current?.click()}>
-            Select PDF
-          </Button>
-          {error ? (
-            <p className="mt-4 max-w-md rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive">
-              {error}
+        <div className="flex flex-1 flex-col items-center justify-center px-4 py-16">
+          <div className="w-full max-w-md text-center">
+            <h1 className="text-lg font-bold text-foreground">
+              Choose a PDF to edit
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Draw, highlight, add text and shapes, redact, and comment. The
+              editor engine is a few megabytes and loads once per session — your
+              file never leaves the browser.
             </p>
-          ) : null}
+            <FileUpload
+              className="mt-6 text-left"
+              value={[]}
+              onValueChange={() => {}}
+              onFilesAdded={(_items, raw) => {
+                const chosen = raw[0];
+                if (chosen) open(chosen);
+              }}
+              accept="application/pdf,.pdf"
+              multiple={false}
+              maxFiles={1}
+              itemStatus="success"
+              variant="centered"
+              title="Drop a PDF here"
+              description="Files never leave this device"
+              browseLabel="Browse"
+              classNames={{ queue: 'hidden' }}
+            />
+            {error ? (
+              <p className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive">
+                {error}
+              </p>
+            ) : null}
+          </div>
         </div>
       ) : null}
 

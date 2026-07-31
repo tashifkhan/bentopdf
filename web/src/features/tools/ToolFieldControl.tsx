@@ -1,15 +1,21 @@
-import { Checkbox } from '~/components/beui/checkbox';
-import { Input } from '~/components/beui/input';
-import { RangeSlider } from '~/components/beui/range-slider';
+import { useMemo } from 'react'
+import { Checkbox } from '~/components/beui/checkbox'
+import {
+  FileUpload,
+  createFileUploadItem,
+  filesFromUploadItems,
+} from '~/components/beui/file-upload'
+import { Input } from '~/components/beui/input'
+import { RangeSlider } from '~/components/beui/range-slider'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '~/components/beui/select';
-import { Textarea } from '~/components/beui/textarea';
-import type { ToolField } from './types';
+} from '~/components/beui/select'
+import { Textarea } from '~/components/beui/textarea'
+import type { ToolField } from './types'
 
 /**
  * Shared beUI-backed field control used by ToolWorkspace and WorkflowPage.
@@ -24,19 +30,19 @@ export function ToolFieldControl({
   onFiles,
   compact = false,
 }: {
-  field: ToolField;
-  value: string;
-  files?: File[];
-  onChange: (v: string) => void;
-  onFiles?: (files: File[]) => void;
+  field: ToolField
+  value: string
+  files?: File[]
+  onChange: (v: string) => void
+  onFiles?: (files: File[]) => void
   /** Tighter layout for multi-column workflow step cards. */
-  compact?: boolean;
+  compact?: boolean
 }) {
-  const id = `field-${field.key}`;
+  const id = `field-${field.key}`
   const labelClass = compact
     ? 'mb-1 block text-[11px] font-semibold text-muted-foreground'
-    : 'mb-1.5 block text-xs font-semibold text-muted-foreground';
-  const helpClass = 'mt-1 block text-[11px] text-ink-4';
+    : 'mb-1.5 block text-xs font-semibold text-muted-foreground'
+  const helpClass = 'mt-1 block text-[11px] text-ink-4'
 
   if (field.type === 'checkbox') {
     return (
@@ -57,7 +63,7 @@ export function ToolFieldControl({
           </span>
         }
       />
-    );
+    )
   }
 
   if (field.type === 'select') {
@@ -78,12 +84,12 @@ export function ToolFieldControl({
         </Select>
         {field.help ? <span className={helpClass}>{field.help}</span> : null}
       </div>
-    );
+    )
   }
 
   if (field.type === 'range') {
-    const num = Number(value);
-    const safe = Number.isFinite(num) ? num : Number(field.defaultValue ?? 0);
+    const num = Number(value)
+    const safe = Number.isFinite(num) ? num : Number(field.defaultValue ?? 0)
     return (
       <div className="block">
         <span className="mb-1.5 flex items-baseline justify-between gap-2">
@@ -103,7 +109,7 @@ export function ToolFieldControl({
         />
         {field.help ? <span className={helpClass}>{field.help}</span> : null}
       </div>
-    );
+    )
   }
 
   if (field.type === 'textarea') {
@@ -120,7 +126,7 @@ export function ToolFieldControl({
         />
         {field.help ? <span className={helpClass}>{field.help}</span> : null}
       </div>
-    );
+    )
   }
 
   if (field.type === 'color') {
@@ -144,29 +150,21 @@ export function ToolFieldControl({
         </span>
         {field.help ? <span className={helpClass}>{field.help}</span> : null}
       </div>
-    );
+    )
   }
 
   if (field.type === 'file') {
     return (
-      <label className="block" htmlFor={id}>
-        <span className={labelClass}>{field.label}</span>
-        <input
-          id={id}
-          type="file"
-          accept={field.accept}
-          multiple={field.multiple}
-          onChange={(e) => onFiles?.(Array.from(e.target.files ?? []))}
-          className="block w-full cursor-pointer rounded-xl border border-border bg-card px-3 py-2 text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-accent-soft file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-accent"
-        />
-        {files.length > 0 ? (
-          <span className="mt-1.5 block truncate text-[11px] text-ink-4">
-            {files.map((f) => f.name).join(', ')}
-          </span>
-        ) : null}
-        {field.help ? <span className={helpClass}>{field.help}</span> : null}
-      </label>
-    );
+      <FileField
+        label={field.label}
+        help={field.help}
+        accept={field.accept}
+        multiple={field.multiple}
+        files={files}
+        onFiles={onFiles}
+        compact={compact}
+      />
+    )
   }
 
   return (
@@ -191,5 +189,69 @@ export function ToolFieldControl({
       />
       {field.help ? <span className={helpClass}>{field.help}</span> : null}
     </div>
-  );
+  )
+}
+
+function FileField({
+  label,
+  help,
+  accept,
+  multiple,
+  files,
+  onFiles,
+  compact,
+}: {
+  label: string
+  help?: string
+  accept?: string
+  multiple?: boolean
+  files: File[]
+  onFiles?: (files: File[]) => void
+  compact?: boolean
+}) {
+  // Dropzone-only when parent owns the list via `files`; rebuild items from
+  // the File objects so remove/add stay in sync with the tool processor.
+  const items = useMemo(
+    () =>
+      files.map((file, index) =>
+        createFileUploadItem(file, index, 'success'),
+      ),
+    [files],
+  )
+
+  return (
+    <div className="block">
+      <span
+        className={
+          compact
+            ? 'mb-1 block text-[11px] font-semibold text-muted-foreground'
+            : 'mb-1.5 block text-xs font-semibold text-muted-foreground'
+        }
+      >
+        {label}
+      </span>
+      <FileUpload
+        value={items}
+        onValueChange={(next) => {
+          onFiles?.(filesFromUploadItems(next))
+        }}
+        accept={accept}
+        multiple={multiple}
+        maxFiles={multiple ? undefined : 1}
+        itemStatus="success"
+        variant={compact ? 'default' : 'centered'}
+        title={multiple ? 'Drop files here' : 'Drop a file here'}
+        description="Stays on this device"
+        browseLabel="Browse"
+        classNames={
+          compact
+            ? { dropzone: 'min-h-0 rounded-2xl p-3' }
+            : undefined
+        }
+      />
+      {help ? (
+        <span className="mt-1 block text-[11px] text-ink-4">{help}</span>
+      ) : null}
+    </div>
+  )
 }

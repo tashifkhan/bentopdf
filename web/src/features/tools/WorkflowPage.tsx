@@ -1,7 +1,12 @@
 import { Link } from '@tanstack/react-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { CloseCircle, Download, Trash, Upload } from 'reicon-react';
+import { useCallback, useMemo, useState } from 'react';
+import { CloseCircle, Download, Trash } from 'reicon-react';
 import { Button, StatefulButton } from '~/components/beui/button';
+import {
+  FileUpload,
+  filesFromUploadItems,
+  type FileUploadItem,
+} from '~/components/beui/file-upload';
 import { Input } from '~/components/beui/input';
 import {
   Select,
@@ -59,8 +64,7 @@ function defaultValues(processor: ToolProcessor): Record<string, string> {
 }
 
 export function WorkflowPage() {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [files, setFiles] = useState<File[]>([]);
+  const [uploadItems, setUploadItems] = useState<FileUploadItem[]>([]);
   const [steps, setSteps] = useState<Step[]>([]);
   const [picker, setPicker] = useState('');
   const [search, setSearch] = useState('');
@@ -71,6 +75,11 @@ export function WorkflowPage() {
   const [results, setResults] = useState<StepResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [templateName, setTemplateName] = useState('');
+
+  const files = useMemo(
+    () => filesFromUploadItems(uploadItems),
+    [uploadItems],
+  );
 
   const visibleTools = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -263,19 +272,6 @@ export function WorkflowPage() {
 
   return (
     <div className="workspace-shell">
-      <input
-        ref={inputRef}
-        type="file"
-        accept="application/pdf,.pdf"
-        multiple
-        className="pointer-events-none fixed left-0 top-0 h-px w-px opacity-0"
-        tabIndex={-1}
-        onChange={(e) => {
-          setFiles((prev) => [...prev, ...Array.from(e.target.files ?? [])]);
-          e.currentTarget.value = '';
-        }}
-      />
-
       <header className="workspace-header">
         <div className="flex min-w-0 items-center gap-2">
           <span className="truncate text-sm font-bold text-foreground">
@@ -302,44 +298,20 @@ export function WorkflowPage() {
         {/* -------------------------------------------------- pipeline */}
         <div className="flex-1 space-y-3">
           <div className="surface-card p-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-foreground">Input files</h2>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => inputRef.current?.click()}
-              >
-                <Upload size={14} color="currentColor" />
-                Add PDFs
-              </Button>
-            </div>
-            {files.length === 0 ? (
-              <p className="mt-2 text-sm text-muted-foreground">
-                Add one or more PDFs. Each one runs through the whole pipeline
-                independently.
-              </p>
-            ) : (
-              <ul className="mt-2 space-y-1">
-                {files.map((f, i) => (
-                  <li
-                    key={`${f.name}-${i}`}
-                    className="flex items-center gap-2 rounded-lg bg-secondary/60 px-2.5 py-1.5 text-sm"
-                  >
-                    <span className="min-w-0 flex-1 truncate">{f.name}</span>
-                    <button
-                      type="button"
-                      aria-label={`Remove ${f.name}`}
-                      className="text-muted-foreground hover:text-destructive"
-                      onClick={() =>
-                        setFiles((prev) => prev.filter((_, j) => j !== i))
-                      }
-                    >
-                      <Trash size={13} color="currentColor" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <h2 className="mb-3 text-sm font-bold text-foreground">
+              Input files
+            </h2>
+            <FileUpload
+              value={uploadItems}
+              onValueChange={setUploadItems}
+              accept="application/pdf,.pdf"
+              multiple
+              itemStatus="success"
+              variant="default"
+              title="Drop PDFs here"
+              description="Each file runs through the whole pipeline · stays on this device"
+              browseLabel="Browse"
+            />
           </div>
 
           {steps.map((step, index) => {

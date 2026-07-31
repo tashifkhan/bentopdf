@@ -1,16 +1,18 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   AlertCircle,
   AlertTriangle,
   Download,
-  Trash,
-  Upload,
 } from 'reicon-react';
 import { Button, StatefulButton } from '~/components/beui/button';
+import {
+  FileUpload,
+  filesFromUploadItems,
+  type FileUploadItem,
+} from '~/components/beui/file-upload';
 import { ToolIcon } from '~/components/icons';
 import type { Tool } from '~/data/tools';
 import { downloadFiles } from '~/lib/pdf/core';
-import { cn } from '~/lib/utils';
 import { getToolEntry } from './processors';
 import { ToolFieldControl } from './ToolFieldControl';
 import type { ProcessResult, ToolProcessor } from './types';
@@ -80,8 +82,7 @@ function ReadyTool({
   tool: Tool;
   processor: ToolProcessor;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [files, setFiles] = useState<File[]>([]);
+  const [uploadItems, setUploadItems] = useState<FileUploadItem[]>([]);
   const [extraFiles, setExtraFiles] = useState<Record<string, File[]>>({});
   const [values, setValues] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
@@ -96,19 +97,8 @@ function ReadyTool({
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<string | null>(null);
   const [result, setResult] = useState<ProcessResult | null>(null);
-  const [dragging, setDragging] = useState(false);
 
-  const addFiles = useCallback(
-    (list: FileList | File[] | null) => {
-      if (!list?.length) return;
-      const next = Array.from(list);
-      setFiles((prev) =>
-        processor.multiple ? [...prev, ...next] : next.slice(0, 1)
-      );
-      setError(null);
-    },
-    [processor.multiple]
-  );
+  const files = useMemo(() => filesFromUploadItems(uploadItems), [uploadItems]);
 
   const visibleFields = (processor.fields ?? []).filter((field) => {
     if (!field.showWhen) return true;
@@ -167,98 +157,28 @@ function ReadyTool({
         </p>
       ) : null}
 
-      <input
-        ref={inputRef}
-        type="file"
+      <FileUpload
+        className="mt-4 sm:mt-5"
+        value={uploadItems}
+        onValueChange={(items) => {
+          setUploadItems(items);
+          setError(null);
+        }}
         accept={processor.accept}
         multiple={processor.multiple}
-        className="pointer-events-none fixed left-0 top-0 h-px w-px opacity-0"
-        tabIndex={-1}
-        onChange={(e) => {
-          addFiles(e.target.files);
-          e.currentTarget.value = '';
-        }}
-      />
-
-      <div
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click();
-        }}
-        onClick={() => inputRef.current?.click()}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragging(true);
-        }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragging(false);
-          addFiles(e.dataTransfer.files);
-        }}
-        className={cn(
-          'tool-dropzone mt-4 touch-manipulation sm:mt-5',
-          dragging && 'border-brand bg-brand-soft/40'
-        )}
-      >
-        <span className="mb-3 grid size-12 place-items-center rounded-2xl bg-brand-soft text-brand">
-          <Upload size={22} color="currentColor" />
-        </span>
-        <span className="text-sm font-semibold text-foreground">
-          {processor.textPrimary
+        maxFiles={processor.multiple ? undefined : 1}
+        itemStatus="success"
+        variant="centered"
+        title={
+          processor.textPrimary
             ? 'Optional: drop a file instead of pasting'
             : processor.multiple
-              ? 'Tap to choose files'
-              : 'Tap to choose a file'}
-        </span>
-        <span className="mt-1 hidden text-xs text-ink-4 sm:inline">
-          Or drop files here · files never leave this device
-        </span>
-        <span className="mt-1 text-xs text-ink-4 sm:hidden">
-          Files never leave this device
-        </span>
-      </div>
-
-      {files.length > 0 ? (
-        <ul className="mt-4 space-y-2">
-          {files.map((file, i) => (
-            <li
-              key={`${file.name}-${file.size}-${i}`}
-              className="flex items-center gap-2 rounded-xl border border-border bg-secondary/60 px-3 py-2.5 text-sm sm:py-2"
-            >
-              <span className="min-w-0 flex-1 truncate font-medium">
-                {file.name}
-              </span>
-              <span className="shrink-0 text-xs text-muted-foreground">
-                {formatBytes(file.size)}
-              </span>
-              <button
-                type="button"
-                className="touch-manipulation rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive sm:p-1"
-                aria-label={`Remove ${file.name}`}
-                onClick={() =>
-                  setFiles((prev) => prev.filter((_, j) => j !== i))
-                }
-              >
-                <Trash size={14} color="currentColor" />
-              </button>
-            </li>
-          ))}
-          {processor.multiple ? (
-            <li>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => inputRef.current?.click()}
-              >
-                Add more
-              </Button>
-            </li>
-          ) : null}
-        </ul>
-      ) : null}
+              ? 'Drop files here'
+              : 'Drop a file here'
+        }
+        description="Files never leave this device"
+        browseLabel="Browse"
+      />
 
       {visibleFields.length > 0 ? (
         <div className="mt-5 space-y-4">
@@ -315,7 +235,7 @@ function ReadyTool({
             variant="ghost"
             className="w-full min-h-11 sm:w-auto sm:min-h-0"
             onClick={() => {
-              setFiles([]);
+              setUploadItems([]);
               setError(null);
               setResult(null);
             }}
@@ -342,10 +262,4 @@ function ReadyTool({
       </div>
     </div>
   );
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
