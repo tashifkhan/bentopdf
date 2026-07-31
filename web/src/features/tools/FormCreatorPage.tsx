@@ -3,6 +3,9 @@ import { PDFDocument } from 'pdf-lib';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CloseCircle, Download, Trash, Upload } from 'reicon-react';
 import { Button, StatefulButton } from '~/components/beui/button';
+import { Checkbox } from '~/components/beui/checkbox';
+import { Input } from '~/components/beui/input';
+import { Textarea } from '~/components/beui/textarea';
 import { downloadFiles } from '~/lib/pdf/core';
 import { openWithPdfjs, renderPage } from '~/lib/pdf/render';
 import { cn } from '~/lib/utils';
@@ -157,7 +160,8 @@ export function FormCreatorPage() {
       height: box.h,
       required: false,
       defaultValue: '',
-      options: kind === 'dropdown' || kind === 'radio' ? 'Option 1\nOption 2' : '',
+      options:
+        kind === 'dropdown' || kind === 'radio' ? 'Option 1\nOption 2' : '',
     };
     setFields((prev) => [...prev, field]);
     setSelectedId(field.id);
@@ -358,7 +362,9 @@ export function FormCreatorPage() {
                         ? 'border-transparent text-white'
                         : 'border-border bg-secondary text-muted-foreground hover:text-foreground'
                     )}
-                    style={kind === k ? { background: KIND_COLORS[k] } : undefined}
+                    style={
+                      kind === k ? { background: KIND_COLORS[k] } : undefined
+                    }
                   >
                     {KIND_LABELS[k]}
                   </button>
@@ -472,48 +478,36 @@ export function FormCreatorPage() {
                   </button>
                 </div>
 
-                <Labelled label="Field name">
-                  <input
-                    value={selected.name}
-                    onChange={(e) => update({ name: e.target.value })}
-                    className={inputClass}
-                  />
-                </Labelled>
+                <Input
+                  label="Field name"
+                  value={selected.name}
+                  onChange={(name) => update({ name })}
+                />
 
                 {selected.kind === 'dropdown' || selected.kind === 'radio' ? (
-                  <Labelled label="Options (one per line)">
-                    <textarea
-                      value={selected.options}
-                      rows={4}
-                      onChange={(e) => update({ options: e.target.value })}
-                      className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
-                    />
-                  </Labelled>
+                  <Textarea
+                    label="Options (one per line)"
+                    value={selected.options}
+                    rows={4}
+                    onChange={(options) => update({ options })}
+                  />
                 ) : null}
 
-                <Labelled
+                <Input
                   label={
                     selected.kind === 'checkbox'
                       ? 'Checked by default (true/false)'
                       : 'Default value'
                   }
-                >
-                  <input
-                    value={selected.defaultValue}
-                    onChange={(e) => update({ defaultValue: e.target.value })}
-                    className={inputClass}
-                  />
-                </Labelled>
+                  value={selected.defaultValue}
+                  onChange={(defaultValue) => update({ defaultValue })}
+                />
 
-                <label className="flex items-center gap-2 text-sm text-foreground">
-                  <input
-                    type="checkbox"
-                    checked={selected.required}
-                    onChange={(e) => update({ required: e.target.checked })}
-                    className="size-4 rounded border-border"
-                  />
-                  Required
-                </label>
+                <Checkbox
+                  checked={selected.required}
+                  onCheckedChange={(required) => update({ required })}
+                  label="Required"
+                />
 
                 <p className="text-[11px] text-ink-4">
                   Press Delete to remove the selected field.
@@ -551,7 +545,9 @@ export function FormCreatorPage() {
                           className="size-2 shrink-0 rounded-full"
                           style={{ background: KIND_COLORS[f.kind] }}
                         />
-                        <span className="min-w-0 flex-1 truncate">{f.name}</span>
+                        <span className="min-w-0 flex-1 truncate">
+                          {f.name}
+                        </span>
                         <span className="shrink-0 tabular-nums">
                           p{f.page + 1}
                         </span>
@@ -589,25 +585,5 @@ export function FormCreatorPage() {
         </div>
       )}
     </div>
-  );
-}
-
-const inputClass =
-  'h-11 w-full rounded-xl border border-border bg-card px-3 text-base text-foreground outline-none focus:border-brand sm:h-10 sm:text-sm';
-
-function Labelled({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
-        {label}
-      </span>
-      {children}
-    </label>
   );
 }

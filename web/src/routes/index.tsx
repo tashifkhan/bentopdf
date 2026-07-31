@@ -1,28 +1,29 @@
-import { Link, createFileRoute } from '@tanstack/react-router'
-import { motion } from 'motion/react'
-import { useMemo, useState } from 'react'
-import { CloseCircle, Search, ShieldCheck } from 'reicon-react'
-import { FadeUp, Stagger } from '~/components/Motion'
-import { ToolIcon } from '~/components/icons'
-import { categories, searchTools, type Tool } from '~/data/tools'
-import { cn } from '~/lib/utils'
+import { Link, createFileRoute } from '@tanstack/react-router';
+import { motion } from 'motion/react';
+import { useMemo, useState } from 'react';
+import { CloseCircle, Search, ShieldCheck } from 'reicon-react';
+import { Input } from '~/components/beui/input';
+import { FadeUp, Stagger } from '~/components/Motion';
+import { ToolIcon } from '~/components/icons';
+import { categories, searchTools, type Tool } from '~/data/tools';
+import { cn } from '~/lib/utils';
 
 export const Route = createFileRoute('/')({
   component: HomePage,
-})
+});
 
 function HomePage() {
-  const [query, setQuery] = useState('')
-  const [filter, setFilter] = useState('all')
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState('all');
 
-  const results = useMemo(() => searchTools(query), [query])
-  const isSearching = query.trim().length > 0
+  const results = useMemo(() => searchTools(query), [query]);
+  const isSearching = query.trim().length > 0;
 
   const visibleCategories = useMemo(() => {
-    if (isSearching) return []
-    if (filter === 'all') return categories
-    return categories.filter((c) => c.name === filter)
-  }, [filter, isSearching])
+    if (isSearching) return [];
+    if (filter === 'all') return categories;
+    return categories.filter((c) => c.name === filter);
+  }, [filter, isSearching]);
 
   return (
     <div className="pt-5 sm:pt-10">
@@ -65,35 +66,35 @@ function HomePage() {
 
       <FadeUp className="surface-card sticky top-[calc(3rem+env(safe-area-inset-top,0px))] z-20 p-2.5 sm:static sm:p-4">
         <div className="relative">
-          <Search
-            size={18}
-            color="currentColor"
-            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-4"
-          />
-          <input
+          <Input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={setQuery}
             placeholder="Search tools…"
             aria-label="Search tools"
             enterKeyHint="search"
             autoComplete="off"
             autoCorrect="off"
             spellCheck={false}
-            className={cn(
-              'h-11 w-full rounded-full border border-input bg-secondary pl-11 text-base font-medium text-foreground outline-none transition placeholder:text-ink-4 focus-visible:border-accent focus-visible:bg-card focus-visible:ring-2 focus-visible:ring-ring/30 sm:h-12 sm:text-sm',
-              query ? 'pr-11' : 'pr-4',
-            )}
+            leftIcon={<Search size={18} color="currentColor" />}
+            rightIcon={
+              query ? (
+                <button
+                  type="button"
+                  onClick={() => setQuery('')}
+                  aria-label="Clear search"
+                  className="text-ink-4 transition-colors hover:text-foreground"
+                >
+                  <CloseCircle size={16} color="currentColor" />
+                </button>
+              ) : undefined
+            }
+            classNames={{
+              root: 'gap-0',
+              field:
+                'h-11 rounded-full border-input bg-secondary sm:h-12 focus-within:bg-card',
+              input: 'text-base font-medium sm:text-sm',
+            }}
           />
-          {query ? (
-            <button
-              type="button"
-              onClick={() => setQuery('')}
-              aria-label="Clear search"
-              className="absolute right-2 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full text-ink-4 transition-colors hover:bg-card hover:text-foreground"
-            >
-              <CloseCircle size={16} color="currentColor" />
-            </button>
-          ) : null}
         </div>
 
         {!isSearching ? (
@@ -169,11 +170,7 @@ function HomePage() {
           )
         ) : (
           visibleCategories.map((category, i) => (
-            <Stagger
-              key={category.name}
-              delay={0.05 + i * 0.03}
-              stagger={0.03}
-            >
+            <Stagger key={category.name} delay={0.05 + i * 0.03} stagger={0.03}>
               <FadeUp>
                 <h2 className="mb-2.5 border-b border-border pb-2 text-[0.95rem] font-bold tracking-tight text-foreground sm:mb-3">
                   {category.name}
@@ -194,7 +191,7 @@ function HomePage() {
         )}
       </div>
     </div>
-  )
+  );
 }
 
 function ToolCard({ tool }: { tool: Tool }) {
@@ -218,5 +215,5 @@ function ToolCard({ tool }: { tool: Tool }) {
         </span>
       </motion.div>
     </Link>
-  )
+  );
 }

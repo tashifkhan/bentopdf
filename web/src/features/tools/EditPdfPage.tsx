@@ -2,6 +2,124 @@ import { Link } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CloseCircle, Upload } from 'reicon-react';
 import { Button } from '~/components/beui/button';
+import { useTheme } from '~/features/theme/theme';
+
+/** BentoPDF palette mapped into EmbedPDF's theme tokens. */
+function bentoPdfTheme(preference: 'light' | 'dark') {
+  return {
+    preference,
+    light: {
+      background: {
+        app: '#f2f0eb',
+        surface: '#fffcf8',
+        surfaceAlt: '#f6f3ed',
+        elevated: '#fffcf8',
+        overlay: 'rgb(21 27 24 / 0.45)',
+        input: '#f6f3ed',
+      },
+      foreground: {
+        primary: '#151b18',
+        secondary: '#3f4843',
+        muted: '#6a746e',
+        disabled: '#939c96',
+        onAccent: '#ffffff',
+      },
+      border: {
+        default: '#e4dfd5',
+        subtle: '#ebe7df',
+        strong: '#cfc8bb',
+      },
+      accent: {
+        primary: '#d24a33',
+        primaryHover: '#b83f2c',
+        primaryActive: '#a33726',
+        primaryLight: 'rgb(210 74 51 / 0.12)',
+        primaryForeground: '#ffffff',
+      },
+      interactive: {
+        hover: 'rgb(26 61 53 / 0.06)',
+        active: 'rgb(26 61 53 / 0.1)',
+        selected: 'rgb(210 74 51 / 0.12)',
+        focus: '#d24a33',
+        focusRing: 'rgb(210 74 51 / 0.3)',
+      },
+      state: {
+        error: '#c93b2c',
+        errorLight: 'rgb(201 59 44 / 0.12)',
+        warning: '#d97706',
+        warningLight: 'rgb(217 119 6 / 0.12)',
+        success: '#2d8f62',
+        successLight: 'rgb(45 143 98 / 0.12)',
+        info: '#1a3d35',
+        infoLight: 'rgb(26 61 53 / 0.1)',
+      },
+      scrollbar: {
+        track: '#f6f3ed',
+        thumb: '#cfc8bb',
+        thumbHover: '#939c96',
+      },
+      tooltip: {
+        background: '#151b18',
+        foreground: '#f7f4ee',
+      },
+    },
+    dark: {
+      background: {
+        app: '#0d110f',
+        surface: '#161c19',
+        surfaceAlt: '#1c231f',
+        elevated: '#1c231f',
+        overlay: 'rgb(0 0 0 / 0.55)',
+        input: '#1c231f',
+      },
+      foreground: {
+        primary: '#f1eee7',
+        secondary: '#c5ccc7',
+        muted: '#8f9892',
+        disabled: '#66706a',
+        onAccent: '#ffffff',
+      },
+      border: {
+        default: '#2a342f',
+        subtle: '#252e29',
+        strong: '#3c4a43',
+      },
+      accent: {
+        primary: '#ff7a5c',
+        primaryHover: '#ff8f77',
+        primaryActive: '#e86a4f',
+        primaryLight: 'rgb(255 122 92 / 0.14)',
+        primaryForeground: '#ffffff',
+      },
+      interactive: {
+        hover: 'rgb(125 207 182 / 0.08)',
+        active: 'rgb(125 207 182 / 0.14)',
+        selected: 'rgb(255 122 92 / 0.14)',
+        focus: '#ff7a5c',
+        focusRing: 'rgb(255 122 92 / 0.35)',
+      },
+      state: {
+        error: '#e85d4c',
+        errorLight: 'rgb(232 93 76 / 0.14)',
+        warning: '#fbbf24',
+        warningLight: 'rgb(251 191 36 / 0.14)',
+        success: '#4ecf8c',
+        successLight: 'rgb(78 207 140 / 0.14)',
+        info: '#7dcfb6',
+        infoLight: 'rgb(125 207 182 / 0.12)',
+      },
+      scrollbar: {
+        track: '#1c231f',
+        thumb: '#3c4a43',
+        thumbHover: '#66706a',
+      },
+      tooltip: {
+        background: '#f1eee7',
+        foreground: '#0d110f',
+      },
+    },
+  } as const;
+}
 
 /**
  * Resolve the public pdfium.wasm URL.
@@ -13,7 +131,9 @@ import { Button } from '~/components/beui/button';
 function pdfiumWasmUrl(): string {
   const base = import.meta.env.BASE_URL || '/';
   // BASE_URL always ends with `/` in Vite; keep a defensive join anyway.
-  const path = base.endsWith('/') ? `${base}pdfium.wasm` : `${base}/pdfium.wasm`;
+  const path = base.endsWith('/')
+    ? `${base}pdfium.wasm`
+    : `${base}/pdfium.wasm`;
   if (typeof window === 'undefined') return path;
   return new URL(path, window.location.origin).href;
 }
@@ -98,6 +218,7 @@ export function EditPdfPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const viewerRef = useRef<any>(null);
+  const { theme } = useTheme();
 
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -110,6 +231,11 @@ export function EditPdfPage() {
     setLoading(true);
     setFile(chosen);
   }, []);
+
+  // Capture current theme at open time without re-mounting the engine when
+  // the user later toggles light/dark (that path uses setTheme below).
+  const themeAtOpenRef = useRef(theme);
+  themeAtOpenRef.current = theme;
 
   useEffect(() => {
     if (!file) return;
@@ -155,6 +281,7 @@ export function EditPdfPage() {
           // thread.
           worker: false,
           src: objectUrl,
+          theme: bentoPdfTheme(themeAtOpenRef.current),
           export: {
             defaultFileName: file.name,
           },
@@ -271,6 +398,19 @@ export function EditPdfPage() {
     };
   }, [file]);
 
+  // Keep EmbedPDF in sync if the user toggles light/dark while editing.
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer || !file) return;
+    try {
+      if (typeof viewer.setTheme === 'function') {
+        viewer.setTheme(bentoPdfTheme(theme));
+      }
+    } catch {
+      // Theme update is best-effort.
+    }
+  }, [theme, file]);
+
   // Unmount-only safety net (effect cleanup above already handles file changes).
   useEffect(() => {
     return () => {
@@ -355,7 +495,7 @@ export function EditPdfPage() {
       <div
         className={
           file
-            ? 'relative flex min-h-0 flex-1 flex-col overflow-hidden'
+            ? 'relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background'
             : 'hidden'
         }
         style={
@@ -363,7 +503,8 @@ export function EditPdfPage() {
             ? {
                 // Full remaining viewport under the workspace header (shell chrome
                 // is hidden on this route so we can use nearly 100dvh).
-                height: 'calc(100dvh - 3.25rem - env(safe-area-inset-top, 0px))',
+                height:
+                  'calc(100dvh - 3.25rem - env(safe-area-inset-top, 0px))',
                 minHeight:
                   'calc(100dvh - 3.25rem - env(safe-area-inset-top, 0px))',
               }
@@ -372,10 +513,10 @@ export function EditPdfPage() {
       >
         <div
           ref={containerRef}
-          className="flex min-h-0 flex-1 flex-col [&>embedpdf-container]:min-h-0 [&>embedpdf-container]:w-full [&>embedpdf-container]:flex-1"
+          className="flex min-h-0 flex-1 flex-col bg-background [&>embedpdf-container]:min-h-0 [&>embedpdf-container]:w-full [&>embedpdf-container]:flex-1 [&>embedpdf-container]:bg-background"
         />
         {file && loading ? (
-          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/80 text-sm text-muted-foreground">
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/80 text-sm text-muted-foreground backdrop-blur-[2px]">
             Starting the editor…
           </div>
         ) : null}

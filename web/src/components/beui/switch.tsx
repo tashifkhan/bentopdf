@@ -1,11 +1,16 @@
 // beui.dev/components/motion/switch
 
-import { animate, motion, MotionConfig, useReducedMotion } from "motion/react";
-import { useEffect, useId, useRef, useState } from "react";
-import { cn } from "~/lib/utils";
+import { animate, motion, MotionConfig, useReducedMotion } from 'motion/react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { cn } from '~/lib/utils';
 
 // Heavy, deliberate thumb — high mass keeps the travel weighty without wobble.
-const THUMB_SPRING = { type: "spring", stiffness: 800, damping: 80, mass: 4 } as const;
+const THUMB_SPRING = {
+  type: 'spring',
+  stiffness: 800,
+  damping: 80,
+  mass: 4,
+} as const;
 
 export interface SwitchProps {
   checked: boolean;
@@ -37,7 +42,7 @@ export function Switch({
       animate(
         thumbRef.current,
         { x: [0, -2, 2, -1, 0] },
-        { delay: 0.2, duration: 0.6 },
+        { delay: 0.2, duration: 0.6 }
       );
     }
   }, [disabled, isPressed, reduce]);
@@ -46,7 +51,7 @@ export function Switch({
 
   return (
     <MotionConfig transition={reduce ? { duration: 0 } : THUMB_SPRING}>
-      <span className={cn("inline-flex items-center gap-3", className)}>
+      <span className={cn('inline-flex items-center gap-3', className)}>
         <motion.button
           id={id}
           type="button"
@@ -57,17 +62,19 @@ export function Switch({
           onClick={() => !disabled && onCheckedChange(!checked)}
           onPointerDown={(e) => {
             setIsPressed(true);
-            setIsPointer(e.type.startsWith("pointer"));
+            setIsPointer(e.type.startsWith('pointer'));
           }}
           onPointerUp={() => setIsPressed(false)}
           onPointerLeave={() => setIsPressed(false)}
           initial={false}
-          data-state={checked ? "checked" : "unchecked"}
+          data-state={checked ? 'checked' : 'unchecked'}
           className={cn(
-            "group peer inline-flex h-7 w-12 shrink-0 cursor-pointer items-center px-1 rounded-full outline-none transition-colors duration-200",
-            "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-            "disabled:cursor-not-allowed disabled:opacity-60",
-            checked ? "justify-end bg-primary" : "justify-start bg-muted-foreground/60",
+            'group peer inline-flex h-7 w-12 shrink-0 cursor-pointer items-center px-1 rounded-full outline-none transition-colors duration-200',
+            'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+            'disabled:cursor-not-allowed disabled:opacity-60',
+            checked
+              ? 'justify-end bg-accent'
+              : 'justify-start bg-muted-foreground/60'
           )}
         >
           <motion.div
@@ -78,15 +85,15 @@ export function Switch({
           >
             {/* Stretch toward the destination while active. */}
             <div
-              className={cn(
-                "size-5",
-                squish && (checked ? "ml-1" : "mr-1"),
-              )}
+              className={cn('size-5', squish && (checked ? 'ml-1' : 'mr-1'))}
             />
           </motion.div>
         </motion.button>
         {label ? (
-          <label htmlFor={id} className="cursor-pointer text-sm text-foreground">
+          <label
+            htmlFor={id}
+            className="cursor-pointer text-sm text-foreground"
+          >
             {label}
           </label>
         ) : null}

@@ -1,40 +1,31 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
   AlertTriangle,
   Download,
   Trash,
   Upload,
-} from 'reicon-react'
-import { Button, StatefulButton } from '~/components/beui/button'
-import { Checkbox } from '~/components/beui/checkbox'
-import { Input } from '~/components/beui/input'
-import { RangeSlider } from '~/components/beui/range-slider'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '~/components/beui/select'
-import { ToolIcon } from '~/components/icons'
-import type { Tool } from '~/data/tools'
-import { downloadFiles } from '~/lib/pdf/core'
-import { cn } from '~/lib/utils'
-import { getToolEntry } from './processors'
-import type { ProcessResult, ToolField, ToolProcessor } from './types'
+} from 'reicon-react';
+import { Button, StatefulButton } from '~/components/beui/button';
+import { ToolIcon } from '~/components/icons';
+import type { Tool } from '~/data/tools';
+import { downloadFiles } from '~/lib/pdf/core';
+import { cn } from '~/lib/utils';
+import { getToolEntry } from './processors';
+import { ToolFieldControl } from './ToolFieldControl';
+import type { ProcessResult, ToolProcessor } from './types';
 
 export function ToolWorkspace({ tool }: { tool: Tool }) {
-  const entry = useMemo(() => getToolEntry(tool.slug), [tool.slug])
+  const entry = useMemo(() => getToolEntry(tool.slug), [tool.slug]);
 
   if (entry.status === 'unavailable') {
-    return <UnavailableTool tool={tool} reason={entry.reason} />
+    return <UnavailableTool tool={tool} reason={entry.reason} />;
   }
   if (entry.status === 'workspace') {
     // Routed to a dedicated page upstream; nothing to render here.
-    return null
+    return null;
   }
-  return <ReadyTool tool={tool} processor={entry.processor} />
+  return <ReadyTool tool={tool} processor={entry.processor} />;
 }
 
 /* --------------------------------------------------------- unavailable */
@@ -61,7 +52,7 @@ function UnavailableTool({ tool, reason }: { tool: Tool; reason: string }) {
         different operation and hand you the wrong file, it does nothing.
       </p>
     </div>
-  )
+  );
 }
 
 /* ---------------------------------------------------------------- ready */
@@ -79,81 +70,81 @@ function ToolHeader({ tool }: { tool: Tool }) {
         <p className="mt-1 text-sm text-muted-foreground">{tool.subtitle}</p>
       </div>
     </header>
-  )
+  );
 }
 
 function ReadyTool({
   tool,
   processor,
 }: {
-  tool: Tool
-  processor: ToolProcessor
+  tool: Tool;
+  processor: ToolProcessor;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [files, setFiles] = useState<File[]>([])
-  const [extraFiles, setExtraFiles] = useState<Record<string, File[]>>({})
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [extraFiles, setExtraFiles] = useState<Record<string, File[]>>({});
   const [values, setValues] = useState<Record<string, string>>(() => {
-    const init: Record<string, string> = {}
+    const init: Record<string, string> = {};
     for (const field of processor.fields ?? []) {
-      init[field.key] = field.defaultValue ?? ''
+      init[field.key] = field.defaultValue ?? '';
     }
-    return init
-  })
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>(
-    'idle',
-  )
-  const [error, setError] = useState<string | null>(null)
-  const [progress, setProgress] = useState<string | null>(null)
-  const [result, setResult] = useState<ProcessResult | null>(null)
-  const [dragging, setDragging] = useState(false)
+    return init;
+  });
+  const [status, setStatus] = useState<
+    'idle' | 'loading' | 'success' | 'error'
+  >('idle');
+  const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<string | null>(null);
+  const [result, setResult] = useState<ProcessResult | null>(null);
+  const [dragging, setDragging] = useState(false);
 
   const addFiles = useCallback(
     (list: FileList | File[] | null) => {
-      if (!list?.length) return
-      const next = Array.from(list)
+      if (!list?.length) return;
+      const next = Array.from(list);
       setFiles((prev) =>
-        processor.multiple ? [...prev, ...next] : next.slice(0, 1),
-      )
-      setError(null)
+        processor.multiple ? [...prev, ...next] : next.slice(0, 1)
+      );
+      setError(null);
     },
-    [processor.multiple],
-  )
+    [processor.multiple]
+  );
 
   const visibleFields = (processor.fields ?? []).filter((field) => {
-    if (!field.showWhen) return true
-    return field.showWhen.equals.includes(values[field.showWhen.key] ?? '')
-  })
+    if (!field.showWhen) return true;
+    return field.showWhen.equals.includes(values[field.showWhen.key] ?? '');
+  });
 
   const run = async () => {
-    setStatus('loading')
-    setError(null)
-    setResult(null)
-    setProgress(null)
+    setStatus('loading');
+    setError(null);
+    setResult(null);
+    setProgress(null);
     try {
       const output = await processor.process({
         files,
         values,
         extraFiles,
         onProgress: (message) => setProgress(message),
-      })
-      if (!output.files.length) throw new Error('No output was produced')
-      downloadFiles(output.files)
-      setResult(output)
-      setStatus('success')
-      window.setTimeout(() => setStatus('idle'), 1800)
+      });
+      if (!output.files.length) throw new Error('No output was produced');
+      downloadFiles(output.files);
+      setResult(output);
+      setStatus('success');
+      window.setTimeout(() => setStatus('idle'), 1800);
     } catch (e) {
-      console.error(e)
-      setError(e instanceof Error ? e.message : 'Processing failed')
-      setStatus('error')
-      window.setTimeout(() => setStatus('idle'), 2400)
+      console.error(e);
+      setError(e instanceof Error ? e.message : 'Processing failed');
+      setStatus('error');
+      window.setTimeout(() => setStatus('idle'), 2400);
     } finally {
-      setProgress(null)
+      setProgress(null);
     }
-  }
+  };
 
-  const minFiles = processor.minFiles ?? 1
-  const needsFiles = !processor.textPrimary
-  const canRun = !needsFiles || files.length >= minFiles
+  const minFiles = processor.minFiles ?? 1;
+  const needsFiles = !processor.textPrimary;
+  const canRun = !needsFiles || files.length >= minFiles;
 
   return (
     <div className="tool-workspace">
@@ -184,8 +175,8 @@ function ReadyTool({
         className="pointer-events-none fixed left-0 top-0 h-px w-px opacity-0"
         tabIndex={-1}
         onChange={(e) => {
-          addFiles(e.target.files)
-          e.currentTarget.value = ''
+          addFiles(e.target.files);
+          e.currentTarget.value = '';
         }}
       />
 
@@ -193,22 +184,22 @@ function ReadyTool({
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click()
+          if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click();
         }}
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => {
-          e.preventDefault()
-          setDragging(true)
+          e.preventDefault();
+          setDragging(true);
         }}
         onDragLeave={() => setDragging(false)}
         onDrop={(e) => {
-          e.preventDefault()
-          setDragging(false)
-          addFiles(e.dataTransfer.files)
+          e.preventDefault();
+          setDragging(false);
+          addFiles(e.dataTransfer.files);
         }}
         className={cn(
           'tool-dropzone mt-4 touch-manipulation sm:mt-5',
-          dragging && 'border-brand bg-brand-soft/40',
+          dragging && 'border-brand bg-brand-soft/40'
         )}
       >
         <span className="mb-3 grid size-12 place-items-center rounded-2xl bg-brand-soft text-brand">
@@ -246,7 +237,9 @@ function ReadyTool({
                 type="button"
                 className="touch-manipulation rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive sm:p-1"
                 aria-label={`Remove ${file.name}`}
-                onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))}
+                onClick={() =>
+                  setFiles((prev) => prev.filter((_, j) => j !== i))
+                }
               >
                 <Trash size={14} color="currentColor" />
               </button>
@@ -270,12 +263,14 @@ function ReadyTool({
       {visibleFields.length > 0 ? (
         <div className="mt-5 space-y-4">
           {visibleFields.map((field) => (
-            <Field
+            <ToolFieldControl
               key={field.key}
               field={field}
               value={values[field.key] ?? ''}
               files={extraFiles[field.key] ?? []}
-              onChange={(v) => setValues((prev) => ({ ...prev, [field.key]: v }))}
+              onChange={(v) =>
+                setValues((prev) => ({ ...prev, [field.key]: v }))
+              }
               onFiles={(list) =>
                 setExtraFiles((prev) => ({ ...prev, [field.key]: list }))
               }
@@ -320,9 +315,9 @@ function ReadyTool({
             variant="ghost"
             className="w-full min-h-11 sm:w-auto sm:min-h-0"
             onClick={() => {
-              setFiles([])
-              setError(null)
-              setResult(null)
+              setFiles([]);
+              setError(null);
+              setResult(null);
             }}
           >
             Clear
@@ -346,202 +341,11 @@ function ReadyTool({
         </StatefulButton>
       </div>
     </div>
-  )
+  );
 }
 
 function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
-
-/* --------------------------------------------------------------- fields */
-
-function Field({
-  field,
-  value,
-  files,
-  onChange,
-  onFiles,
-}: {
-  field: ToolField
-  value: string
-  files: File[]
-  onChange: (v: string) => void
-  onFiles: (files: File[]) => void
-}) {
-  const id = `field-${field.key}`
-
-  if (field.type === 'checkbox') {
-    return (
-      <Checkbox
-        id={id}
-        checked={value === 'true'}
-        onCheckedChange={(checked) => onChange(checked ? 'true' : 'false')}
-        label={
-          <span>
-            <span className="block text-sm font-medium text-foreground">
-              {field.label}
-            </span>
-            {field.help ? (
-              <span className="mt-0.5 block text-[11px] font-normal text-ink-4">
-                {field.help}
-              </span>
-            ) : null}
-          </span>
-        }
-      />
-    )
-  }
-
-  if (field.type === 'select') {
-    return (
-      <div className="block">
-        <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
-          {field.label}
-        </span>
-        <Select value={value} onValueChange={onChange}>
-          <SelectTrigger>
-            <SelectValue placeholder={field.placeholder ?? 'Select…'} />
-          </SelectTrigger>
-          <SelectContent>
-            {(field.options ?? []).map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {field.help ? (
-          <span className="mt-1 block text-[11px] text-ink-4">{field.help}</span>
-        ) : null}
-      </div>
-    )
-  }
-
-  if (field.type === 'range') {
-    const num = Number(value)
-    const safe = Number.isFinite(num) ? num : Number(field.defaultValue ?? 0)
-    return (
-      <div className="block">
-        <span className="mb-1.5 flex items-baseline justify-between gap-2">
-          <span className="text-xs font-semibold text-muted-foreground">
-            {field.label}
-          </span>
-          <span className="text-[11px] tabular-nums text-accent">{value}</span>
-        </span>
-        <RangeSlider
-          value={safe}
-          min={field.min}
-          max={field.max}
-          step={field.step}
-          onValueChange={(v) => onChange(String(v))}
-          aria-label={field.label}
-        />
-        {field.help ? (
-          <span className="mt-1 block text-[11px] text-ink-4">{field.help}</span>
-        ) : null}
-      </div>
-    )
-  }
-
-  if (field.type === 'textarea') {
-    return (
-      <label className="block" htmlFor={id}>
-        <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
-          {field.label}
-        </span>
-        <textarea
-          id={id}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={field.placeholder}
-          rows={8}
-          className="w-full rounded-xl border border-border bg-card px-3 py-2 font-mono text-base text-foreground outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-ring/30 sm:text-sm"
-        />
-        {field.help ? (
-          <span className="mt-1 block text-[11px] text-ink-4">{field.help}</span>
-        ) : null}
-      </label>
-    )
-  }
-
-  if (field.type === 'color') {
-    return (
-      <div className="block">
-        <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
-          {field.label}
-        </span>
-        <span className="flex items-center gap-2">
-          <input
-            id={id}
-            type="color"
-            value={value || '#ffffff'}
-            onChange={(e) => onChange(e.target.value)}
-            className="h-10 w-14 cursor-pointer rounded-xl border border-border bg-card p-1"
-          />
-          <Input
-            value={value}
-            onChange={onChange}
-            className="min-w-0 flex-1"
-            classNames={{ root: 'gap-0' }}
-          />
-        </span>
-        {field.help ? (
-          <span className="mt-1 block text-[11px] text-ink-4">{field.help}</span>
-        ) : null}
-      </div>
-    )
-  }
-
-  if (field.type === 'file') {
-    return (
-      <label className="block" htmlFor={id}>
-        <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
-          {field.label}
-        </span>
-        <input
-          id={id}
-          type="file"
-          accept={field.accept}
-          multiple={field.multiple}
-          onChange={(e) => onFiles(Array.from(e.target.files ?? []))}
-          className="block w-full cursor-pointer rounded-xl border border-border bg-card px-3 py-2 text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-accent-soft file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-accent"
-        />
-        {files.length > 0 ? (
-          <span className="mt-1.5 block truncate text-[11px] text-ink-4">
-            {files.map((f) => f.name).join(', ')}
-          </span>
-        ) : null}
-        {field.help ? (
-          <span className="mt-1 block text-[11px] text-ink-4">{field.help}</span>
-        ) : null}
-      </label>
-    )
-  }
-
-  return (
-    <div className="block">
-      <Input
-        id={id}
-        label={field.label}
-        type={
-          field.type === 'number'
-            ? 'number'
-            : field.type === 'password'
-              ? 'password'
-              : 'text'
-        }
-        value={value}
-        min={field.min}
-        max={field.max}
-        step={field.step}
-        onChange={onChange}
-        placeholder={field.placeholder}
-      />
-      {field.help ? (
-        <span className="mt-1 block text-[11px] text-ink-4">{field.help}</span>
-      ) : null}
-    </div>
-  )
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }

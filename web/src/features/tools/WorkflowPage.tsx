@@ -2,10 +2,19 @@ import { Link } from '@tanstack/react-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { CloseCircle, Download, Trash, Upload } from 'reicon-react';
 import { Button, StatefulButton } from '~/components/beui/button';
+import { Input } from '~/components/beui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '~/components/beui/select';
 import { allTools } from '~/data/tools';
 import { downloadFiles, type OutFile } from '~/lib/pdf/core';
 import { cn } from '~/lib/utils';
 import { getToolEntry } from './processors';
+import { ToolFieldControl } from './ToolFieldControl';
 import type { ToolField, ToolProcessor } from './types';
 
 type Step = {
@@ -38,9 +47,7 @@ const chainableTools = allTools
     return entry.status === 'ready' && isChainable(entry.processor);
   })
   // The catalog lists some tools in two categories.
-  .filter(
-    (tool, i, list) => list.findIndex((t) => t.slug === tool.slug) === i
-  )
+  .filter((tool, i, list) => list.findIndex((t) => t.slug === tool.slug) === i)
   .sort((a, b) => a.name.localeCompare(b.name));
 
 function defaultValues(processor: ToolProcessor): Record<string, string> {
@@ -130,10 +137,17 @@ export function WorkflowPage() {
 
   const loadTemplate = (name: string) => {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
-    const saved = stored[name] as { slug: string; values: Record<string, string> }[];
+    const saved = stored[name] as {
+      slug: string;
+      values: Record<string, string>;
+    }[];
     if (!saved) return;
     setSteps(
-      saved.map((s) => ({ id: crypto.randomUUID(), slug: s.slug, values: s.values }))
+      saved.map((s) => ({
+        id: crypto.randomUUID(),
+        slug: s.slug,
+        values: s.values,
+      }))
     );
   };
 
@@ -231,7 +245,8 @@ export function WorkflowPage() {
         }
       }
 
-      if (finals.length === 0) throw new Error('The pipeline produced no output');
+      if (finals.length === 0)
+        throw new Error('The pipeline produced no output');
       downloadFiles(finals);
       setResults(log);
       setRunning('success');
@@ -267,8 +282,8 @@ export function WorkflowPage() {
             PDF Workflow
           </span>
           <span className="hidden text-xs text-muted-foreground sm:inline">
-            {steps.length} step{steps.length === 1 ? '' : 's'} ·{' '}
-            {files.length} file{files.length === 1 ? '' : 's'}
+            {steps.length} step{steps.length === 1 ? '' : 's'} · {files.length}{' '}
+            file{files.length === 1 ? '' : 's'}
           </span>
           <span className="truncate text-xs text-muted-foreground sm:hidden">
             {steps.length}s · {files.length}f
@@ -379,59 +394,15 @@ export function WorkflowPage() {
                 </div>
 
                 {visible.length > 0 ? (
-                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     {visible.map((field) => (
-                      <label key={field.key} className="block">
-                        <span className="mb-1 block text-[11px] font-semibold text-muted-foreground">
-                          {field.label}
-                        </span>
-                        {field.type === 'select' ? (
-                          <select
-                            value={step.values[field.key] ?? ''}
-                            onChange={(e) =>
-                              setValue(step.id, field.key, e.target.value)
-                            }
-                            className="h-9 w-full rounded-lg border border-border bg-card px-2 text-sm"
-                          >
-                            {(field.options ?? []).map((o) => (
-                              <option key={o.value} value={o.value}>
-                                {o.label}
-                              </option>
-                            ))}
-                          </select>
-                        ) : field.type === 'checkbox' ? (
-                          <input
-                            type="checkbox"
-                            checked={step.values[field.key] === 'true'}
-                            onChange={(e) =>
-                              setValue(
-                                step.id,
-                                field.key,
-                                e.target.checked ? 'true' : 'false'
-                              )
-                            }
-                            className="size-4 rounded border-border"
-                          />
-                        ) : (
-                          <input
-                            type={
-                              field.type === 'number' || field.type === 'range'
-                                ? 'number'
-                                : field.type === 'password'
-                                  ? 'password'
-                                  : field.type === 'color'
-                                    ? 'color'
-                                    : 'text'
-                            }
-                            value={step.values[field.key] ?? ''}
-                            placeholder={field.placeholder}
-                            onChange={(e) =>
-                              setValue(step.id, field.key, e.target.value)
-                            }
-                            className="h-9 w-full rounded-lg border border-border bg-card px-2 text-sm"
-                          />
-                        )}
-                      </label>
+                      <ToolFieldControl
+                        key={field.key}
+                        field={field}
+                        value={step.values[field.key] ?? ''}
+                        onChange={(v) => setValue(step.id, field.key, v)}
+                        compact
+                      />
                     ))}
                   </div>
                 ) : null}
@@ -440,27 +411,38 @@ export function WorkflowPage() {
           })}
 
           <div className="surface-card p-4">
-            <h2 className="mb-2 text-sm font-bold text-foreground">Add a step</h2>
-            <input
+            <h2 className="mb-2 text-sm font-bold text-foreground">
+              Add a step
+            </h2>
+            <Input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={setSearch}
               placeholder="Search tools…"
-              className="mb-2 h-11 w-full rounded-lg border border-border bg-card px-2.5 text-base sm:h-9 sm:text-sm"
+              className="mb-2"
+              classNames={{
+                field: 'h-11 sm:h-9',
+                input: 'text-base sm:text-sm',
+              }}
             />
-            <select
-              value={picker}
-              onChange={(e) => addStep(e.target.value)}
-              className="h-11 w-full rounded-xl border border-border bg-card px-3 text-base sm:h-10 sm:text-sm"
+            <Select
+              value={picker || undefined}
+              onValueChange={(slug) => {
+                if (slug) addStep(slug);
+              }}
             >
-              <option value="">
-                Choose a tool… ({visibleTools.length} available)
-              </option>
-              {visibleTools.map((t) => (
-                <option key={t.slug} value={t.slug}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="h-11 sm:h-10">
+                <SelectValue
+                  placeholder={`Choose a tool… (${visibleTools.length} available)`}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {visibleTools.map((t) => (
+                  <SelectItem key={t.slug} value={t.slug}>
+                    {t.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <p className="mt-2 text-[11px] text-ink-4">
               Only tools that take a PDF and return a PDF can be chained.
             </p>
@@ -487,7 +469,9 @@ export function WorkflowPage() {
               errorText="Failed"
               className="min-h-11 w-full sm:min-h-0"
               disabled={
-                files.length === 0 || steps.length === 0 || running === 'loading'
+                files.length === 0 ||
+                steps.length === 0 ||
+                running === 'loading'
               }
               onClick={() => void run()}
             >
@@ -509,7 +493,8 @@ export function WorkflowPage() {
                         : 'bg-destructive/10 text-destructive'
                     )}
                   >
-                    <span className="font-semibold">{r.slug}</span> — {r.message}
+                    <span className="font-semibold">{r.slug}</span> —{' '}
+                    {r.message}
                   </li>
                 ))}
               </ul>
@@ -517,13 +502,16 @@ export function WorkflowPage() {
           </div>
 
           <div className="surface-card p-4">
-            <h2 className="mb-2 text-sm font-bold text-foreground">Templates</h2>
+            <h2 className="mb-2 text-sm font-bold text-foreground">
+              Templates
+            </h2>
             <div className="flex gap-2">
-              <input
+              <Input
                 value={templateName}
-                onChange={(e) => setTemplateName(e.target.value)}
+                onChange={setTemplateName}
                 placeholder="Template name"
-                className="h-9 min-w-0 flex-1 rounded-lg border border-border bg-card px-2.5 text-sm"
+                className="min-w-0 flex-1"
+                classNames={{ root: 'gap-0', field: 'h-9' }}
               />
               <Button
                 size="sm"
