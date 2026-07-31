@@ -6,6 +6,7 @@ FROM oven/bun:1.3.9 AS builder
 WORKDIR /app
 
 COPY web/package.json web/bun.lock ./
+COPY vendor /vendor
 RUN bun install --frozen-lockfile
 
 COPY web/ ./
