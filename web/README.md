@@ -46,14 +46,25 @@ bun run start   # bun .output/server/index.mjs
 
 ## Ported tools
 
-106 of the 116 catalog slugs have a real implementation. Everything runs in the
-browser; no file is uploaded anywhere.
+112 of the 116 catalog slugs have a real implementation, exposing 307 options
+between them. Everything runs in the browser; no file is uploaded anywhere.
 
-The remaining 10 render an explicit **"Not available in this build"** panel with
-the reason and no run button:
+The remaining 4 render an explicit **"Not available in this build"** panel with
+the reason and no run button — all of them need a large interactive canvas or a
+font engine that is not bundled:
 
-`pdf-workflow`, `edit-pdf`, `form-creator`, `pdf-layers`, `pdf-to-pdfa`,
-`pdf-to-svg`, `font-to-outline`, `mobi-to-pdf`, `pages-to-pdf`, `psd-to-pdf`
+`edit-pdf`, `form-creator`, `pdf-workflow`, `font-to-outline`
+
+### Notes on the trickier conversions
+
+| Tool           | How it works                                                                                                                                                                  |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pages-to-pdf` | iWork bundles are ZIPs containing a full-fidelity `QuickLook/Preview.pdf` rendered by Pages itself — that is what gets extracted.                                             |
+| `psd-to-pdf`   | Decodes the flattened composite Photoshop stores in every PSD (8-bit RGB/greyscale, raw or RLE). Layers are not preserved.                                                    |
+| `mobi-to-pdf`  | Reads the PalmDOC text stream from DRM-free MOBI/AZW files. HUFF/CDIC-compressed and DRM'd books are rejected with a clear message.                                           |
+| `pdf-to-svg`   | pdf.js removed its vector SVG backend, so each page becomes a real SVG with the artwork embedded as an image plus a selectable `<text>` layer.                                |
+| `pdf-to-pdfa`  | Adds an embedded sRGB ICC OutputIntent, PDF/A XMP and a document ID, and strips forbidden constructs. **Best effort — no validator runs**, so it is not certified compliance. |
+| `pdf-layers`   | Lists optional content groups, changes their default visibility, or permanently strips their `BDC…EMC` content blocks.                                                        |
 
 > A tool that cannot do its job must say so. Nothing falls back to a different
 > operation — handing back a plausible-looking wrong file is worse than an error.

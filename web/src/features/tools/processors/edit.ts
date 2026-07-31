@@ -355,18 +355,65 @@ export const editProcessors: Record<string, ToolProcessor> = {
   bookmark: processor({
     accept: PDF,
     multiple: false,
+    note: 'Builds a real navigable outline. You can type entries, import them, or read back the outline already in the file.',
     fields: [
+      selectField('source', 'Where do the bookmarks come from?', [
+        { value: 'text', label: 'Type them below' },
+        { value: 'csv', label: 'Import a CSV file' },
+        { value: 'json', label: 'Import a JSON file' },
+        { value: 'extract', label: 'Read the existing outline (no changes)' },
+      ]),
       {
         key: 'spec',
         label: 'Bookmarks',
         type: 'textarea',
         defaultValue: 'Introduction: 1\n  Background: 2\nConclusion: 8',
         help: 'One per line as "Title: page". Indent by two spaces (or a tab) to nest.',
+        showWhen: { key: 'source', equals: ['text'] },
+      },
+      {
+        ...fileField('csv', 'CSV file', '.csv,text/csv', {
+          help: 'Columns: Title, page, level. A header row is skipped automatically.',
+        }),
+        showWhen: { key: 'source', equals: ['csv'] },
+      },
+      {
+        ...fileField('json', 'JSON file', '.json,application/json', {
+          help: 'An array of { title, page, level } or a nested tree with "children".',
+        }),
+        showWhen: { key: 'source', equals: ['json'] },
       },
     ],
     async process(ctx) {
       const file = first(ctx);
-      const specs = struct.parseBookmarkSpec(str(ctx, 'spec'));
+      const source = str(ctx, 'source', 'text');
+
+      if (source === 'extract') {
+        const existing = await struct.readExistingBookmarks(file);
+        if (existing.length === 0) {
+          throw new Error('This PDF has no outline to read');
+        }
+        const asText = struct.bookmarksToText(existing);
+        return {
+          ...textResult(derive(file, 'bookmarks', 'txt'), asText, 'text/plain'),
+          message: `Found ${existing.length} bookmark(s).`,
+          preview: { title: 'Existing outline', text: asText },
+        };
+      }
+
+      let specs;
+      if (source === 'csv') {
+        const csv = ctx.extraFiles.csv?.[0];
+        if (!csv) throw new Error('Choose a CSV file');
+        specs = struct.parseBookmarkCsv(await csv.text());
+      } else if (source === 'json') {
+        const json = ctx.extraFiles.json?.[0];
+        if (!json) throw new Error('Choose a JSON file');
+        specs = struct.parseBookmarkJson(await json.text());
+      } else {
+        specs = struct.parseBookmarkSpec(str(ctx, 'spec'));
+      }
+
       const bytes = await struct.addBookmarks(file, specs);
       return {
         ...onePdf(bytes, derive(file, 'bookmarked')),
@@ -392,15 +439,40 @@ export const editProcessors: Record<string, ToolProcessor> = {
         defaultValue: 'Introduction: 1\n  Background: 2\nConclusion: 8',
         help: 'One per line as "Title: page". Indent to nest. Page numbers refer to the original document; the inserted contents pages are accounted for automatically.',
       },
+      selectField(
+        'fontFamily',
+        'Font',
+        [
+          { value: 'Helvetica', label: 'Helvetica' },
+          { value: 'TimesRoman', label: 'Times Roman' },
+          { value: 'Courier', label: 'Courier' },
+        ],
+        'Helvetica'
+      ),
+      selectField(
+        'fontSize',
+        'Entry size',
+        [
+          { value: '9', label: '9 pt' },
+          { value: '10', label: '10 pt' },
+          { value: '11', label: '11 pt' },
+          { value: '12', label: '12 pt' },
+          { value: '14', label: '14 pt' },
+          { value: '16', label: '16 pt' },
+        ],
+        '11'
+      ),
+      checkbox('addBookmarks', 'Also add matching PDF bookmarks', true),
     ],
     async process(ctx) {
       const file = first(ctx);
       const specs = struct.parseBookmarkSpec(str(ctx, 'spec'));
-      const bytes = await struct.addTableOfContents(
-        file,
-        specs,
-        str(ctx, 'title', 'Contents')
-      );
+      const bytes = await struct.addTableOfContents(file, specs, {
+        title: str(ctx, 'title', 'Contents'),
+        fontFamily: str(ctx, 'fontFamily', 'Helvetica'),
+        fontSize: num(ctx, 'fontSize', 11),
+        addBookmarks: ctx.values.addBookmarks !== 'false',
+      });
       return onePdf(bytes, derive(file, 'with-toc'));
     },
   }),

@@ -2,6 +2,7 @@ import type { ToolEntry, ToolProcessor } from '../types';
 import { convertProcessors, rasterizeProcessor } from './convert';
 import { editProcessors } from './edit';
 import { organizeProcessors } from './organize';
+import { formatProcessors } from './formats';
 import { optimizeProcessors, secureProcessors } from './secure';
 
 /** Every slug backed by a real, honest implementation. */
@@ -11,6 +12,7 @@ const processors: Record<string, ToolProcessor> = {
   ...convertProcessors,
   ...secureProcessors,
   ...optimizeProcessors,
+  ...formatProcessors,
   'rasterize-pdf': rasterizeProcessor,
 };
 
@@ -34,20 +36,8 @@ const unavailable: Record<string, string> = {
     'The full page editor (freehand drawing, text boxes, redaction) has not been rebuilt yet. Annotation-adjacent tools such as Add Stamps, Sign PDF and Add Watermark work today.',
   'form-creator':
     'Designing new form fields needs an interactive canvas that has not been rebuilt yet. Form Filler can read and fill existing fields.',
-  'pdf-layers':
-    'Editing optional content groups (OCG layers) is not implemented. Flatten PDF removes layer interactivity if that is what you need.',
-  'pdf-to-pdfa':
-    'PDF/A conversion requires colour-profile embedding and compliance validation that this build does not ship.',
-  'pdf-to-svg':
-    'pdf.js removed its SVG renderer, so vector export is unavailable. PDF to PNG produces high-resolution raster output.',
   'font-to-outline':
-    'Converting embedded fonts to vector outlines needs a font engine that is not bundled. Rasterize PDF removes font dependencies at the cost of selectable text.',
-  'mobi-to-pdf':
-    'MOBI is a proprietary Kindle format that the bundled conversion engine cannot read. Convert to EPUB first, then use EPUB to PDF.',
-  'pages-to-pdf':
-    'Apple Pages files are not readable by the bundled conversion engine. Export to DOCX or PDF from Pages instead.',
-  'psd-to-pdf':
-    'Photoshop documents need a layered-image decoder that is not bundled. Export a flattened PNG or TIFF first.',
+    'Converting glyphs to vector outlines means rewriting every content stream against the embedded font programs, which needs a font engine this build does not ship. Rasterize PDF removes font dependencies today, at the cost of selectable text.',
 };
 
 export function getToolEntry(slug: string): ToolEntry {

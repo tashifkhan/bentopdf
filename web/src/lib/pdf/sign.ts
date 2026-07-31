@@ -491,6 +491,55 @@ export async function timestampPdf(
   });
 }
 
+/** Stamp a typed signature across a page range. */
+export async function applyTextSignatureToPages(
+  file: File,
+  text: string,
+  range: string,
+  placement: Omit<SignaturePlacement, 'page'>,
+  opts: { size?: number; color?: string } = {}
+): Promise<Uint8Array> {
+  if (!text.trim()) throw new Error('Enter the text to sign with');
+  const doc = await loadPdf(file);
+  const indices = parsePageRange(range, doc.getPageCount());
+  const font = await doc.embedFont(StandardFonts.HelveticaOblique);
+  const c = opts.color
+    ? hexToRgbTuple(opts.color)
+    : { r: 0.05, g: 0.1, b: 0.35 };
+  const size = opts.size ?? 24;
+
+  for (const i of indices) {
+    const page = doc.getPage(i);
+    const { width: pw, height: ph } = page.getSize();
+    page.drawText(text, {
+      x: pw * placement.x,
+      y: ph * placement.y,
+      size,
+      font,
+      color: rgb(c.r, c.g, c.b),
+      rotate: degrees(placement.rotate ?? 0),
+    });
+  }
+  return doc.save();
+}
+
+function hexToRgbTuple(hex: string) {
+  const clean = hex.replace('#', '').trim();
+  const full =
+    clean.length === 3
+      ? clean
+          .split('')
+          .map((ch) => ch + ch)
+          .join('')
+      : clean;
+  if (!/^[0-9a-fA-F]{6}$/.test(full)) return { r: 0.05, g: 0.1, b: 0.35 };
+  return {
+    r: parseInt(full.slice(0, 2), 16) / 255,
+    g: parseInt(full.slice(2, 4), 16) / 255,
+    b: parseInt(full.slice(4, 6), 16) / 255,
+  };
+}
+
 export async function applySignatureToPages(
   file: File,
   signature: File,

@@ -10,6 +10,7 @@ import {
   checkbox,
   derive,
   first,
+  int,
   num,
   onePdf,
   passwordField,
@@ -263,6 +264,95 @@ export const secureProcessors: Record<string, ToolProcessor> = {
         placeholder: 'https://freetsa.org/tsr',
         help: 'An RFC 3161 TSA adds a trusted signing time. Requires the server to allow browser requests.',
       },
+      checkbox(
+        'visible',
+        'Also stamp a visible signature',
+        false,
+        'The cryptographic signature is invisible by default; this adds a graphic on the page.'
+      ),
+      {
+        ...selectField(
+          'visibleKind',
+          'Visible signature content',
+          [
+            { value: 'image', label: 'Image' },
+            { value: 'text', label: 'Typed name' },
+          ],
+          'image'
+        ),
+        showWhen: { key: 'visible', equals: ['true'] },
+      },
+      {
+        key: 'sigImage',
+        label: 'Signature image',
+        type: 'file',
+        accept: 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp',
+        help: 'A transparent PNG works best.',
+        showWhen: { key: 'visible', equals: ['true'] },
+      },
+      {
+        key: 'sigText',
+        label: 'Typed signature',
+        type: 'text',
+        defaultValue: '',
+        showWhen: { key: 'visible', equals: ['true'] },
+      },
+      {
+        ...selectField(
+          'sigPage',
+          'Page',
+          [
+            { value: 'first', label: 'First page' },
+            { value: 'last', label: 'Last page' },
+            { value: 'all', label: 'Every page' },
+            { value: 'custom', label: 'Specific page…' },
+          ],
+          'first'
+        ),
+        showWhen: { key: 'visible', equals: ['true'] },
+      },
+      {
+        key: 'sigCustomPage',
+        label: 'Page number',
+        type: 'number',
+        defaultValue: '1',
+        min: 1,
+        showWhen: { key: 'sigPage', equals: ['custom'] },
+      },
+      {
+        ...rangeSlider('sigX', 'Horizontal position', 0, 0.95, 0.01, 0.6),
+        showWhen: { key: 'visible', equals: ['true'] },
+      },
+      {
+        ...rangeSlider('sigY', 'Vertical position', 0, 0.95, 0.01, 0.08),
+        showWhen: { key: 'visible', equals: ['true'] },
+      },
+      {
+        ...rangeSlider(
+          'sigWidth',
+          'Width (fraction of page)',
+          0.05,
+          0.8,
+          0.01,
+          0.25
+        ),
+        showWhen: { key: 'visible', equals: ['true'] },
+      },
+      {
+        key: 'sigTextSize',
+        label: 'Typed signature size',
+        type: 'number',
+        defaultValue: '24',
+        min: 6,
+        showWhen: { key: 'visibleKind', equals: ['text'] },
+      },
+      {
+        key: 'sigTextColor',
+        label: 'Typed signature colour',
+        type: 'color',
+        defaultValue: '#0d1a5c',
+        showWhen: { key: 'visibleKind', equals: ['text'] },
+      },
     ],
     note: 'Applies a cryptographic PAdES-style signature. Certificates needing chain lookup over the network may require a CORS proxy (VITE_CORS_PROXY_URL).',
     async process(ctx) {
@@ -278,8 +368,64 @@ export const secureProcessors: Record<string, ToolProcessor> = {
           ? await sign.loadCombinedPem(await certFile.text(), password)
           : await sign.loadPkcs12(certFile, password);
 
+      // Stamp the visible graphic first — it must be inside the signed bytes,
+      // otherwise adding it would invalidate the signature.
+      let target = file;
+      if (ctx.values.visible === 'true') {
+        ctx.onProgress('Stamping visible signature');
+        const doc = await pdf.loadPdf(file);
+        const pageCount = doc.getPageCount();
+        const choice = str(ctx, 'sigPage', 'first');
+        const range =
+          choice === 'all'
+            ? ''
+            : choice === 'last'
+              ? String(pageCount)
+              : choice === 'custom'
+                ? String(Math.min(int(ctx, 'sigCustomPage', 1), pageCount))
+                : '1';
+
+        const placement = {
+          x: num(ctx, 'sigX', 0.6),
+          y: num(ctx, 'sigY', 0.08),
+          width: num(ctx, 'sigWidth', 0.25),
+        };
+
+        let stamped: Uint8Array;
+        if (str(ctx, 'visibleKind', 'image') === 'text') {
+          const text = str(ctx, 'sigText');
+          if (!text.trim()) throw new Error('Enter the typed signature text');
+          stamped = await sign.applyTextSignatureToPages(
+            file,
+            text,
+            range,
+            placement,
+            {
+              size: num(ctx, 'sigTextSize', 24),
+              color: str(ctx, 'sigTextColor', '#0d1a5c'),
+            }
+          );
+        } else {
+          const image = ctx.extraFiles.sigImage?.[0];
+          if (!image) throw new Error('Choose a signature image');
+          stamped = await sign.applySignatureToPages(
+            file,
+            image,
+            range,
+            placement
+          );
+        }
+        target = new File(
+          [new Uint8Array(stamped).buffer as ArrayBuffer],
+          file.name,
+          {
+            type: 'application/pdf',
+          }
+        );
+      }
+
       ctx.onProgress('Signing');
-      const bytes = await sign.digitallySign(file, credential, {
+      const bytes = await sign.digitallySign(target, credential, {
         reason: str(ctx, 'reason'),
         location: str(ctx, 'location'),
         contact: str(ctx, 'contact'),

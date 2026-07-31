@@ -543,22 +543,42 @@ export async function addBookmarks(
   return doc.save();
 }
 
-/** Prepend a rendered table-of-contents page (and matching bookmarks). */
+export type TocOptions = {
+  title: string;
+  fontFamily: string;
+  fontSize: number;
+  addBookmarks: boolean;
+};
+
+const TOC_FONTS: Record<string, [StandardFonts, StandardFonts]> = {
+  Helvetica: [StandardFonts.Helvetica, StandardFonts.HelveticaBold],
+  TimesRoman: [StandardFonts.TimesRoman, StandardFonts.TimesRomanBold],
+  Courier: [StandardFonts.Courier, StandardFonts.CourierBold],
+};
+
+/** Prepend a rendered table-of-contents page (and optionally bookmarks). */
 export async function addTableOfContents(
   file: File,
   specs: BookmarkSpec[],
-  title: string
+  opts: TocOptions
 ): Promise<Uint8Array> {
-  const withMarks = await addBookmarks(file, specs);
-  const doc = await PDFDocument.load(withMarks, { ignoreEncryption: true });
-  const font = await doc.embedFont(StandardFonts.Helvetica);
-  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const source = opts.addBookmarks
+    ? await addBookmarks(file, specs)
+    : new Uint8Array(await file.arrayBuffer());
+  const doc = await PDFDocument.load(source, { ignoreEncryption: true });
+  const [regular, boldName] =
+    TOC_FONTS[opts.fontFamily] ?? TOC_FONTS.Helvetica!;
+  const font = await doc.embedFont(regular);
+  const bold = await doc.embedFont(boldName);
+  const size = opts.fontSize;
+  const title = opts.title;
 
   const first = doc.getPage(0);
   const width = first.getWidth();
   const height = first.getHeight();
 
-  const rowsPerPage = Math.floor((height - 160) / 22);
+  const rowHeight = size * 1.9;
+  const rowsPerPage = Math.floor((height - 160) / rowHeight);
   const chunks: BookmarkSpec[][] = [];
   for (let i = 0; i < specs.length; i += rowsPerPage) {
     chunks.push(specs.slice(i, i + rowsPerPage));
@@ -571,31 +591,37 @@ export async function addTableOfContents(
     created.push(page);
     let y = height - 80;
     if (created.length === 1) {
-      page.drawText(title || 'Contents', { x: 60, y, size: 22, font: bold });
-      y -= 40;
+      page.drawText(title || 'Contents', {
+        x: 60,
+        y,
+        size: size * 2,
+        font: bold,
+      });
+      y -= size * 3.5;
     }
     for (const spec of chunk) {
-      const indent = 60 + spec.level * 18;
+      const indent = 60 + spec.level * (size * 1.6);
       const label = spec.title;
       const pageLabel = String(spec.page + chunks.length);
-      page.drawText(label, { x: indent, y, size: 11, font });
-      const labelWidth = font.widthOfTextAtSize(label, 11);
-      const numWidth = font.widthOfTextAtSize(pageLabel, 11);
+      const entryFont = spec.level === 0 ? bold : font;
+      page.drawText(label, { x: indent, y, size, font: entryFont });
+      const labelWidth = entryFont.widthOfTextAtSize(label, size);
+      const numWidth = font.widthOfTextAtSize(pageLabel, size);
       const dotsStart = indent + labelWidth + 6;
       const dotsEnd = width - 60 - numWidth - 6;
       if (dotsEnd > dotsStart) {
-        const dotWidth = font.widthOfTextAtSize('.', 11);
+        const dotWidth = font.widthOfTextAtSize('.', size);
         const count = Math.floor((dotsEnd - dotsStart) / dotWidth);
         page.drawText('.'.repeat(Math.max(0, count)), {
           x: dotsStart,
           y,
-          size: 11,
+          size,
           font,
           color: rgb(0.6, 0.6, 0.6),
         });
       }
-      page.drawText(pageLabel, { x: width - 60 - numWidth, y, size: 11, font });
-      y -= 22;
+      page.drawText(pageLabel, { x: width - 60 - numWidth, y, size, font });
+      y -= rowHeight;
     }
   }
 
@@ -1224,4 +1250,118 @@ export async function dividePages(
     }
   }
   return out.save();
+}
+
+/* ------------------------------------------------- bookmark importing */
+
+/** Parse "Title,page,level" CSV (a header row is detected and skipped). */
+export function parseBookmarkCsv(source: string): BookmarkSpec[] {
+  const out: BookmarkSpec[] = [];
+  const rows = source.split(/\r?\n/).filter((l) => l.trim());
+  for (const [i, row] of rows.entries()) {
+    const cells = row.split(',').map((c) => c.trim().replace(/^"|"$/g, ''));
+    if (cells.length < 2) continue;
+    const page = parseInt(cells[1]!, 10);
+    if (!Number.isFinite(page)) {
+      // A non-numeric second column on the first row means it is a header.
+      if (i === 0) continue;
+      throw new Error(`Row ${i + 1}: "${cells[1]}" is not a page number`);
+    }
+    out.push({
+      title: cells[0]!,
+      page,
+      level: Number.isFinite(parseInt(cells[2] ?? '', 10))
+        ? parseInt(cells[2]!, 10)
+        : 0,
+    });
+  }
+  if (out.length === 0) throw new Error('No bookmark rows found in the CSV');
+  return out;
+}
+
+/** Parse [{ title, page, level }] or a nested [{ title, page, children }] tree. */
+export function parseBookmarkJson(source: string): BookmarkSpec[] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(source);
+  } catch (e) {
+    throw new Error(
+      `Invalid JSON: ${e instanceof Error ? e.message : 'parse error'}`,
+      { cause: e }
+    );
+  }
+  const out: BookmarkSpec[] = [];
+  const walk = (nodes: unknown, level: number) => {
+    if (!Array.isArray(nodes)) return;
+    for (const raw of nodes) {
+      if (!raw || typeof raw !== 'object') continue;
+      const node = raw as Record<string, unknown>;
+      const title = String(node.title ?? node.name ?? '').trim();
+      const page = Number(node.page ?? node.pageNumber ?? 1);
+      if (!title) continue;
+      out.push({
+        title,
+        page: Number.isFinite(page) ? page : 1,
+        level: Number.isFinite(Number(node.level)) ? Number(node.level) : level,
+      });
+      walk(node.children ?? node.items, level + 1);
+    }
+  };
+  walk(parsed, 0);
+  if (out.length === 0) throw new Error('No bookmarks found in the JSON');
+  return out;
+}
+
+/** Read the outline already embedded in a PDF, flattened with levels. */
+export async function readExistingBookmarks(
+  file: File
+): Promise<BookmarkSpec[]> {
+  const doc = await loadPdf(file);
+  const outlines = doc.catalog.lookupMaybe(PDFName.of('Outlines'), PDFDict);
+  if (!outlines) return [];
+
+  const pageRefs = doc.getPages().map((p) => p.ref);
+  const indexOfRef = (ref: unknown) =>
+    pageRefs.findIndex((r) => String(r) === String(ref));
+
+  const out: BookmarkSpec[] = [];
+  const walk = (
+    node: PDFDict | undefined,
+    level: number,
+    seen: Set<string>
+  ) => {
+    let current = node;
+    while (current) {
+      const key = String(current);
+      if (seen.has(key)) break;
+      seen.add(key);
+
+      const rawTitle = current.lookupMaybe(
+        PDFName.of('Title'),
+        PDFString,
+        PDFHexString
+      );
+      const title = rawTitle ? rawTitle.decodeText() : '';
+
+      let page = 1;
+      const dest = current.lookup(PDFName.of('Dest'));
+      if (dest instanceof PDFArray && dest.size() > 0) {
+        const found = indexOfRef(dest.get(0));
+        if (found >= 0) page = found + 1;
+      }
+      if (title) out.push({ title, page, level });
+
+      walk(current.lookupMaybe(PDFName.of('First'), PDFDict), level + 1, seen);
+      current = current.lookupMaybe(PDFName.of('Next'), PDFDict);
+    }
+  };
+  walk(outlines.lookupMaybe(PDFName.of('First'), PDFDict), 0, new Set());
+  return out;
+}
+
+/** Serialise bookmarks back to the indented "Title: page" text format. */
+export function bookmarksToText(specs: BookmarkSpec[]): string {
+  return specs
+    .map((s) => `${'  '.repeat(Math.max(0, s.level))}${s.title}: ${s.page}`)
+    .join('\n');
 }
