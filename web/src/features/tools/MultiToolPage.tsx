@@ -437,7 +437,7 @@ export function MultiToolPage() {
   const selectedIds = pages.filter((p) => selected.has(p.id)).map((p) => p.id);
 
   return (
-    <div className="-mx-[max(0px,calc((100vw-1120px)/2))] flex min-h-[calc(100dvh-3.5rem)] flex-col bg-background">
+    <div className="workspace-shell">
       <input
         ref={inputRef}
         id="multi-tool-file-input"
@@ -449,7 +449,7 @@ export function MultiToolPage() {
         onChange={(e) => void onFiles(e.target.files)}
       />
 
-      <header className="flex h-12 items-center justify-between border-b border-border bg-card px-3 sm:px-4">
+      <header className="workspace-header">
         <div className="flex min-w-0 items-center gap-2">
           <span className="truncate text-sm font-bold text-foreground">
             PDF Multi Tool
@@ -464,179 +464,197 @@ export function MultiToolPage() {
         </div>
         <Link
           to="/"
-          className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-border bg-secondary px-3 text-sm font-semibold text-foreground"
+          className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-secondary px-3 text-sm font-semibold text-foreground"
         >
           <CloseCircle size={14} color="currentColor" />
           Close
         </Link>
       </header>
 
-      <div className="flex flex-wrap items-center gap-2 border-b border-border bg-card px-3 py-2">
-        <ToolGroup>
-          <Button
-            size="sm"
-            variant="primary"
-            type="button"
-            onClick={() => openPicker()}
-          >
-            <Upload size={14} color="currentColor" />
-            Upload PDFs
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            type="button"
-            onClick={() => void addBlank()}
-          >
-            Add Blank Page
-          </Button>
-        </ToolGroup>
+      {/* Horizontally scrollable toolbar — critical on narrow viewports */}
+      <div className="workspace-toolbar">
+        <div className="workspace-toolbar-scroll">
+          <ToolGroup>
+            <Button
+              size="sm"
+              variant="primary"
+              type="button"
+              onClick={() => openPicker()}
+              className="shrink-0"
+            >
+              <Upload size={14} color="currentColor" />
+              <span className="hidden sm:inline">Upload PDFs</span>
+              <span className="sm:hidden">Upload</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              type="button"
+              onClick={() => void addBlank()}
+              className="shrink-0"
+            >
+              <span className="hidden sm:inline">Add Blank Page</span>
+              <span className="sm:hidden">Blank</span>
+            </Button>
+          </ToolGroup>
 
-        <ToolGroup label="Edit">
-          <Button
-            size="sm"
-            variant="ghost"
-            type="button"
-            onClick={undo}
-            disabled={undoStack.current.length === 0}
-            data-history={historyTick}
-          >
-            Undo
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            type="button"
-            onClick={redo}
-            disabled={redoStack.current.length === 0}
-          >
-            Redo
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            type="button"
-            onClick={resetAll}
-            disabled={empty}
-          >
-            <Restart size={14} color="currentColor" />
-            Reset
-          </Button>
-        </ToolGroup>
+          <ToolGroup label="Edit">
+            <Button
+              size="sm"
+              variant="ghost"
+              type="button"
+              onClick={undo}
+              disabled={undoStack.current.length === 0}
+              data-history={historyTick}
+              className="shrink-0"
+            >
+              Undo
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              type="button"
+              onClick={redo}
+              disabled={redoStack.current.length === 0}
+              className="shrink-0"
+            >
+              Redo
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              type="button"
+              onClick={resetAll}
+              disabled={empty}
+              className="shrink-0"
+            >
+              <Restart size={14} color="currentColor" />
+              Reset
+            </Button>
+          </ToolGroup>
 
-        <ToolGroup label="Selection">
-          <Button
-            size="sm"
-            variant="ghost"
-            type="button"
-            onClick={selectAll}
-            disabled={empty}
-          >
-            Select All
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            type="button"
-            onClick={deselectAll}
-            disabled={selectedCount === 0}
-          >
-            Deselect All
-          </Button>
-        </ToolGroup>
+          <ToolGroup label="Selection">
+            <Button
+              size="sm"
+              variant="ghost"
+              type="button"
+              onClick={selectAll}
+              disabled={empty}
+              className="shrink-0"
+            >
+              Select All
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              type="button"
+              onClick={deselectAll}
+              disabled={selectedCount === 0}
+              className="shrink-0"
+            >
+              Deselect
+            </Button>
+          </ToolGroup>
 
-        <ToolGroup label="Rotate">
-          <Button
-            size="sm"
-            variant="ghost"
-            type="button"
-            onClick={() => rotate(selectedIds, -1)}
-            disabled={selectedCount === 0}
-            title="Rotate left"
-          >
-            ↺ Left
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            type="button"
-            onClick={() => rotate(selectedIds, 1)}
-            disabled={selectedCount === 0}
-            title="Rotate right"
-          >
-            ↻ Right
-          </Button>
-        </ToolGroup>
+          <ToolGroup label="Rotate">
+            <Button
+              size="sm"
+              variant="ghost"
+              type="button"
+              onClick={() => rotate(selectedIds, -1)}
+              disabled={selectedCount === 0}
+              title="Rotate left"
+              className="shrink-0"
+            >
+              ↺ Left
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              type="button"
+              onClick={() => rotate(selectedIds, 1)}
+              disabled={selectedCount === 0}
+              title="Rotate right"
+              className="shrink-0"
+            >
+              ↻ Right
+            </Button>
+          </ToolGroup>
 
-        <ToolGroup label="Transform">
-          <Button
-            size="sm"
-            variant="ghost"
-            type="button"
-            onClick={() => duplicate(selectedIds)}
-            disabled={selectedCount === 0}
-          >
-            <Copy size={14} color="currentColor" />
-            Duplicate
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            type="button"
-            onClick={() => toggleSplit(selectedIds)}
-            disabled={selectedCount === 0}
-            title="Toggle a split point after each selected page"
-          >
-            <Scissors size={14} color="currentColor" />
-            Split
-          </Button>
-        </ToolGroup>
+          <ToolGroup label="Transform">
+            <Button
+              size="sm"
+              variant="ghost"
+              type="button"
+              onClick={() => duplicate(selectedIds)}
+              disabled={selectedCount === 0}
+              className="shrink-0"
+            >
+              <Copy size={14} color="currentColor" />
+              <span className="hidden sm:inline">Duplicate</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              type="button"
+              onClick={() => toggleSplit(selectedIds)}
+              disabled={selectedCount === 0}
+              title="Toggle a split point after each selected page"
+              className="shrink-0"
+            >
+              <Scissors size={14} color="currentColor" />
+              Split
+            </Button>
+          </ToolGroup>
 
-        <ToolGroup label="Clear">
-          <Button
-            size="sm"
-            variant="ghost"
-            type="button"
-            className="text-destructive"
-            onClick={() => remove(selectedIds)}
-            disabled={selectedCount === 0}
-          >
-            <Trash size={14} color="currentColor" />
-            Delete
-          </Button>
-        </ToolGroup>
+          <ToolGroup label="Clear">
+            <Button
+              size="sm"
+              variant="ghost"
+              type="button"
+              className="shrink-0 text-destructive"
+              onClick={() => remove(selectedIds)}
+              disabled={selectedCount === 0}
+            >
+              <Trash size={14} color="currentColor" />
+              Delete
+            </Button>
+          </ToolGroup>
 
-        <ToolGroup label="Download">
-          <Button
-            size="sm"
-            variant="secondary"
-            type="button"
-            onClick={() => void downloadSelected()}
-            disabled={selectedCount === 0}
-          >
-            <Download size={14} color="currentColor" />
-            Download Selected
-          </Button>
-          <StatefulButton
-            size="sm"
-            type="button"
-            state={exportState}
-            loadingText="Exporting…"
-            successText="Done"
-            errorText="Failed"
-            onClick={() => void exportPdf()}
-            disabled={empty || exportState === 'loading'}
-          >
-            <span className="inline-flex items-center gap-1.5">
+          <ToolGroup label="Download">
+            <Button
+              size="sm"
+              variant="secondary"
+              type="button"
+              onClick={() => void downloadSelected()}
+              disabled={selectedCount === 0}
+              className="hidden shrink-0 sm:inline-flex"
+            >
               <Download size={14} color="currentColor" />
-              {segments.length > 1 ? 'Export ZIP' : 'Export PDF'}
-            </span>
-          </StatefulButton>
-        </ToolGroup>
+              Download Selected
+            </Button>
+            <StatefulButton
+              size="sm"
+              type="button"
+              state={exportState}
+              loadingText="Exporting…"
+              successText="Done"
+              errorText="Failed"
+              onClick={() => void exportPdf()}
+              disabled={empty || exportState === 'loading'}
+              className="hidden shrink-0 sm:inline-flex"
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <Download size={14} color="currentColor" />
+                {segments.length > 1 ? 'Export ZIP' : 'Export PDF'}
+              </span>
+            </StatefulButton>
+          </ToolGroup>
+        </div>
       </div>
 
       <div
-        className="flex flex-1 flex-col overflow-auto p-4"
+        className="flex flex-1 flex-col overflow-auto p-3 sm:p-4"
         onDragOver={(e) => {
           e.preventDefault();
           e.dataTransfer.dropEffect = 'copy';
@@ -683,7 +701,7 @@ export function MultiToolPage() {
             </p>
           </div>
         ) : (
-          <div className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          <div className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {pages.map((page, index) => (
               <PageCard
                 key={page.id}
@@ -709,9 +727,9 @@ export function MultiToolPage() {
       </div>
 
       {!empty ? (
-        <div className="sticky bottom-0 flex gap-2 border-t border-border bg-card/95 p-3 backdrop-blur md:hidden">
+        <div className="mobile-action-bar sm:hidden">
           <Button
-            className="flex-1"
+            className="min-h-11 flex-1"
             variant="secondary"
             type="button"
             onClick={() => openPicker()}
@@ -719,7 +737,7 @@ export function MultiToolPage() {
             Upload
           </Button>
           <Button
-            className="flex-1"
+            className="min-h-11 flex-1"
             variant="ghost"
             type="button"
             onClick={() => remove(selectedIds)}
@@ -728,10 +746,11 @@ export function MultiToolPage() {
             Delete
           </Button>
           <Button
-            className="flex-1"
+            className="min-h-11 flex-1"
             variant="primary"
             type="button"
             onClick={() => void exportPdf()}
+            disabled={exportState === 'loading'}
           >
             Export
           </Button>
@@ -749,7 +768,7 @@ function ToolGroup({
   children: React.ReactNode;
 }) {
   return (
-    <div className="inline-flex items-center gap-1.5">
+    <div className="inline-flex shrink-0 items-center gap-1.5">
       {label ? (
         <span className="hidden text-[11px] font-semibold uppercase tracking-wide text-muted-foreground lg:inline">
           {label}:
@@ -795,12 +814,13 @@ function PageCard({
   onDragEnd: () => void;
   onDropOn: () => void;
 }) {
+  // Larger hit targets on touch; denser on desktop
   const action =
-    'grid size-6 place-items-center rounded-md text-[11px] text-foreground/80 hover:bg-secondary';
+    'grid size-8 place-items-center rounded-md text-[12px] text-foreground/80 active:bg-secondary sm:size-7 hover:bg-secondary touch-manipulation';
 
   return (
     <div
-      className={cn('relative', isDragging && 'opacity-40')}
+      className={cn('group/card relative', isDragging && 'opacity-40')}
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
@@ -815,7 +835,7 @@ function PageCard({
         type="button"
         onClick={onToggle}
         className={cn(
-          'group w-full overflow-hidden rounded-xl border bg-card p-2 text-left shadow-card transition',
+          'w-full touch-manipulation overflow-hidden rounded-xl border bg-card p-1.5 text-left shadow-card transition sm:p-2',
           isSelected
             ? 'border-brand ring-2 ring-brand/40'
             : 'border-border hover:border-brand/40'
@@ -846,8 +866,8 @@ function PageCard({
         </p>
       </button>
 
-      {/* Per-page actions, mirroring the legacy hover toolbar. */}
-      <div className="mt-1 flex items-center justify-center gap-0.5 rounded-lg border border-border bg-card/90 p-0.5 opacity-0 transition group-hover:opacity-100 focus-within:opacity-100 md:opacity-0 md:hover:opacity-100">
+      {/* Always visible on touch devices; hover-reveal only on fine pointers */}
+      <div className="mt-1 flex items-center justify-center gap-0.5 rounded-lg border border-border bg-card p-0.5 opacity-100 transition [@media(hover:hover)_and_(pointer:fine)]:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:group-hover/card:opacity-100 focus-within:opacity-100">
         <button type="button" className={action} title="Rotate left" onClick={onRotateLeft}>
           ↺
         </button>

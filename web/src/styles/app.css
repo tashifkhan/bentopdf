@@ -334,18 +334,17 @@ html[data-theme-switching='1'] * {
   .workspace-shell {
     @apply flex flex-col bg-background;
     /* Break out of .app-main max-width + padding on all viewports */
-    margin-inline: calc(50% - 50vw);
     width: 100vw;
     max-width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
     min-height: calc(100dvh - 3.5rem);
-    min-height: calc(100dvh - 3.5rem - env(safe-area-inset-top, 0px));
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    /* Pull up under sticky app header for true full-viewport workspaces */
+    margin-top: -0.25rem;
   }
 
   .workspace-header {
-    @apply sticky top-0 z-30 flex h-12 items-center justify-between gap-2 border-b border-border bg-card/95 px-3 backdrop-blur-md sm:px-4;
-    padding-top: env(safe-area-inset-top, 0px);
-    height: calc(3rem + env(safe-area-inset-top, 0px));
+    @apply sticky top-0 z-30 flex min-h-12 items-center justify-between gap-2 border-b border-border bg-card/95 px-3 py-2 backdrop-blur-md sm:px-4;
   }
 
   .workspace-toolbar {

@@ -25,6 +25,15 @@ export function SettingsModal({
       localStorage.getItem('compactMode') === 'true',
   )
 
+  // Restore compact density on first mount (settings may never open)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    document.body.classList.toggle(
+      'density-compact',
+      localStorage.getItem('compactMode') === 'true',
+    )
+  }, [])
+
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
@@ -32,9 +41,12 @@ export function SettingsModal({
     }
     document.addEventListener('keydown', onKey)
     document.body.style.overflow = 'hidden'
+    // Prevent iOS background scroll while sheet is open
+    document.body.style.touchAction = 'none'
     return () => {
       document.removeEventListener('keydown', onKey)
       document.body.style.overflow = ''
+      document.body.style.touchAction = ''
     }
   }, [open, onClose])
 
@@ -58,8 +70,9 @@ export function SettingsModal({
             aria-modal="true"
             aria-labelledby="settings-title"
             className={cn(
-              'relative z-10 flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden border border-border bg-card text-card-foreground shadow-panel',
+              'relative z-10 flex max-h-[min(92dvh,100%)] w-full max-w-xl flex-col overflow-hidden border border-border bg-card text-card-foreground shadow-panel',
               'rounded-t-2xl sm:rounded-2xl',
+              'pb-[env(safe-area-inset-bottom,0px)] sm:pb-0',
             )}
             initial={
               reduce

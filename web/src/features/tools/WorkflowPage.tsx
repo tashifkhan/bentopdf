@@ -247,7 +247,7 @@ export function WorkflowPage() {
   };
 
   return (
-    <div className="-mx-[max(0px,calc((100vw-1120px)/2))] flex min-h-[calc(100dvh-3.5rem)] flex-col bg-background">
+    <div className="workspace-shell">
       <input
         ref={inputRef}
         type="file"
@@ -261,26 +261,29 @@ export function WorkflowPage() {
         }}
       />
 
-      <header className="flex h-12 items-center justify-between border-b border-border bg-card px-3 sm:px-4">
+      <header className="workspace-header">
         <div className="flex min-w-0 items-center gap-2">
           <span className="truncate text-sm font-bold text-foreground">
-            PDF Workflow Builder
+            PDF Workflow
           </span>
           <span className="hidden text-xs text-muted-foreground sm:inline">
             {steps.length} step{steps.length === 1 ? '' : 's'} ·{' '}
             {files.length} file{files.length === 1 ? '' : 's'}
           </span>
+          <span className="truncate text-xs text-muted-foreground sm:hidden">
+            {steps.length}s · {files.length}f
+          </span>
         </div>
         <Link
           to="/"
-          className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-border bg-secondary px-3 text-sm font-semibold text-foreground"
+          className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-secondary px-3 text-sm font-semibold text-foreground"
         >
           <CloseCircle size={14} color="currentColor" />
           Close
         </Link>
       </header>
 
-      <div className="flex flex-1 flex-col gap-4 p-4 lg:flex-row">
+      <div className="flex flex-1 flex-col gap-4 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-4 lg:flex-row">
         {/* -------------------------------------------------- pipeline */}
         <div className="flex-1 space-y-3">
           <div className="surface-card p-4">
@@ -442,12 +445,12 @@ export function WorkflowPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search tools…"
-              className="mb-2 h-9 w-full rounded-lg border border-border bg-card px-2.5 text-sm"
+              className="mb-2 h-11 w-full rounded-lg border border-border bg-card px-2.5 text-base sm:h-9 sm:text-sm"
             />
             <select
               value={picker}
               onChange={(e) => addStep(e.target.value)}
-              className="h-10 w-full rounded-xl border border-border bg-card px-3 text-sm"
+              className="h-11 w-full rounded-xl border border-border bg-card px-3 text-base sm:h-10 sm:text-sm"
             >
               <option value="">
                 Choose a tool… ({visibleTools.length} available)
@@ -482,7 +485,7 @@ export function WorkflowPage() {
               loadingText="Running…"
               successText="Done"
               errorText="Failed"
-              className="w-full"
+              className="min-h-11 w-full sm:min-h-0"
               disabled={
                 files.length === 0 || steps.length === 0 || running === 'loading'
               }

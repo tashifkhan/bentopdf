@@ -110,9 +110,9 @@ export function MergePdfTool() {
   }
 
   return (
-    <div className="surface-card mx-auto w-full max-w-xl p-5 sm:p-7">
-      <header className="mb-5">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+    <div className="surface-card mx-auto w-full max-w-xl p-4 sm:p-7">
+      <header className="mb-4 sm:mb-5">
+        <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
           Merge PDF
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -120,12 +120,13 @@ export function MergePdfTool() {
         </p>
       </header>
 
-      <label className="tool-dropzone">
+      <label className="tool-dropzone touch-manipulation">
         <span className="mb-3 grid size-12 place-items-center rounded-2xl bg-brand-soft text-brand">
           <Upload size={22} color="currentColor" />
         </span>
         <span className="text-sm font-semibold text-foreground">
-          Drop PDFs here or click to browse
+          <span className="sm:hidden">Tap to choose PDFs</span>
+          <span className="hidden sm:inline">Drop PDFs here or click to browse</span>
         </span>
         <span className="mt-1 text-xs text-ink-4">
           Files never leave this device
@@ -144,10 +145,12 @@ export function MergePdfTool() {
 
       {files.length > 0 ? (
         <div className="mt-4 space-y-4">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
               variant="secondary"
+              size="sm"
+              className="min-h-10 sm:min-h-0"
               onClick={() => {
                 const input = document.createElement('input')
                 input.type = 'file'
@@ -162,11 +165,17 @@ export function MergePdfTool() {
               <Document size={16} color="currentColor" />
               Add more
             </Button>
-            <Button type="button" variant="ghost" onClick={() => setFiles([])}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="min-h-10 sm:min-h-0"
+              onClick={() => setFiles([])}
+            >
               <Trash size={16} color="currentColor" />
               Clear all
             </Button>
-            <span className="ml-auto self-center text-xs text-ink-4">
+            <span className="w-full text-xs text-ink-4 sm:ml-auto sm:w-auto sm:self-center">
               {files.length} files · {totalPages} pages
             </span>
           </div>
@@ -195,7 +204,7 @@ export function MergePdfTool() {
                     </span>
                     <button
                       type="button"
-                      className="rounded-lg p-2 text-destructive hover:bg-destructive/10"
+                      className="touch-manipulation rounded-lg p-2.5 text-destructive hover:bg-destructive/10 sm:p-2"
                       onClick={() =>
                         setFiles((prev) => prev.filter((f) => f.id !== entry.id))
                       }
@@ -218,7 +227,8 @@ export function MergePdfTool() {
                         )
                       }
                       placeholder="All pages (or e.g. 1-3, 5)"
-                      className="mt-1 w-full rounded-xl border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-ring/30"
+                      inputMode="text"
+                      className="mt-1 h-11 w-full rounded-xl border border-input bg-card px-3 py-2 text-base text-foreground outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-ring/30 sm:h-auto sm:text-sm"
                     />
                   </label>
                 </div>
@@ -237,7 +247,7 @@ export function MergePdfTool() {
 
           <StatefulButton
             type="button"
-            className={cn('w-full')}
+            className={cn('min-h-11 w-full sm:min-h-0')}
             state={status}
             loadingText="Merging…"
             successText="Downloaded"

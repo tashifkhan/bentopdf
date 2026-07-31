@@ -41,7 +41,7 @@ export function ToolWorkspace({ tool }: { tool: Tool }) {
 
 function UnavailableTool({ tool, reason }: { tool: Tool; reason: string }) {
   return (
-    <div className="surface-card mx-auto w-full max-w-xl p-5 sm:p-7">
+    <div className="surface-card mx-auto w-full max-w-xl p-4 sm:p-7">
       <ToolHeader tool={tool} />
       <div className="mt-5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
         <div className="flex items-start gap-3">
@@ -69,11 +69,11 @@ function UnavailableTool({ tool, reason }: { tool: Tool; reason: string }) {
 function ToolHeader({ tool }: { tool: Tool }) {
   return (
     <header className="flex items-start gap-3">
-      <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-brand-soft text-brand">
+      <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-brand-soft text-brand sm:size-11">
         <ToolIcon name={tool.icon} size={22} />
       </span>
       <div className="min-w-0">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+        <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
           {tool.name}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">{tool.subtitle}</p>
@@ -156,7 +156,7 @@ function ReadyTool({
   const canRun = !needsFiles || files.length >= minFiles
 
   return (
-    <div className="surface-card mx-auto w-full max-w-xl p-5 sm:p-7">
+    <div className="surface-card mx-auto w-full max-w-xl p-4 sm:p-7">
       <ToolHeader tool={tool} />
 
       {processor.note ? (
@@ -207,7 +207,7 @@ function ReadyTool({
           addFiles(e.dataTransfer.files)
         }}
         className={cn(
-          'tool-dropzone mt-5',
+          'tool-dropzone mt-4 touch-manipulation sm:mt-5',
           dragging && 'border-brand bg-brand-soft/40',
         )}
       >
@@ -218,10 +218,13 @@ function ReadyTool({
           {processor.textPrimary
             ? 'Optional: drop a file instead of pasting'
             : processor.multiple
-              ? 'Drop files here or click to browse'
-              : 'Drop a file here or click to browse'}
+              ? 'Tap to choose files'
+              : 'Tap to choose a file'}
         </span>
-        <span className="mt-1 text-xs text-ink-4">
+        <span className="mt-1 hidden text-xs text-ink-4 sm:inline">
+          Or drop files here · files never leave this device
+        </span>
+        <span className="mt-1 text-xs text-ink-4 sm:hidden">
           Files never leave this device
         </span>
       </div>
@@ -231,17 +234,17 @@ function ReadyTool({
           {files.map((file, i) => (
             <li
               key={`${file.name}-${file.size}-${i}`}
-              className="flex items-center gap-2 rounded-xl border border-border bg-secondary/60 px-3 py-2 text-sm"
+              className="flex items-center gap-2 rounded-xl border border-border bg-secondary/60 px-3 py-2.5 text-sm sm:py-2"
             >
               <span className="min-w-0 flex-1 truncate font-medium">
                 {file.name}
               </span>
-              <span className="text-xs text-muted-foreground">
+              <span className="shrink-0 text-xs text-muted-foreground">
                 {formatBytes(file.size)}
               </span>
               <button
                 type="button"
-                className="rounded-lg p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                className="touch-manipulation rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive sm:p-1"
                 aria-label={`Remove ${file.name}`}
                 onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))}
               >
@@ -304,32 +307,18 @@ function ReadyTool({
           <p className="mb-1.5 text-xs font-semibold text-muted-foreground">
             {result.preview.title}
           </p>
-          <pre className="max-h-72 overflow-auto rounded-xl border border-border bg-secondary/50 p-3 text-[11px] leading-relaxed text-foreground">
+          <pre className="max-h-56 overflow-auto rounded-xl border border-border bg-secondary/50 p-3 text-[11px] leading-relaxed text-foreground sm:max-h-72">
             {result.preview.text}
           </pre>
         </div>
       ) : null}
 
-      <div className="mt-6 flex flex-wrap gap-2">
-        <StatefulButton
-          type="button"
-          state={status}
-          loadingText={progress ?? 'Working…'}
-          successText="Done"
-          errorText="Failed"
-          disabled={status === 'loading' || !canRun}
-          onClick={() => void run()}
-          className="min-w-[8rem]"
-        >
-          <span className="inline-flex items-center gap-1.5">
-            <Download size={16} color="currentColor" />
-            Run & download
-          </span>
-        </StatefulButton>
+      <div className="tool-actions">
         {files.length > 0 ? (
           <Button
             type="button"
             variant="ghost"
+            className="w-full min-h-11 sm:w-auto sm:min-h-0"
             onClick={() => {
               setFiles([])
               setError(null)
@@ -339,6 +328,22 @@ function ReadyTool({
             Clear
           </Button>
         ) : null}
+        <StatefulButton
+          type="button"
+          state={status}
+          loadingText={progress ?? 'Working…'}
+          successText="Done"
+          errorText="Failed"
+          disabled={status === 'loading' || !canRun}
+          onClick={() => void run()}
+          data-primary-action
+          className="w-full min-h-11 sm:w-auto sm:min-h-0 sm:min-w-[8rem]"
+        >
+          <span className="inline-flex items-center gap-1.5">
+            <Download size={16} color="currentColor" />
+            Run & download
+          </span>
+        </StatefulButton>
       </div>
     </div>
   )
@@ -452,7 +457,7 @@ function Field({
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder}
           rows={8}
-          className="w-full rounded-xl border border-border bg-card px-3 py-2 font-mono text-sm text-foreground outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-ring/30"
+          className="w-full rounded-xl border border-border bg-card px-3 py-2 font-mono text-base text-foreground outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-ring/30 sm:text-sm"
         />
         {field.help ? (
           <span className="mt-1 block text-[11px] text-ink-4">{field.help}</span>

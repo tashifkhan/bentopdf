@@ -19,8 +19,10 @@ export const Route = createRootRoute({
       { charSet: 'utf-8' },
       {
         name: 'viewport',
-        content: 'width=device-width, initial-scale=1, viewport-fit=cover',
+        content:
+          'width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5',
       },
+      { name: 'format-detection', content: 'telephone=no' },
       {
         title: 'PDF Tools — private browser toolkit',
       },

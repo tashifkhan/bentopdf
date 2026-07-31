@@ -67,7 +67,7 @@ function BackLink() {
   return (
     <Link
       to="/"
-      className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-accent hover:text-accent"
+      className="mb-3 inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-secondary px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-accent hover:text-accent sm:mb-4"
     >
       <ArrowLeft size={14} color="currentColor" />
       Back to tools

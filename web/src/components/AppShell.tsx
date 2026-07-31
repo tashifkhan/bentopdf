@@ -40,7 +40,7 @@ export function AppShell({
               <strong className="truncate text-[0.92rem] font-bold tracking-tight text-foreground">
                 BentoPDF
               </strong>
-              <small className="hidden text-[0.66rem] font-semibold uppercase tracking-[0.04em] text-ink-4 xs:inline sm:inline">
+              <small className="hidden text-[0.66rem] font-semibold uppercase tracking-[0.04em] text-ink-4 sm:inline">
                 Private document tools
               </small>
             </span>

@@ -276,7 +276,7 @@ export function FormCreatorPage() {
   const empty = !file;
 
   return (
-    <div className="-mx-[max(0px,calc((100vw-1120px)/2))] flex min-h-[calc(100dvh-3.5rem)] flex-col bg-background">
+    <div className="workspace-shell">
       <input
         ref={inputRef}
         type="file"
@@ -290,7 +290,7 @@ export function FormCreatorPage() {
         }}
       />
 
-      <header className="flex h-12 items-center justify-between border-b border-border bg-card px-3 sm:px-4">
+      <header className="workspace-header">
         <div className="flex min-w-0 items-center gap-2">
           <span className="truncate text-sm font-bold text-foreground">
             Form Creator
@@ -303,7 +303,7 @@ export function FormCreatorPage() {
         </div>
         <Link
           to="/"
-          className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-border bg-secondary px-3 text-sm font-semibold text-foreground"
+          className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-secondary px-3 text-sm font-semibold text-foreground"
         >
           <CloseCircle size={14} color="currentColor" />
           Close
@@ -341,33 +341,36 @@ export function FormCreatorPage() {
       ) : (
         <div className="flex flex-1 flex-col lg:flex-row">
           {/* ------------------------------------------------ canvas */}
-          <div className="flex flex-1 flex-col overflow-auto p-4">
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Field type
-              </span>
-              {(Object.keys(KIND_LABELS) as FieldKind[]).map((k) => (
-                <button
-                  key={k}
-                  type="button"
-                  onClick={() => setKind(k)}
-                  className={cn(
-                    'rounded-lg border px-2.5 py-1 text-xs font-semibold transition',
-                    kind === k
-                      ? 'border-transparent text-white'
-                      : 'border-border bg-secondary text-muted-foreground hover:text-foreground'
-                  )}
-                  style={kind === k ? { background: KIND_COLORS[k] } : undefined}
-                >
-                  {KIND_LABELS[k]}
-                </button>
-              ))}
-              <div className="ml-auto flex items-center gap-1">
+          <div className="flex flex-1 flex-col overflow-auto p-3 sm:p-4">
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+              <div className="h-scroll items-center">
+                <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Field type
+                </span>
+                {(Object.keys(KIND_LABELS) as FieldKind[]).map((k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setKind(k)}
+                    className={cn(
+                      'touch-manipulation shrink-0 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition sm:py-1',
+                      kind === k
+                        ? 'border-transparent text-white'
+                        : 'border-border bg-secondary text-muted-foreground hover:text-foreground'
+                    )}
+                    style={kind === k ? { background: KIND_COLORS[k] } : undefined}
+                  >
+                    {KIND_LABELS[k]}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center justify-between gap-1 sm:ml-auto">
                 <Button
                   size="sm"
                   variant="ghost"
                   disabled={pageIndex === 0}
                   onClick={() => setPageIndex((p) => p - 1)}
+                  className="min-h-9"
                 >
                   ‹ Prev
                 </Button>
@@ -379,6 +382,7 @@ export function FormCreatorPage() {
                   variant="ghost"
                   disabled={pageIndex >= pageImages.length - 1}
                   onClick={() => setPageIndex((p) => p + 1)}
+                  className="min-h-9"
                 >
                   Next ›
                 </Button>
@@ -446,7 +450,7 @@ export function FormCreatorPage() {
           </div>
 
           {/* ----------------------------------------------- inspector */}
-          <aside className="w-full shrink-0 border-t border-border bg-card p-4 lg:w-80 lg:border-l lg:border-t-0">
+          <aside className="w-full shrink-0 border-t border-border bg-card p-4 pb-[max(1rem,env(safe-area-inset-bottom))] lg:w-80 lg:border-l lg:border-t-0">
             {selected ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -564,7 +568,7 @@ export function FormCreatorPage() {
               </p>
             ) : null}
 
-            <div className="mt-5 flex gap-2">
+            <div className="mt-5 flex gap-2 lg:static">
               <StatefulButton
                 type="button"
                 state={saveState}
@@ -573,7 +577,7 @@ export function FormCreatorPage() {
                 errorText="Failed"
                 onClick={() => void save()}
                 disabled={fields.length === 0 || saveState === 'loading'}
-                className="flex-1"
+                className="min-h-11 flex-1 sm:min-h-0"
               >
                 <span className="inline-flex items-center gap-1.5">
                   <Download size={15} color="currentColor" />
@@ -589,7 +593,7 @@ export function FormCreatorPage() {
 }
 
 const inputClass =
-  'h-10 w-full rounded-xl border border-border bg-card px-3 text-sm text-foreground outline-none focus:border-brand';
+  'h-11 w-full rounded-xl border border-border bg-card px-3 text-base text-foreground outline-none focus:border-brand sm:h-10 sm:text-sm';
 
 function Labelled({
   label,

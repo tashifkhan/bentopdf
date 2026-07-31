@@ -25,12 +25,12 @@ export function EditPdfPage() {
     setError(null);
     try {
       const { default: EmbedPDF } = await import('embedpdf-snippet');
-      // The wasm binary ships with the package; resolve it relative to the
-      // module so the bundler emits it as an asset.
-      const wasmUrl = new URL(
-        'embedpdf-snippet/dist/pdfium.wasm',
-        import.meta.url
-      ).toString();
+      // `new URL(bare, import.meta.url)` is NOT resolved by Vite — it would
+      // produce a path relative to this source file and 404. The `?url` import
+      // resolves the package properly and emits the wasm as a build asset.
+      const { default: wasmUrl } = await import(
+        'embedpdf-snippet/dist/pdfium.wasm?url'
+      );
 
       const url = URL.createObjectURL(chosen);
       viewerRef.current = await EmbedPDF.init({
@@ -64,7 +64,7 @@ export function EditPdfPage() {
   }, []);
 
   return (
-    <div className="-mx-[max(0px,calc((100vw-1120px)/2))] flex min-h-[calc(100dvh-3.5rem)] flex-col bg-background">
+    <div className="workspace-shell">
       <input
         ref={inputRef}
         type="file"
@@ -78,7 +78,7 @@ export function EditPdfPage() {
         }}
       />
 
-      <header className="flex h-12 items-center justify-between border-b border-border bg-card px-3 sm:px-4">
+      <header className="workspace-header">
         <div className="flex min-w-0 items-center gap-2">
           <span className="truncate text-sm font-bold text-foreground">
             PDF Editor
@@ -89,7 +89,7 @@ export function EditPdfPage() {
         </div>
         <Link
           to="/"
-          className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-border bg-secondary px-3 text-sm font-semibold text-foreground"
+          className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-secondary px-3 text-sm font-semibold text-foreground"
         >
           <CloseCircle size={14} color="currentColor" />
           Close
@@ -131,11 +131,18 @@ export function EditPdfPage() {
         </div>
       ) : null}
 
-      {/* EmbedPDF mounts here and provides its own toolbar. */}
+      {/* EmbedPDF mounts here and provides its own toolbar.
+          Its custom element is display:flex with no intrinsic height, so it
+          collapses to the toolbar unless we force it to fill this box — the
+          page list is virtualised and renders nothing at zero height. */}
       <div
         ref={containerRef}
-        className={file ? 'flex-1' : 'hidden'}
-        style={{ minHeight: file ? '70vh' : undefined }}
+        className={
+          file
+            ? 'flex min-h-0 flex-1 flex-col [&>embedpdf-container]:min-h-0 [&>embedpdf-container]:flex-1'
+            : 'hidden'
+        }
+        style={{ minHeight: file ? 'min(70vh, calc(100dvh - 8rem))' : undefined }}
       />
     </div>
   );
