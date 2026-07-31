@@ -5,13 +5,19 @@ import {
   createRootRoute,
 } from '@tanstack/react-router'
 import * as React from 'react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { DefaultCatchBoundary } from '~/components/DefaultCatchBoundary'
 import { NotFound } from '~/components/NotFound'
 import { AppShell } from '~/components/AppShell'
 import { SettingsModal } from '~/components/SettingsModal'
+import {
+  SETTINGS_BOOT_SCRIPT,
+  SettingsProvider,
+} from '~/features/settings/settings'
 import { ThemeProvider } from '~/features/theme/theme'
 import appCss from '~/styles/app.css?url'
+
+const THEME_BOOT_SCRIPT = `(function(){try{var k='taf-pdf-theme';var s=localStorage.getItem(k);var t=s==='light'||s==='dark'?s:(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;document.documentElement.classList.toggle('dark',t==='dark');document.documentElement.style.colorScheme=t;}catch(e){}})();`
 
 export const Route = createRootRoute({
   head: () => ({
@@ -34,22 +40,38 @@ export const Route = createRootRoute({
       { name: 'theme-color', content: '#1a3d35' },
       { name: 'mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-capable', content: 'yes' },
-      { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
+      {
+        name: 'apple-mobile-web-app-status-bar-style',
+        content: 'black-translucent',
+      },
       { name: 'apple-mobile-web-app-title', content: 'BentoPDF' },
       { name: 'application-name', content: 'BentoPDF' },
     ],
     links: [
       { rel: 'stylesheet', href: appCss },
       { rel: 'icon', type: 'image/svg+xml', href: '/images/taf-pdf-mark.svg' },
-      { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32x32.png' },
-      { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicon-16x16.png' },
-      { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' },
+      {
+        rel: 'icon',
+        type: 'image/png',
+        sizes: '32x32',
+        href: '/favicon-32x32.png',
+      },
+      {
+        rel: 'icon',
+        type: 'image/png',
+        sizes: '16x16',
+        href: '/favicon-16x16.png',
+      },
+      {
+        rel: 'apple-touch-icon',
+        sizes: '180x180',
+        href: '/apple-touch-icon.png',
+      },
       { rel: 'manifest', href: '/manifest.webmanifest' },
     ],
     scripts: [
-      {
-        children: `(function(){try{var k='taf-pdf-theme';var s=localStorage.getItem(k);var t=s==='light'||s==='dark'?s:(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;document.documentElement.classList.toggle('dark',t==='dark');document.documentElement.style.colorScheme=t;}catch(e){}})();`,
-      },
+      { children: THEME_BOOT_SCRIPT },
+      { children: SETTINGS_BOOT_SCRIPT },
     ],
   }),
   errorComponent: DefaultCatchBoundary,
@@ -60,13 +82,23 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const settingsButtonRef = useRef<HTMLButtonElement>(null)
 
   return (
     <ThemeProvider>
-      <AppShell onOpenSettings={() => setSettingsOpen(true)}>
-        <Outlet />
-      </AppShell>
-      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsProvider>
+        <AppShell
+          onOpenSettings={() => setSettingsOpen(true)}
+          settingsButtonRef={settingsButtonRef}
+        >
+          <Outlet />
+        </AppShell>
+        <SettingsModal
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          returnFocusRef={settingsButtonRef}
+        />
+      </SettingsProvider>
     </ThemeProvider>
   )
 }

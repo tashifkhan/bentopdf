@@ -1,7 +1,7 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { motion } from 'motion/react'
 import { useMemo, useState } from 'react'
-import { Search, ShieldCheck } from 'reicon-react'
+import { CloseCircle, Search, ShieldCheck } from 'reicon-react'
 import { FadeUp, Stagger } from '~/components/Motion'
 import { ToolIcon } from '~/components/icons'
 import { categories, searchTools, type Tool } from '~/data/tools'
@@ -79,13 +79,26 @@ function HomePage() {
             autoComplete="off"
             autoCorrect="off"
             spellCheck={false}
-            className="h-11 w-full rounded-full border border-input bg-secondary pl-11 pr-4 text-base font-medium text-foreground outline-none transition placeholder:text-ink-4 focus-visible:border-accent focus-visible:bg-card focus-visible:ring-2 focus-visible:ring-ring/30 sm:h-12 sm:text-sm"
+            className={cn(
+              'h-11 w-full rounded-full border border-input bg-secondary pl-11 text-base font-medium text-foreground outline-none transition placeholder:text-ink-4 focus-visible:border-accent focus-visible:bg-card focus-visible:ring-2 focus-visible:ring-ring/30 sm:h-12 sm:text-sm',
+              query ? 'pr-11' : 'pr-4',
+            )}
           />
+          {query ? (
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              aria-label="Clear search"
+              className="absolute right-2 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full text-ink-4 transition-colors hover:bg-card hover:text-foreground"
+            >
+              <CloseCircle size={16} color="currentColor" />
+            </button>
+          ) : null}
         </div>
 
         {!isSearching ? (
           <div
-            className="h-scroll mt-2.5 -mx-0.5 px-0.5 pb-0.5 sm:mt-3"
+            className="h-scroll h-scroll-fade mt-2.5 -mx-0.5 px-0.5 pb-0.5 sm:mt-3"
             role="tablist"
             aria-label="Tool categories"
           >
@@ -112,9 +125,25 @@ function HomePage() {
             ))}
           </div>
         ) : (
-          <p className="mt-2.5 px-1 text-xs font-semibold text-ink-4 sm:mt-3">
-            {results.length} match{results.length === 1 ? '' : 'es'}
-          </p>
+          <div className="mt-2.5 flex flex-wrap items-center gap-2 px-1 sm:mt-3">
+            <p className="text-xs font-semibold text-ink-4">
+              {results.length} match{results.length === 1 ? '' : 'es'}
+            </p>
+            {results.length === 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {['merge', 'compress', 'sign', 'convert'].map((hint) => (
+                  <button
+                    key={hint}
+                    type="button"
+                    className="chip is-active !h-7 !text-[0.7rem]"
+                    onClick={() => setQuery(hint)}
+                  >
+                    {hint}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
         )}
       </FadeUp>
 

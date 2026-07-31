@@ -41,7 +41,7 @@ export function ToolWorkspace({ tool }: { tool: Tool }) {
 
 function UnavailableTool({ tool, reason }: { tool: Tool; reason: string }) {
   return (
-    <div className="surface-card mx-auto w-full max-w-xl p-4 sm:p-7">
+    <div className="tool-workspace">
       <ToolHeader tool={tool} />
       <div className="mt-5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
         <div className="flex items-start gap-3">
@@ -156,7 +156,7 @@ function ReadyTool({
   const canRun = !needsFiles || files.length >= minFiles
 
   return (
-    <div className="surface-card mx-auto w-full max-w-xl p-4 sm:p-7">
+    <div className="tool-workspace">
       <ToolHeader tool={tool} />
 
       {processor.note ? (
@@ -313,7 +313,7 @@ function ReadyTool({
         </div>
       ) : null}
 
-      <div className="tool-actions">
+      <div className="tool-actions tool-actions-sticky">
         {files.length > 0 ? (
           <Button
             type="button"

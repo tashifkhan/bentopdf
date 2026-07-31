@@ -1,200 +1,235 @@
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { useEffect, useState } from 'react'
-import { CloseCircle } from 'reicon-react'
+import {
+  useEffect,
+  useId,
+  useRef,
+  type ReactNode,
+  type RefObject,
+} from 'react'
+import { ShieldCheck } from 'reicon-react'
+import { BottomSheet } from '~/components/beui/bottom-sheet'
 import { Button } from '~/components/beui/button'
 import { Switch } from '~/components/beui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/beui/tabs'
-import { cn } from '~/lib/utils'
+import { useSettings } from '~/features/settings/settings'
+import { useTheme } from '~/features/theme/theme'
+
+const FOCUSABLE =
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 export function SettingsModal({
   open,
   onClose,
+  returnFocusRef,
 }: {
   open: boolean
   onClose: () => void
+  /** Element to restore focus to on close (typically the settings gear). */
+  returnFocusRef?: RefObject<HTMLElement | null>
 }) {
-  const reduce = useReducedMotion()
-  const [fullWidth, setFullWidth] = useState(
-    () =>
-      typeof window !== 'undefined' &&
-      localStorage.getItem('fullWidthMode') !== 'false',
-  )
-  const [compact, setCompact] = useState(
-    () =>
-      typeof window !== 'undefined' &&
-      localStorage.getItem('compactMode') === 'true',
-  )
+  const { fullWidth, compact, setFullWidth, setCompact } = useSettings()
+  const { theme, setTheme } = useTheme()
+  const panelRef = useRef<HTMLDivElement>(null)
+  const titleId = useId()
+  const descId = useId()
 
-  // Restore compact density on first mount (settings may never open)
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    document.body.classList.toggle(
-      'density-compact',
-      localStorage.getItem('compactMode') === 'true',
-    )
-  }, [])
-
+  // Focus first control when opened; restore focus when closed.
   useEffect(() => {
     if (!open) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', onKey)
-    document.body.style.overflow = 'hidden'
-    // Prevent iOS background scroll while sheet is open
-    document.body.style.touchAction = 'none'
+
+    const previouslyFocused =
+      (document.activeElement as HTMLElement | null) ?? null
+
+    const frame = requestAnimationFrame(() => {
+      const root = panelRef.current
+      if (!root) return
+      const focusables = root.querySelectorAll<HTMLElement>(FOCUSABLE)
+      const first = focusables[0]
+      first?.focus()
+    })
+
     return () => {
-      document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = ''
-      document.body.style.touchAction = ''
+      cancelAnimationFrame(frame)
+      const target = returnFocusRef?.current ?? previouslyFocused
+      if (target && typeof target.focus === 'function') {
+        // Defer so BottomSheet unmount doesn't steal focus back.
+        requestAnimationFrame(() => target.focus())
+      }
     }
+  }, [open, returnFocusRef])
+
+  // Focus trap while open (BottomSheet does not include one).
+  useEffect(() => {
+    if (!open) return
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        onClose()
+        return
+      }
+      if (e.key !== 'Tab') return
+
+      const root = panelRef.current
+      if (!root) return
+      const focusables = [
+        ...root.querySelectorAll<HTMLElement>(FOCUSABLE),
+      ].filter((el) => !el.hasAttribute('disabled') && el.tabIndex !== -1)
+      if (focusables.length === 0) return
+
+      const first = focusables[0]!
+      const last = focusables[focusables.length - 1]!
+      const active = document.activeElement as HTMLElement | null
+
+      if (e.shiftKey) {
+        if (active === first || !root.contains(active)) {
+          e.preventDefault()
+          last.focus()
+        }
+      } else if (active === last || !root.contains(active)) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
   }, [open, onClose])
 
   return (
-    <AnimatePresence>
-      {open ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
-          <motion.button
-            type="button"
-            aria-label="Close settings"
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={onClose}
-          />
+    <BottomSheet
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose()
+      }}
+      title="Settings"
+      description="Display and layout preferences"
+      snapPoints={['auto', 0.92]}
+      defaultSnap={0}
+      className="sm:max-w-lg"
+    >
+      <div
+        ref={panelRef}
+        role="document"
+        aria-labelledby={titleId}
+        aria-describedby={descId}
+        className="pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]"
+      >
+        <span id={titleId} className="sr-only">
+          Settings
+        </span>
+        <span id={descId} className="sr-only">
+          Display and layout preferences for BentoPDF
+        </span>
 
-          <motion.div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="settings-title"
-            className={cn(
-              'relative z-10 flex max-h-[min(92dvh,100%)] w-full max-w-xl flex-col overflow-hidden border border-border bg-card text-card-foreground shadow-panel',
-              'rounded-t-2xl sm:rounded-2xl',
-              'pb-[env(safe-area-inset-bottom,0px)] sm:pb-0',
-            )}
-            initial={
-              reduce
-                ? { opacity: 0 }
-                : { opacity: 0, y: 28, scale: 0.97, filter: 'blur(8px)' }
-            }
-            animate={
-              reduce
-                ? { opacity: 1 }
-                : { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }
-            }
-            exit={
-              reduce
-                ? { opacity: 0 }
-                : { opacity: 0, y: 16, scale: 0.98, filter: 'blur(4px)' }
-            }
-            transition={
-              reduce
-                ? { duration: 0.12 }
-                : { type: 'spring', stiffness: 320, damping: 28 }
-            }
+        <Tabs defaultValue="preferences" variant="segment">
+          <TabsList className="mb-4 w-full bg-secondary">
+            <TabsTrigger value="preferences" className="flex-1">
+              Preferences
+            </TabsTrigger>
+            <TabsTrigger value="about" className="flex-1">
+              About
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="preferences" className="space-y-3">
+            <SettingRow
+              title="Full width mode"
+              description="Stretch tool layouts across the screen."
+            >
+              <Switch
+                checked={fullWidth}
+                onCheckedChange={setFullWidth}
+                ariaLabel="Full width mode"
+              />
+            </SettingRow>
+
+            <SettingRow
+              title="Compact mode"
+              description="Denser tool list on the home page."
+            >
+              <Switch
+                checked={compact}
+                onCheckedChange={setCompact}
+                ariaLabel="Compact mode"
+              />
+            </SettingRow>
+
+            <SettingRow
+              title="Dark mode"
+              description="Match your eyes, not a server."
+            >
+              <Switch
+                checked={theme === 'dark'}
+                onCheckedChange={(v) => setTheme(v ? 'dark' : 'light')}
+                ariaLabel="Dark mode"
+              />
+            </SettingRow>
+          </TabsContent>
+
+          <TabsContent
+            value="about"
+            className="space-y-3 text-sm text-muted-foreground"
           >
-            <header className="flex items-center justify-between border-b border-border px-4 py-3">
-              <div>
-                <h2
-                  id="settings-title"
-                  className="text-base font-bold tracking-tight"
-                >
-                  Settings
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Display preferences
-                </p>
+            <div className="rounded-2xl border border-border bg-secondary p-4">
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl bg-success/15 text-success">
+                  <ShieldCheck size={18} color="currentColor" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    Private by design
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed">
+                    Every tool runs in your browser. Files are not uploaded to a
+                    server — processing stays on this device.
+                  </p>
+                </div>
               </div>
+            </div>
+
+            <p>
+              TanStack Start rewrite of the BentoPDF toolkit for private,
+              browser-side PDF work.
+            </p>
+            <ul className="space-y-1.5 text-xs text-ink-4">
+              <li>· Offline-capable PWA after the first visit (production build)</li>
+              <li>· Theme transitions use the View Transition API</li>
+              <li>· Controls from beUI · icons from Reicon</li>
+            </ul>
+
+            <div className="flex flex-wrap gap-2 pt-1">
               <Button
                 type="button"
-                variant="ghost"
-                size="icon"
+                variant="outline"
+                size="sm"
                 onClick={onClose}
               >
-                <CloseCircle size={18} color="currentColor" />
+                Done
               </Button>
-            </header>
-
-            <div className="overflow-y-auto p-4">
-              <Tabs defaultValue="preferences" variant="segment">
-                <TabsList className="mb-4 w-full bg-secondary">
-                  <TabsTrigger value="preferences" className="flex-1">
-                    Preferences
-                  </TabsTrigger>
-                  <TabsTrigger value="about" className="flex-1">
-                    About
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="preferences" className="space-y-3">
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.05 }}
-                    className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-secondary p-4"
-                  >
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">
-                        Full width mode
-                      </p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        Stretch tool layouts across the screen.
-                      </p>
-                    </div>
-                    <Switch
-                      checked={fullWidth}
-                      onCheckedChange={(v) => {
-                        setFullWidth(v)
-                        localStorage.setItem('fullWidthMode', String(v))
-                      }}
-                    />
-                  </motion.div>
-
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-secondary p-4"
-                  >
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">
-                        Compact mode
-                      </p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        Denser tool list on the home page.
-                      </p>
-                    </div>
-                    <Switch
-                      checked={compact}
-                      onCheckedChange={(v) => {
-                        setCompact(v)
-                        localStorage.setItem('compactMode', String(v))
-                        document.body.classList.toggle('density-compact', v)
-                      }}
-                    />
-                  </motion.div>
-                </TabsContent>
-
-                <TabsContent
-                  value="about"
-                  className="space-y-2 text-sm text-muted-foreground"
-                >
-                  <p>
-                    TanStack Start rewrite of the BentoPDF toolkit for private,
-                    browser-side PDF work.
-                  </p>
-                  <p className="text-xs text-ink-4">
-                    Theme transitions use the View Transition API · page routes
-                    animate with Motion · controls from beUI · icons from Reicon.
-                  </p>
-                </TabsContent>
-              </Tabs>
             </div>
-          </motion.div>
-        </div>
-      ) : null}
-    </AnimatePresence>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </BottomSheet>
+  )
+}
+
+function SettingRow({
+  title,
+  description,
+  children,
+}: {
+  title: string
+  description: string
+  children: ReactNode
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-secondary p-4">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-foreground">{title}</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+      </div>
+      <div className="shrink-0">{children}</div>
+    </div>
   )
 }

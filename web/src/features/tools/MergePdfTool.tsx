@@ -110,7 +110,7 @@ export function MergePdfTool() {
   }
 
   return (
-    <div className="surface-card mx-auto w-full max-w-xl p-4 sm:p-7">
+    <div className="tool-workspace">
       <header className="mb-4 sm:mb-5">
         <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
           Merge PDF
@@ -245,20 +245,23 @@ export function MergePdfTool() {
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-          <StatefulButton
-            type="button"
-            className={cn('min-h-11 w-full sm:min-h-0')}
-            state={status}
-            loadingText="Merging…"
-            successText="Downloaded"
-            errorText="Failed"
-            onClick={() => void merge()}
-          >
-            <span className="inline-flex items-center gap-2">
-              <Layers size={16} color="currentColor" />
-              Merge PDFs
-            </span>
-          </StatefulButton>
+          <div className="tool-actions tool-actions-sticky">
+            <StatefulButton
+              type="button"
+              className={cn('min-h-11 w-full sm:min-h-0')}
+              state={status}
+              loadingText="Merging…"
+              successText="Downloaded"
+              errorText="Failed"
+              onClick={() => void merge()}
+              data-primary-action
+            >
+              <span className="inline-flex items-center gap-2">
+                <Layers size={16} color="currentColor" />
+                Merge PDFs
+              </span>
+            </StatefulButton>
+          </div>
         </div>
       ) : null}
     </div>

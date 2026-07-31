@@ -224,18 +224,34 @@ html[data-theme-switching='1'] * {
     outline-offset: 2px;
   }
 
-  /* Compact density (settings toggle) */
-  body.density-compact .tool-card {
+  /* Compact density — applied on <html> so FOUC head script works before body */
+  html.density-compact .tool-card,
+  html[data-density='compact'] .tool-card {
     padding: 0.7rem 0.85rem;
     gap: 0.7rem;
   }
 
-  body.density-compact .tool-grid {
+  html.density-compact .tool-grid,
+  html[data-density='compact'] .tool-grid {
     gap: 0.45rem;
   }
 
-  body.density-compact .tool-card p {
+  html.density-compact .tool-card p,
+  html[data-density='compact'] .tool-card p {
     display: none;
+  }
+
+  /* Narrow layout (full width mode off) */
+  html[data-layout='narrow'] .app-main:not(.app-main--workspace) {
+    max-width: 42rem;
+  }
+
+  html[data-layout='narrow'] .app-chrome-inner {
+    max-width: 42rem;
+  }
+
+  html[data-layout='narrow'] .tool-workspace {
+    max-width: 100%;
   }
 }
 
@@ -247,9 +263,88 @@ html[data-theme-switching='1'] * {
     padding-right: env(safe-area-inset-right, 0px);
   }
 
+  /* Shared max-width rail for header/footer (respects full-width setting) */
+  .app-chrome-inner {
+    @apply mx-auto w-full max-w-[1120px] px-3 sm:px-4;
+  }
+
   .app-main {
     @apply mx-auto w-full max-w-[1120px] flex-1 px-3 pb-10 sm:px-4 sm:pb-12;
     padding-bottom: max(2.5rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Full-viewport workspaces: no shell padding, one chrome owner */
+  .app-shell--workspace {
+    @apply min-h-dvh;
+  }
+
+  .app-main--workspace {
+    @apply m-0 max-w-none flex-1 p-0;
+    padding-bottom: 0;
+  }
+
+  .app-shell--workspace .workspace-shell {
+    min-height: 100dvh;
+    min-height: 100svh;
+    margin-top: 0;
+    /* Safe areas still apply via shell horizontal padding */
+    width: 100%;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .tool-workspace {
+    @apply mx-auto w-full max-w-xl rounded-lg border border-border bg-card p-4 text-card-foreground shadow-card sm:p-7;
+  }
+
+  /* Full width: roomier tool forms inside the 1120px shell */
+  html[data-layout='wide'] .tool-workspace {
+    max-width: 48rem;
+  }
+
+  html[data-layout='narrow'] .tool-workspace {
+    max-width: 100%;
+  }
+
+  /* Sticky primary actions on long tool forms (mobile) */
+  .tool-actions-sticky {
+    @apply sticky bottom-0 z-10 -mx-4 mt-5 border-t border-border bg-card/95 px-4 py-3 backdrop-blur-md sm:static sm:mx-0 sm:mt-6 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  @media (min-width: 640px) {
+    .tool-actions-sticky {
+      padding-bottom: 0;
+    }
+  }
+
+  /* Fade hint on horizontal chip scroller */
+  .h-scroll-fade {
+    mask-image: linear-gradient(
+      to right,
+      #000 0%,
+      #000 calc(100% - 1.75rem),
+      transparent 100%
+    );
+  }
+
+  @media (min-width: 640px) {
+    .h-scroll-fade {
+      mask-image: none;
+    }
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
   }
 
   .surface-card {
@@ -333,18 +428,15 @@ html[data-theme-switching='1'] * {
   /* Full-bleed workspace shell (multi-tool, editor, form creator, workflow) */
   .workspace-shell {
     @apply flex flex-col bg-background;
-    /* Break out of .app-main max-width + padding on all viewports */
-    width: 100vw;
-    max-width: 100vw;
-    margin-left: calc(50% - 50vw);
-    margin-right: calc(50% - 50vw);
-    min-height: calc(100dvh - 3.5rem);
-    /* Pull up under sticky app header for true full-viewport workspaces */
-    margin-top: -0.25rem;
+    width: 100%;
+    max-width: 100%;
+    min-height: 100dvh;
+    min-height: 100svh;
   }
 
   .workspace-header {
     @apply sticky top-0 z-30 flex min-h-12 items-center justify-between gap-2 border-b border-border bg-card/95 px-3 py-2 backdrop-blur-md sm:px-4;
+    padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
   }
 
   .workspace-toolbar {

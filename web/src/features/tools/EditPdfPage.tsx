@@ -160,16 +160,75 @@ export function EditPdfPage() {
           },
         });
 
-        // Custom elements default to display:inline. Force the host to fill
-        // the flex parent so the virtualised page list gets a real viewport
-        // (h-full children inside the shadow tree need a definite host height).
+        // EmbedPDF's shadow root content is `height: 100%`, but percentage
+        // height does not resolve against this custom-element host (measured:
+        // host 611px, shadow content still content-sized ~69px toolbar-only,
+        // so the virtualised page list never painted). Pin both the host and
+        // its non-<style> shadow children to the container's pixel box.
         if (viewer instanceof HTMLElement) {
-          viewer.style.display = 'flex';
-          viewer.style.flex = '1 1 0%';
-          viewer.style.flexDirection = 'column';
-          viewer.style.minHeight = '0';
-          viewer.style.height = '100%';
-          viewer.style.width = '100%';
+          type SizedHost = HTMLElement & {
+            __sizeObserver?: ResizeObserver;
+            __shadowObserver?: MutationObserver;
+          };
+          const host = viewer as SizedHost;
+          let syncing = false;
+
+          const syncHostSize = () => {
+            if (syncing) return;
+            const w = container.clientWidth;
+            const h = container.clientHeight;
+            if (w <= 0 || h <= 0) return;
+
+            syncing = true;
+            try {
+              host.style.display = 'block';
+              host.style.boxSizing = 'border-box';
+              host.style.width = `${w}px`;
+              host.style.height = `${h}px`;
+              host.style.maxWidth = '100%';
+              host.style.maxHeight = '100%';
+
+              const root = host.shadowRoot;
+              if (!root) return;
+              for (const el of root.children) {
+                if (!(el instanceof HTMLElement) || el.tagName === 'STYLE') {
+                  continue;
+                }
+                // Only rewrite when EmbedPDF has reset back to % / empty —
+                // avoids fighting every frame after we pin px.
+                const want = `${h}px`;
+                if (el.style.height !== want) {
+                  el.style.setProperty('box-sizing', 'border-box', 'important');
+                  el.style.setProperty('width', `${w}px`, 'important');
+                  el.style.setProperty('height', want, 'important');
+                  el.style.setProperty('min-height', want, 'important');
+                }
+              }
+            } finally {
+              syncing = false;
+            }
+          };
+
+          syncHostSize();
+
+          if (typeof ResizeObserver !== 'undefined') {
+            const ro = new ResizeObserver(syncHostSize);
+            ro.observe(container);
+            host.__sizeObserver = ro;
+          }
+          // Content mounts asynchronously (engine init → Preact tree). Preact
+          // also rewrites the content root's style attribute to height:100%,
+          // which we must re-pin to px.
+          if (host.shadowRoot && typeof MutationObserver !== 'undefined') {
+            const mo = new MutationObserver(syncHostSize);
+            mo.observe(host.shadowRoot, {
+              childList: true,
+              subtree: true,
+              attributes: true,
+              attributeFilter: ['style'],
+            });
+            host.__shadowObserver = mo;
+          }
         }
 
         viewerRef.current = viewer;
@@ -190,9 +249,15 @@ export function EditPdfPage() {
     return () => {
       signal.cancelled = true;
       try {
-        // Prefer removing the host — disconnectedCallback unmounts the
-        // shadow React tree and tears down the engine.
         if (viewer instanceof HTMLElement) {
+          const host = viewer as HTMLElement & {
+            __sizeObserver?: ResizeObserver;
+            __shadowObserver?: MutationObserver;
+          };
+          host.__sizeObserver?.disconnect();
+          host.__shadowObserver?.disconnect();
+          // Prefer removing the host — disconnectedCallback unmounts the
+          // shadow React tree and tears down the engine.
           viewer.remove();
         } else {
           viewer?.destroy?.();
@@ -296,10 +361,11 @@ export function EditPdfPage() {
         style={
           file
             ? {
-                // Definite height so flex children (and EmbedPDF's h-full tree)
-                // get a real viewport even before the shell's min-height settles.
-                height: 'min(70vh, calc(100dvh - 8rem))',
-                minHeight: 'min(70vh, calc(100dvh - 8rem))',
+                // Full remaining viewport under the workspace header (shell chrome
+                // is hidden on this route so we can use nearly 100dvh).
+                height: 'calc(100dvh - 3.25rem - env(safe-area-inset-top, 0px))',
+                minHeight:
+                  'calc(100dvh - 3.25rem - env(safe-area-inset-top, 0px))',
               }
             : undefined
         }
