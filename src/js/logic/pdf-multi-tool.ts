@@ -15,7 +15,7 @@ import { repairPdfFile } from './repair-pdf.js';
 import { partitionIncomingFiles } from '../utils/multi-tool-file-input.js';
 import { convertImagesToPdfFile } from '../utils/images-to-pdf-lib.js';
 
-import { t } from '../i18n/i18n';
+import { t, trText, onPageReady } from '../i18n/i18n';
 import { loadPdfDocument } from '../utils/load-pdf-document.js';
 import '../utils/setup-pdf-worker.js';
 
@@ -85,8 +85,8 @@ function showModal(
 
   if (!modal || !modalTitle || !modalMessage || !modalIcon) return;
 
-  modalTitle.textContent = title;
-  modalMessage.textContent = message;
+  modalTitle.textContent = trText(title);
+  modalMessage.textContent = trText(message);
 
   const iconMap = {
     info: 'info',
@@ -620,7 +620,9 @@ async function loadPdfs(files: File[]) {
           console.log(`Repairing ${file.name}...`);
           const loadingText = document.getElementById('loading-text');
           if (loadingText)
-            loadingText.textContent = `Repairing ${file.name}...`;
+            loadingText.textContent = trText('Repairing {{name}}...', {
+              name: file.name,
+            });
 
           const repairedData = await repairPdfFile(file);
           if (repairedData) {
@@ -786,7 +788,10 @@ function createPageElement(
   // Page info
   const info = document.createElement('div');
   info.className = 'text-xs text-gray-400 text-center mb-2';
-  info.textContent = `${t('common.page')} ${index + 1}`;
+  info.textContent = trText('{{page}} {{n}}', {
+    page: t('common.page'),
+    n: index + 1,
+  });
 
   // Actions toolbar
   const actions = document.createElement('div');
@@ -1132,7 +1137,7 @@ async function handleInsertPdf(e: Event) {
     console.error('Failed to insert PDF:', e);
     showModal(
       'Error',
-      'Failed to insert PDF. The file may be corrupted.',
+      trText('Failed to insert PDF. The file may be corrupted.'),
       'error'
     );
   }
@@ -1191,7 +1196,11 @@ function addBlankPage() {
 
 function bulkRotate(delta: number) {
   if (selectedPages.size === 0) {
-    showModal('No Selection', 'Please select pages to rotate.', 'info');
+    showModal(
+      trText('No Selection'),
+      trText('Please select pages to rotate.'),
+      'info'
+    );
     return;
   }
 
@@ -1223,7 +1232,11 @@ function bulkRotate(delta: number) {
 
 function bulkDelete() {
   if (selectedPages.size === 0) {
-    showModal('No Selection', 'Please select pages to delete.', 'info');
+    showModal(
+      trText('No Selection'),
+      trText('Please select pages to delete.'),
+      'info'
+    );
     return;
   }
   const indices = Array.from(selectedPages).sort((a, b) => b - a);
@@ -1240,7 +1253,11 @@ function bulkDelete() {
 
 function bulkDuplicate() {
   if (selectedPages.size === 0) {
-    showModal('No Selection', 'Please select pages to duplicate.', 'info');
+    showModal(
+      trText('No Selection'),
+      trText('Please select pages to duplicate.'),
+      'info'
+    );
     return;
   }
   const indices = Array.from(selectedPages).sort((a, b) => b - a);
@@ -1254,8 +1271,8 @@ function bulkDuplicate() {
 function bulkSplit() {
   if (selectedPages.size === 0) {
     showModal(
-      'No Selection',
-      'Please select pages to mark for splitting.',
+      trText('No Selection'),
+      trText('Please select pages to mark for splitting.'),
       'info'
     );
     return;
@@ -1273,7 +1290,7 @@ function bulkSplit() {
 
 async function downloadAll() {
   if (allPages.length === 0) {
-    showModal('No Pages', 'Please upload PDFs first.', 'info');
+    showModal(trText('No Pages'), trText('Please upload PDFs first.'), 'info');
     return;
   }
 
@@ -1384,12 +1401,14 @@ async function downloadSplitPdfs() {
 
     showModal(
       'Success',
-      `Downloaded ${segments.length} PDF files in a ZIP archive.`,
+      trText('Downloaded {{length}} PDF files in a ZIP archive.', {
+        length: segments.length,
+      }),
       'success'
     );
   } catch (e) {
     console.error('Failed to create split PDFs:', e);
-    showModal('Error', 'Failed to create split PDFs.', 'error');
+    showModal('Error', trText('Failed to create split PDFs.'), 'error');
   } finally {
     hideLoading(); // Ensure loader is hidden if we used it (though showModal replaces it)
   }
@@ -1464,10 +1483,10 @@ async function downloadPagesAsPdf(indices: number[], filename: string) {
     });
 
     downloadFile(blob, filename);
-    showModal('Success', 'PDF downloaded successfully.', 'success');
+    showModal('Success', trText('PDF downloaded successfully.'), 'success');
   } catch (e) {
     console.error('Failed to create PDF:', e);
-    showModal('Error', 'Failed to create PDF.', 'error');
+    showModal('Error', trText('Failed to create PDF.'), 'error');
   }
 }
 
@@ -1506,7 +1525,7 @@ function updatePageDisplay() {
       const info = card.querySelector(
         '.text-xs.text-gray-400.text-center.mb-2'
       );
-      if (info) info.textContent = `Page ${index + 1} `;
+      if (info) info.textContent = trText('Page {{n}} ', { n: index + 1 });
 
       // Update selection state
       const selectBtn = card.querySelector(
@@ -1614,7 +1633,7 @@ function updatePageNumbers() {
     // Update visible page number text
     const info = card.querySelector('.text-xs.text-gray-400.text-center.mb-2');
     if (info) {
-      info.textContent = `Page ${index + 1} `;
+      info.textContent = trText('Page {{n}} ', { n: index + 1 });
     }
 
     // Re-attach event listeners for buttons

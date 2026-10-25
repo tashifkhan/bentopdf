@@ -29,7 +29,7 @@ import mark from 'markdown-it-mark';
 import taskLists from 'markdown-it-task-lists';
 import anchor from 'markdown-it-anchor';
 import tocDoneRight from 'markdown-it-toc-done-right';
-import { applyTranslations } from '../i18n/i18n';
+import { applyTranslations, trHtml, trText } from '../i18n/i18n';
 import type {
   WindowWithLucide,
   WindowWithI18next,
@@ -74,6 +74,9 @@ export interface MarkdownEditorOptions {
 }
 
 export type { MarkdownItOptions } from '@/types';
+
+const MIN_TABLE_ZOOM = 0.6;
+const TABLE_BREAK_CLASS = 'md-table-break-anywhere';
 
 const DEFAULT_MARKDOWN = `# Welcome to BentoPDF Markdown Editor
 
@@ -342,14 +345,14 @@ export class MarkdownEditor {
               <input type="file" accept=".md,.markdown,.txt" id="mdFileInput" style="display: none;" />
               <button class="md-editor-btn md-editor-btn-secondary" id="mdUpload">
                 <i data-lucide="upload"></i>
-                <span data-i18n="tools:markdownToPdf.btnUpload">Upload</span>
+                <span data-i18n="tools:markdownToPdf.btnUpload">Select</span>
               </button>
               <div class="theme-toggle">
                 <i data-lucide="moon" width="16" height="16"></i>
                 <div class="theme-toggle-slider active" id="themeToggle"></div>
                 <i data-lucide="sun" width="16" height="16"></i>
               </div>
-              <button class="md-editor-btn md-editor-btn-secondary" id="mdSyncScroll" title="Toggle sync scroll">
+              <button class="md-editor-btn md-editor-btn-secondary" id="mdSyncScroll" title="${trHtml('Toggle sync scroll')}">
                 <i data-lucide="git-compare"></i>
                 <span data-i18n="tools:markdownToPdf.btnSyncScroll">Sync Scroll</span>
               </button>
@@ -438,6 +441,13 @@ export class MarkdownEditor {
     this.editor?.addEventListener('input', () => {
       this.updatePreview();
     });
+
+    window
+      .matchMedia('print')
+      .addEventListener('change', (event) =>
+        this.fitTablesToPage(event.matches)
+      );
+    window.addEventListener('afterprint', () => this.fitTablesToPage(false));
 
     // Sync scroll
     const syncScrollBtn = document.getElementById('mdSyncScroll');
@@ -674,7 +684,7 @@ export class MarkdownEditor {
         .use(emoji) // Emoji: :smile: -> 😄
         .use(ins) // Inserted text: ++text++ -> <ins>text</ins>
         .use(mark) // Marked text: ==text== -> <mark>text</mark>
-        .use(taskLists, { enabled: true, label: true, labelAfter: true }) // Task lists: - [x] done
+        .use(taskLists, { enabled: true, label: false }) // Task lists: - [x] done
         .use(anchor, { permalink: false }) // Header anchors
         .use(tocDoneRight); // Table of contents: ${toc}
     }
@@ -728,7 +738,9 @@ export class MarkdownEditor {
           console.error('Mermaid rendering error:', error);
           const errorDiv = document.createElement('div');
           errorDiv.className = 'mermaid-error';
-          errorDiv.textContent = `Mermaid Error: ${(error as Error).message}`;
+          errorDiv.textContent = trText('Mermaid Error: {{error}}', {
+            error: (error as Error).message,
+          });
           pre.replaceWith(errorDiv);
         }
       }
@@ -750,6 +762,26 @@ export class MarkdownEditor {
     return DOMPurify.sanitize(this.md.render(this.getContent()), {
       ADD_ATTR: ['target'],
     });
+  }
+
+  private fitTablesToPage(printing: boolean): void {
+    if (!this.preview) return;
+    const available = this.preview.clientWidth;
+    for (const table of this.preview.querySelectorAll('table')) {
+      table.style.zoom = '';
+      table.classList.remove(TABLE_BREAK_CLASS);
+      if (!printing || table.scrollWidth <= available) continue;
+      if (available / table.scrollWidth < MIN_TABLE_ZOOM) {
+        table.classList.add(TABLE_BREAK_CLASS);
+      }
+      let zoom = 1;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const width = table.getBoundingClientRect().width;
+        if (width <= available) break;
+        zoom = Math.floor(((zoom * available) / width) * 100) / 100;
+        table.style.zoom = String(zoom);
+      }
+    }
   }
 
   private exportPdf(): void {
