@@ -29,9 +29,6 @@ export function BrandMark({ compact = false }: { compact?: boolean }) {
           <strong className="truncate text-[0.92rem] font-bold tracking-tight text-foreground">
             BentoPDF
           </strong>
-          <small className="hidden text-[0.66rem] font-semibold uppercase tracking-[0.04em] text-ink-4 sm:inline">
-            Private document tools
-          </small>
         </span>
       )}
     </Link>
@@ -63,22 +60,6 @@ export function HeaderControls() {
   );
 }
 
-export function PrivacyBadge() {
-  return (
-    <span
-      className="inline-flex items-center gap-1.5 rounded-full bg-success-soft px-2 py-1 text-[0.68rem] font-bold text-success md:px-2.5 md:text-[0.7rem]"
-      title="Files stay on this device"
-    >
-      <span className="relative flex size-1.5">
-        <span className="absolute inline-flex size-full rounded-full bg-success opacity-40 motion-safe:animate-ping" />
-        <span className="relative inline-flex size-1.5 rounded-full bg-success" />
-      </span>
-      <span className="md:hidden">Local</span>
-      <span className="hidden md:inline">On this device</span>
-    </span>
-  );
-}
-
 /**
  * Header for full-viewport tools (multi-tool, editor, form creator, workflow).
  * Same height on every workspace so EditPdfPage's viewport math holds.
@@ -87,38 +68,43 @@ export function WorkspaceHeader({
   title,
   subtitle,
   actions,
+  bleed = false,
 }: {
   title: string;
   subtitle?: ReactNode;
   actions?: ReactNode;
+  /** Span the full viewport instead of the layout rail (for full-bleed bodies). */
+  bleed?: boolean;
 }) {
   return (
-    <header className="workspace-header">
-      <div className="flex min-w-0 items-center gap-2.5">
-        <BrandMark compact />
-        <span aria-hidden className="h-5 w-px shrink-0 bg-border" />
-        <div className="flex min-w-0 flex-col leading-tight sm:flex-row sm:items-baseline sm:gap-2">
-          <h1 className="truncate text-sm font-bold text-foreground">
-            {title}
-          </h1>
-          {subtitle ? (
-            <span className="truncate text-xs text-muted-foreground">
-              {subtitle}
-            </span>
-          ) : null}
+    <header className="workspace-header" data-bleed={bleed ? '' : undefined}>
+      <div className="workspace-header-inner">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <BrandMark compact />
+          <span aria-hidden className="h-5 w-px shrink-0 bg-border" />
+          <div className="flex min-w-0 flex-col leading-tight sm:flex-row sm:items-baseline sm:gap-2">
+            <h1 className="truncate text-sm font-bold text-foreground">
+              {title}
+            </h1>
+            {subtitle ? (
+              <span className="truncate text-xs text-muted-foreground">
+                {subtitle}
+              </span>
+            ) : null}
+          </div>
         </div>
-      </div>
-      <div className="flex shrink-0 items-center gap-1.5">
-        {actions}
-        <HeaderControls />
-        <Link
-          to="/"
-          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[0.7rem] border border-border bg-secondary px-2.5 text-sm font-semibold text-foreground transition-colors hover:border-brand/40 sm:px-3"
-          aria-label="Close and return to all tools"
-        >
-          <CloseCircle size={14} color="currentColor" />
-          <span className="hidden sm:inline">Close</span>
-        </Link>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {actions}
+          <HeaderControls />
+          <Link
+            to="/"
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[0.7rem] border border-border bg-secondary px-2.5 text-sm font-semibold text-foreground transition-colors hover:border-brand/40 sm:px-3"
+            aria-label="Close and return to all tools"
+          >
+            <CloseCircle size={14} color="currentColor" />
+            <span className="hidden sm:inline">Close</span>
+          </Link>
+        </div>
       </div>
     </header>
   );

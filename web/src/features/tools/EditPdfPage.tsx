@@ -426,6 +426,7 @@ export function EditPdfPage() {
   return (
     <div className="workspace-shell">
       <WorkspaceHeader
+        bleed
         title="PDF Editor"
         subtitle={file ? file.name : 'Annotate, highlight, redact and comment'}
       />
