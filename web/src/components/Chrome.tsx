@@ -87,38 +87,43 @@ export function WorkspaceHeader({
   title,
   subtitle,
   actions,
+  bleed = false,
 }: {
   title: string;
   subtitle?: ReactNode;
   actions?: ReactNode;
+  /** Span the full viewport instead of the layout rail (for full-bleed bodies). */
+  bleed?: boolean;
 }) {
   return (
-    <header className="workspace-header">
-      <div className="flex min-w-0 items-center gap-2.5">
-        <BrandMark compact />
-        <span aria-hidden className="h-5 w-px shrink-0 bg-border" />
-        <div className="flex min-w-0 flex-col leading-tight sm:flex-row sm:items-baseline sm:gap-2">
-          <h1 className="truncate text-sm font-bold text-foreground">
-            {title}
-          </h1>
-          {subtitle ? (
-            <span className="truncate text-xs text-muted-foreground">
-              {subtitle}
-            </span>
-          ) : null}
+    <header className="workspace-header" data-bleed={bleed ? '' : undefined}>
+      <div className="workspace-header-inner">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <BrandMark compact />
+          <span aria-hidden className="h-5 w-px shrink-0 bg-border" />
+          <div className="flex min-w-0 flex-col leading-tight sm:flex-row sm:items-baseline sm:gap-2">
+            <h1 className="truncate text-sm font-bold text-foreground">
+              {title}
+            </h1>
+            {subtitle ? (
+              <span className="truncate text-xs text-muted-foreground">
+                {subtitle}
+              </span>
+            ) : null}
+          </div>
         </div>
-      </div>
-      <div className="flex shrink-0 items-center gap-1.5">
-        {actions}
-        <HeaderControls />
-        <Link
-          to="/"
-          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[0.7rem] border border-border bg-secondary px-2.5 text-sm font-semibold text-foreground transition-colors hover:border-brand/40 sm:px-3"
-          aria-label="Close and return to all tools"
-        >
-          <CloseCircle size={14} color="currentColor" />
-          <span className="hidden sm:inline">Close</span>
-        </Link>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {actions}
+          <HeaderControls />
+          <Link
+            to="/"
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[0.7rem] border border-border bg-secondary px-2.5 text-sm font-semibold text-foreground transition-colors hover:border-brand/40 sm:px-3"
+            aria-label="Close and return to all tools"
+          >
+            <CloseCircle size={14} color="currentColor" />
+            <span className="hidden sm:inline">Close</span>
+          </Link>
+        </div>
       </div>
     </header>
   );

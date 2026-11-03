@@ -610,21 +610,39 @@ html[data-theme-switching='1'] * {
     min-height: 100svh;
   }
 
+  /*
+    Workspace bars: the background spans the viewport, the contents sit on the
+    same rail as the page body (like the shell header). Pages whose body is
+    full-bleed (the PDF editor) add data-bleed to drop the cap.
+  */
   .workspace-header {
-    @apply sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-border bg-card/90 py-2 backdrop-blur-md;
+    @apply sticky top-0 z-30 flex border-b border-border bg-card/90 py-2 backdrop-blur-md;
     min-height: 3.25rem;
-    padding-inline: var(--app-gutter);
     padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
   }
 
-  .workspace-toolbar {
-    @apply flex items-center gap-2 border-b border-border bg-card py-2;
+  .workspace-header-inner {
+    @apply flex items-center justify-between gap-2;
+    width: 100%;
+    max-width: calc(var(--app-max) + 2 * var(--app-gutter));
+    margin-inline: auto;
     padding-inline: var(--app-gutter);
+  }
+
+  .workspace-header[data-bleed] .workspace-header-inner {
+    max-width: none;
+  }
+
+  .workspace-toolbar {
+    @apply flex items-center border-b border-border bg-card py-2;
   }
 
   /* Fade the right edge so a clipped toolbar reads as scrollable */
   .workspace-toolbar-scroll {
-    @apply flex w-full gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5 pr-6;
+    @apply flex w-full gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5;
+    max-width: calc(var(--app-max) + 2 * var(--app-gutter));
+    margin-inline: auto;
+    padding-inline: var(--app-gutter) calc(var(--app-gutter) + 1.5rem);
     mask-image: linear-gradient(
       to right,
       #000 0%,
@@ -668,5 +686,18 @@ html[data-theme-switching='1'] * {
 
   html[data-layout='wide'] .page-grid {
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr));
+  }
+}
+
+@layer components {
+  /* Desktop: wrap toolbar groups instead of hiding them behind a scroll */
+  @media (min-width: 1024px) {
+    .workspace-toolbar-scroll {
+      flex-wrap: wrap;
+      row-gap: 0.5rem;
+      overflow: visible;
+      mask-image: none;
+      padding-inline: var(--app-gutter);
+    }
   }
 }
