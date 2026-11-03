@@ -29,9 +29,6 @@ export function BrandMark({ compact = false }: { compact?: boolean }) {
           <strong className="truncate text-[0.92rem] font-bold tracking-tight text-foreground">
             BentoPDF
           </strong>
-          <small className="hidden text-[0.66rem] font-semibold uppercase tracking-[0.04em] text-ink-4 sm:inline">
-            Private document tools
-          </small>
         </span>
       )}
     </Link>
@@ -60,22 +57,6 @@ export function HeaderControls() {
         iconClassName="size-4"
       />
     </>
-  );
-}
-
-export function PrivacyBadge() {
-  return (
-    <span
-      className="inline-flex items-center gap-1.5 rounded-full bg-success-soft px-2 py-1 text-[0.68rem] font-bold text-success md:px-2.5 md:text-[0.7rem]"
-      title="Files stay on this device"
-    >
-      <span className="relative flex size-1.5">
-        <span className="absolute inline-flex size-full rounded-full bg-success opacity-40 motion-safe:animate-ping" />
-        <span className="relative inline-flex size-1.5 rounded-full bg-success" />
-      </span>
-      <span className="md:hidden">Local</span>
-      <span className="hidden md:inline">On this device</span>
-    </span>
   );
 }
 

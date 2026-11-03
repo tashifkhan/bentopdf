@@ -1,7 +1,7 @@
 import { Link, createFileRoute } from '@tanstack/react-router';
 import { motion } from 'motion/react';
 import { useMemo, useState } from 'react';
-import { CloseCircle, Search, ShieldCheck } from 'reicon-react';
+import { CloseCircle, Search } from 'reicon-react';
 import { Input } from '~/components/beui/input';
 import { FadeUp, Stagger } from '~/components/Motion';
 import { ToolIcon } from '~/components/icons';
@@ -29,12 +29,6 @@ function HomePage() {
     <div className="page-head">
       <Stagger className="mb-5 max-w-2xl sm:mb-6" delay={0.05} stagger={0.06}>
         <FadeUp>
-          <p className="eyebrow mb-3">
-            <ShieldCheck size={12} color="currentColor" />
-            Private · Local · Instant
-          </p>
-        </FadeUp>
-        <FadeUp>
           <h1 className="text-[clamp(1.55rem,6.5vw,2.4rem)] font-bold leading-[1.15] tracking-tight text-foreground">
             Every PDF tool you need,{' '}
             <span className="text-accent">in the browser</span>
@@ -43,24 +37,8 @@ function HomePage() {
         <FadeUp>
           <p className="mt-3 max-w-xl text-[0.95rem] leading-relaxed text-muted-foreground sm:text-base">
             Merge, split, convert, sign, and edit. Files never leave this
-            device. Search a tool or browse by category.
+            device.
           </p>
-        </FadeUp>
-        <FadeUp>
-          <ul className="mt-4 flex flex-wrap gap-1.5 sm:gap-2">
-            {[
-              ['70+', 'tools'],
-              ['0', 'uploads'],
-              ['100%', 'local'],
-            ].map(([k, v]) => (
-              <li
-                key={v}
-                className="inline-flex h-8 items-center gap-1 rounded-full border border-border bg-card px-2.5 text-xs font-semibold text-muted-foreground sm:px-3"
-              >
-                <strong className="text-foreground">{k}</strong> {v}
-              </li>
-            ))}
-          </ul>
         </FadeUp>
       </Stagger>
 

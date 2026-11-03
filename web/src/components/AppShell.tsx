@@ -1,7 +1,7 @@
 import { useRouterState } from '@tanstack/react-router';
 import { motion, useReducedMotion } from 'motion/react';
 import { useEffect, type ReactNode } from 'react';
-import { BrandMark, HeaderControls, PrivacyBadge } from '~/components/Chrome';
+import { BrandMark, HeaderControls } from '~/components/Chrome';
 import { PageTransition } from '~/components/PageTransition';
 import { isWorkspacePath } from '~/features/settings/workspace-routes';
 import { cn } from '~/lib/utils';
@@ -45,7 +45,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="app-chrome-inner">
             <BrandMark />
             <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-              <PrivacyBadge />
               <HeaderControls />
             </div>
           </div>
@@ -66,16 +65,16 @@ export function AppShell({ children }: { children: ReactNode }) {
             paddingBottom: 'max(0px, env(safe-area-inset-bottom, 0px))',
           }}
         >
-          <div className="app-chrome-inner flex flex-col gap-2 py-5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-6">
-            <div className="text-sm">
-              <strong className="text-foreground">BentoPDF</strong>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Privacy-first PDF tools. Files stay in your browser.
-              </p>
-            </div>
-            <p className="text-xs text-ink-4">
-              TanStack Start · Tailwind v4 · beUI · Reicon
-            </p>
+          <div className="app-chrome-inner flex items-center justify-between gap-3 py-4 text-xs text-ink-4">
+            <span>BentoPDF</span>
+            <a
+              href="https://github.com/tashifkhan/bentopdf"
+              target="_blank"
+              rel="noreferrer"
+              className="transition-colors hover:text-foreground"
+            >
+              Source (AGPL-3.0)
+            </a>
           </div>
         </footer>
       ) : null}

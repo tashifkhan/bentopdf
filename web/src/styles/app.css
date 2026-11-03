@@ -384,10 +384,6 @@ html[data-theme-switching='1'] * {
     }
   }
 
-  .eyebrow {
-    @apply inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-2.5 py-1 text-[0.7rem] font-bold uppercase tracking-wide text-brand;
-  }
-
   .section-title {
     @apply mb-3 flex items-center gap-2 border-b border-border pb-2 text-[0.95rem] font-bold tracking-tight text-foreground;
   }

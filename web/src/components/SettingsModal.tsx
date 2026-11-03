@@ -10,7 +10,6 @@ import {
   type RefObject,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { ShieldCheck } from 'reicon-react';
 import { BottomSheet } from '~/components/beui/bottom-sheet';
 import { Button } from '~/components/beui/button';
 import { useSettings, type LayoutMode } from '~/features/settings/settings';
@@ -287,19 +286,6 @@ function SettingsBody({ onClose }: { onClose: () => void }) {
           ]}
         />
       </Section>
-
-      <div className="flex items-start gap-3 rounded-xl border border-border bg-secondary p-3.5">
-        <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-success-soft text-success">
-          <ShieldCheck size={16} color="currentColor" />
-        </span>
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          <span className="font-semibold text-foreground">
-            Private by design.
-          </span>{' '}
-          Every tool runs in your browser and nothing is uploaded. After the
-          first visit the app also works offline.
-        </p>
-      </div>
 
       <div className="flex items-center justify-between gap-2 border-t border-border pt-4">
         <Button type="button" variant="ghost" size="sm" onClick={reset}>
