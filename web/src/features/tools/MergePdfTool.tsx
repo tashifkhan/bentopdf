@@ -10,7 +10,9 @@ import {
   TabsList,
   TabsTrigger,
 } from '~/components/beui/tabs'
+import type { Tool } from '~/data/tools'
 import { cn } from '~/lib/utils'
+import { ToolHeader } from './ToolWorkspace'
 
 type FileEntry = {
   id: string
@@ -59,7 +61,7 @@ function parseRange(range: string, pageCount: number): number[] {
   return [...pages].sort((x, y) => x - y)
 }
 
-export function MergePdfTool() {
+export function MergePdfTool({ tool }: { tool: Tool }) {
   const [files, setFiles] = useState<FileEntry[]>([])
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>(
     'idle',
@@ -119,16 +121,10 @@ export function MergePdfTool() {
 
   return (
     <div className="tool-workspace">
-      <header className="mb-4 sm:mb-5">
-        <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-          Merge PDF
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Combine whole files, or pick page ranges, entirely in your browser.
-        </p>
-      </header>
+      <ToolHeader tool={tool} />
 
       <FileUpload
+        className="mt-4 sm:mt-5"
         // Controlled empty list: dropzone only; we own the merge queue below.
         value={[]}
         onValueChange={() => {}}
@@ -233,12 +229,12 @@ export function MergePdfTool() {
             </TabsContent>
           </Tabs>
 
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          {error ? <p className="notice notice-error">{error}</p> : null}
 
           <div className="tool-actions tool-actions-sticky">
             <StatefulButton
               type="button"
-              className={cn('min-h-11 w-full sm:min-h-0')}
+              className={cn('min-h-11 w-full sm:min-h-0 sm:w-auto sm:min-w-[9rem]')}
               state={status}
               loadingText="Merging…"
               successText="Downloaded"

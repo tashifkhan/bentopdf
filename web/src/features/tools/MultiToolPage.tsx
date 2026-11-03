@@ -1,15 +1,7 @@
-import { Link } from '@tanstack/react-router';
+import { WorkspaceHeader } from '~/components/Chrome';
 import { PDFDocument, degrees } from 'pdf-lib';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import {
-  CloseCircle,
-  Copy,
-  Download,
-  Restart,
-  Scissors,
-  Trash,
-  Upload,
-} from 'reicon-react';
+import { Copy, Download, Restart, Scissors, Trash, Upload } from 'reicon-react';
 import { Button, StatefulButton } from '~/components/beui/button';
 import { FileUpload } from '~/components/beui/file-upload';
 import { cn } from '~/lib/utils';
@@ -115,14 +107,12 @@ async function loadFilesToPages(
     } catch {
       continue;
     }
-    doc
-      .addPage([embedded.width, embedded.height])
-      .drawImage(embedded, {
-        x: 0,
-        y: 0,
-        width: embedded.width,
-        height: embedded.height,
-      });
+    doc.addPage([embedded.width, embedded.height]).drawImage(embedded, {
+      x: 0,
+      y: 0,
+      width: embedded.width,
+      height: embedded.height,
+    });
     const pdfBytes = await doc.save();
     const ab = pdfBytes.buffer.slice(
       pdfBytes.byteOffset,
@@ -268,7 +258,7 @@ export function MultiToolPage() {
       };
       input.click();
     },
-    [onFiles],
+    [onFiles]
   );
 
   /* ------------------------------------------------------------ editing */
@@ -443,27 +433,16 @@ export function MultiToolPage() {
 
   return (
     <div className="workspace-shell">
-      <header className="workspace-header">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-sm font-bold text-foreground">
-            PDF Multi Tool
-          </span>
-          <span className="hidden text-xs text-muted-foreground sm:inline">
-            {empty
-              ? 'Organize · rotate · split · export'
-              : `${pages.length} page${pages.length === 1 ? '' : 's'}${
-                  selectedCount ? ` · ${selectedCount} selected` : ''
-                }${segments.length > 1 ? ` · ${segments.length} documents` : ''}`}
-          </span>
-        </div>
-        <Link
-          to="/"
-          className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-secondary px-3 text-sm font-semibold text-foreground"
-        >
-          <CloseCircle size={14} color="currentColor" />
-          Close
-        </Link>
-      </header>
+      <WorkspaceHeader
+        title="PDF Multi Tool"
+        subtitle={
+          empty
+            ? 'Organize · rotate · split · export'
+            : `${pages.length} page${pages.length === 1 ? '' : 's'}${
+                selectedCount ? ` · ${selectedCount} selected` : ''
+              }${segments.length > 1 ? ` · ${segments.length} documents` : ''}`
+        }
+      />
 
       {/* Horizontally scrollable toolbar — critical on narrow viewports */}
       <div className="workspace-toolbar">
@@ -648,7 +627,7 @@ export function MultiToolPage() {
       </div>
 
       <div
-        className="flex flex-1 flex-col overflow-auto p-3 sm:p-4"
+        className="workspace-content flex flex-1 flex-col py-3 sm:py-4"
         onDragOver={(e) => {
           e.preventDefault();
           e.dataTransfer.dropEffect = 'copy';
@@ -669,11 +648,11 @@ export function MultiToolPage() {
             <p className="text-sm">Loading pages…</p>
           </div>
         ) : empty ? (
-          <div className="flex flex-1 flex-col items-center justify-center px-4 py-16">
-            <div className="w-full max-w-md text-center">
-              <h1 className="text-lg font-bold text-foreground">
+          <div className="workspace-empty">
+            <div>
+              <h2 className="text-lg font-bold text-foreground">
                 Select PDF or image files
-              </h1>
+              </h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 Drag and drop PDF or image files here, or browse. Everything
                 stays in your browser.
@@ -697,7 +676,7 @@ export function MultiToolPage() {
             </div>
           </div>
         ) : (
-          <div className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          <div className="page-grid">
             {pages.map((page, index) => (
               <PageCard
                 key={page.id}
@@ -864,16 +843,36 @@ function PageCard({
 
       {/* Always visible on touch devices; hover-reveal only on fine pointers */}
       <div className="mt-1 flex items-center justify-center gap-0.5 rounded-lg border border-border bg-card p-0.5 opacity-100 transition [@media(hover:hover)_and_(pointer:fine)]:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:group-hover/card:opacity-100 focus-within:opacity-100">
-        <button type="button" className={action} title="Rotate left" onClick={onRotateLeft}>
+        <button
+          type="button"
+          className={action}
+          title="Rotate left"
+          onClick={onRotateLeft}
+        >
           ↺
         </button>
-        <button type="button" className={action} title="Rotate right" onClick={onRotateRight}>
+        <button
+          type="button"
+          className={action}
+          title="Rotate right"
+          onClick={onRotateRight}
+        >
           ↻
         </button>
-        <button type="button" className={action} title="Duplicate page" onClick={onDuplicate}>
+        <button
+          type="button"
+          className={action}
+          title="Duplicate page"
+          onClick={onDuplicate}
+        >
           <Copy size={12} color="currentColor" />
         </button>
-        <button type="button" className={action} title="Insert PDF after this page" onClick={onInsert}>
+        <button
+          type="button"
+          className={action}
+          title="Insert PDF after this page"
+          onClick={onInsert}
+        >
           +
         </button>
         <button
