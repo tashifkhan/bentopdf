@@ -1,7 +1,7 @@
 import { Link, createFileRoute } from '@tanstack/react-router';
 import { motion } from 'motion/react';
 import { useMemo, useState } from 'react';
-import { CloseCircle, Search, ShieldCheck } from 'reicon-react';
+import { CloseCircle, Search } from 'reicon-react';
 import { Input } from '~/components/beui/input';
 import { FadeUp, Stagger } from '~/components/Motion';
 import { ToolIcon } from '~/components/icons';
@@ -26,14 +26,8 @@ function HomePage() {
   }, [filter, isSearching]);
 
   return (
-    <div className="pt-5 sm:pt-10">
+    <div className="page-head">
       <Stagger className="mb-5 max-w-2xl sm:mb-6" delay={0.05} stagger={0.06}>
-        <FadeUp>
-          <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-2.5 py-1 text-[0.7rem] font-bold uppercase tracking-wide text-brand">
-            <ShieldCheck size={12} color="currentColor" />
-            Private · Local · Instant
-          </p>
-        </FadeUp>
         <FadeUp>
           <h1 className="text-[clamp(1.55rem,6.5vw,2.4rem)] font-bold leading-[1.15] tracking-tight text-foreground">
             Every PDF tool you need,{' '}
@@ -42,29 +36,13 @@ function HomePage() {
         </FadeUp>
         <FadeUp>
           <p className="mt-3 max-w-xl text-[0.95rem] leading-relaxed text-muted-foreground sm:text-base">
-            Merge, split, convert, sign, and edit — files never leave this
-            device. Search a tool or browse by category.
+            Merge, split, convert, sign, and edit. Files never leave this
+            device.
           </p>
-        </FadeUp>
-        <FadeUp>
-          <ul className="mt-4 flex flex-wrap gap-1.5 sm:gap-2">
-            {[
-              ['70+', 'tools'],
-              ['0', 'uploads'],
-              ['100%', 'local'],
-            ].map(([k, v]) => (
-              <li
-                key={v}
-                className="inline-flex h-8 items-center gap-1 rounded-full border border-border bg-card px-2.5 text-xs font-semibold text-muted-foreground sm:px-3"
-              >
-                <strong className="text-foreground">{k}</strong> {v}
-              </li>
-            ))}
-          </ul>
         </FadeUp>
       </Stagger>
 
-      <FadeUp className="surface-card sticky top-[calc(3rem+env(safe-area-inset-top,0px))] z-20 p-2.5 sm:static sm:p-4">
+      <FadeUp className="surface-card sticky top-[calc(var(--app-header-h)+env(safe-area-inset-top,0px)+0.5rem)] z-20 p-2.5 sm:static sm:p-4">
         <div className="relative">
           <Input
             value={query}
@@ -99,7 +77,7 @@ function HomePage() {
 
         {!isSearching ? (
           <div
-            className="h-scroll h-scroll-fade mt-2.5 -mx-0.5 px-0.5 pb-0.5 sm:mt-3"
+            className="h-scroll h-scroll-fade chips-wrap mt-2.5 -mx-0.5 px-0.5 pb-0.5 sm:mt-3"
             role="tablist"
             aria-label="Tool categories"
           >
@@ -151,9 +129,9 @@ function HomePage() {
       <div className="mt-6 space-y-7 sm:mt-8 sm:space-y-8">
         {isSearching ? (
           results.length === 0 ? (
-            <FadeUp className="rounded-2xl border border-dashed border-border px-4 py-10 text-center text-muted-foreground">
+            <FadeUp className="rounded-lg border border-dashed border-line-strong px-4 py-12 text-center text-muted-foreground">
               <p className="font-semibold text-foreground">
-                No tools match “{query}”
+                No tools match "{query}"
               </p>
               <p className="mt-1 text-sm">
                 Try merge, compress, sign, or convert.
@@ -172,11 +150,9 @@ function HomePage() {
           visibleCategories.map((category, i) => (
             <Stagger key={category.name} delay={0.05 + i * 0.03} stagger={0.03}>
               <FadeUp>
-                <h2 className="mb-2.5 border-b border-border pb-2 text-[0.95rem] font-bold tracking-tight text-foreground sm:mb-3">
+                <h2 className="section-title">
                   {category.name}
-                  <span className="ml-2 inline-grid h-5 min-w-5 place-items-center rounded-full bg-surface-3 px-1.5 text-[0.68rem] font-bold text-ink-3">
-                    {category.tools.length}
-                  </span>
+                  <span className="count-badge">{category.tools.length}</span>
                 </h2>
               </FadeUp>
               <div className="tool-grid">

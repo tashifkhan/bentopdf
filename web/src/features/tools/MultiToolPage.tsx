@@ -1,7 +1,7 @@
-import { Link } from '@tanstack/react-router';
+import { WorkspaceHeader } from '~/components/Chrome';
 import { PDFDocument } from 'pdf-lib';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CloseCircle, Download, Restart } from 'reicon-react';
+import { Download, Restart } from 'reicon-react';
 import editcoreWasmUrl from 'bentopdf-pdfium/editcore.wasm?url';
 import { Button } from '~/components/beui/button';
 import { FileUpload } from '~/components/beui/file-upload';
@@ -35,7 +35,9 @@ type DocManager = {
   }): unknown;
   closeDocument(id: string): unknown;
   onDocumentOpened(cb: (data: { id?: string } | null) => void): unknown;
-  onDocumentClosed(cb: (data: string | { id?: string } | null) => void): unknown;
+  onDocumentClosed(
+    cb: (data: string | { id?: string } | null) => void
+  ): unknown;
 };
 
 function isPdf(file: File) {
@@ -104,10 +106,12 @@ export function MultiToolPage() {
   const ensureViewer = useCallback((): Promise<Registry> => {
     if (registryRef.current) return registryRef.current;
     const container = containerRef.current;
-    if (!container) return Promise.reject(new Error('Organizer container missing'));
+    if (!container)
+      return Promise.reject(new Error('Organizer container missing'));
     registryRef.current = (async () => {
       const ready = await waitForLaidOut(container, { cancelled: false });
-      if (!ready) throw new Error('Organizer container never received a layout size.');
+      if (!ready)
+        throw new Error('Organizer container never received a layout size.');
       const { default: EmbedPDF } = await import('bentopdf-viewer');
       container.replaceChildren();
       const viewer = EmbedPDF.init({
@@ -120,7 +124,7 @@ export function MultiToolPage() {
         tabBar: 'never',
         organize: { standalone: true },
         documentManager: { maxDocuments: 1 },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
       viewerRef.current = viewer;
       pinHostSize(viewer, container);
@@ -158,7 +162,10 @@ export function MultiToolPage() {
         const doc = await engine
           .openDocumentBuffer({ id: `mt-probe-${++probeSeq.current}`, content })
           .toPromise();
-        await engine.closeDocument(doc).toPromise().catch(() => {});
+        await engine
+          .closeDocument(doc)
+          .toPromise()
+          .catch(() => {});
         return doc.pageCount > 0;
       } catch {
         return false;
@@ -300,17 +307,12 @@ export function MultiToolPage() {
 
   return (
     <div className="workspace-shell">
-      <header className="workspace-header">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-sm font-bold text-foreground">
-            PDF Multi Tool
-          </span>
-          <span className="hidden truncate text-xs text-muted-foreground sm:inline">
-            {docName ?? 'Reorder, rotate, duplicate and delete pages'}
-          </span>
-        </div>
-        <div className="flex shrink-0 items-center gap-1.5">
-          {active ? (
+      <WorkspaceHeader
+        bleed
+        title="PDF Multi Tool"
+        subtitle={docName ?? 'Reorder, rotate, duplicate and delete pages'}
+        actions={
+          active ? (
             <>
               <input
                 ref={extraInput}
@@ -353,27 +355,20 @@ export function MultiToolPage() {
                 Export PDF
               </Button>
             </>
-          ) : null}
-          <Link
-            to="/"
-            className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-secondary px-3 text-sm font-semibold text-foreground"
-          >
-            <CloseCircle size={14} color="currentColor" />
-            <span className="hidden sm:inline">Close</span>
-          </Link>
-        </div>
-      </header>
+          ) : null
+        }
+      />
 
       {!active ? (
-        <div className="flex flex-1 flex-col items-center justify-center px-4 py-16">
-          <div className="w-full max-w-md text-center">
-            <h1 className="text-lg font-bold text-foreground">
+        <div className="workspace-empty">
+          <div>
+            <h2 className="text-lg font-bold text-foreground">
               Organize PDF pages
-            </h1>
+            </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Drop PDFs or images. Reorder, rotate, duplicate, insert and
-              delete pages in the pdfium organizer, then export one PDF. Your
-              files never leave the browser.
+              Drop PDFs or images. Reorder, rotate, duplicate, insert and delete
+              pages in the pdfium organizer, then export one PDF. Your files
+              never leave the browser.
             </p>
             <FileUpload
               className="mt-6 text-left"
@@ -408,7 +403,8 @@ export function MultiToolPage() {
         style={
           active
             ? {
-                height: 'calc(100dvh - 3.25rem - env(safe-area-inset-top, 0px))',
+                height:
+                  'calc(100dvh - 3.25rem - env(safe-area-inset-top, 0px))',
                 minHeight:
                   'calc(100dvh - 3.25rem - env(safe-area-inset-top, 0px))',
               }

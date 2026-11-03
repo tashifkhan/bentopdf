@@ -1,6 +1,5 @@
-import { Link } from '@tanstack/react-router';
+import { WorkspaceHeader } from '~/components/Chrome';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CloseCircle } from 'reicon-react';
 import { FileUpload } from '~/components/beui/file-upload';
 import { useTheme } from '~/features/theme/theme';
 import {
@@ -234,30 +233,18 @@ export function EditPdfPage() {
 
   return (
     <div className="workspace-shell">
-      <header className="workspace-header">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-sm font-bold text-foreground">
-            PDF Editor
-          </span>
-          <span className="hidden truncate text-xs text-muted-foreground sm:inline">
-            {file ? file.name : 'Annotate, highlight, redact and comment'}
-          </span>
-        </div>
-        <Link
-          to="/"
-          className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-secondary px-3 text-sm font-semibold text-foreground"
-        >
-          <CloseCircle size={14} color="currentColor" />
-          Close
-        </Link>
-      </header>
+      <WorkspaceHeader
+        bleed
+        title="PDF Editor"
+        subtitle={file ? file.name : 'Annotate, highlight, redact and comment'}
+      />
 
       {!file ? (
-        <div className="flex flex-1 flex-col items-center justify-center px-4 py-16">
-          <div className="w-full max-w-md text-center">
-            <h1 className="text-lg font-bold text-foreground">
+        <div className="workspace-empty">
+          <div>
+            <h2 className="text-lg font-bold text-foreground">
               Choose a PDF to edit
-            </h1>
+            </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Draw, highlight, add text and shapes, redact, and comment. The
               editor engine is a few megabytes and loads once per session — your

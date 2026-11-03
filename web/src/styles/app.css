@@ -9,52 +9,81 @@
   -------------
   Raw palette lives on :root / .dark as --ws-*.
   @theme maps them into Tailwind utilities (bg-background, text-primary, …)
-  so beUI + app code share one system.
+  so beUI + app code share one system. Never use raw Tailwind palette colors
+  (gray-500, amber-400…) in app code; add a token here instead.
 */
 :root {
   color-scheme: light;
 
-  --ws-bg: #f2f0eb;
-  --ws-surface: #fffcf8;
-  --ws-surface-2: #f6f3ed;
-  --ws-surface-3: #ebe7df;
-  --ws-ink: #151b18;
-  --ws-ink-2: #3f4843;
-  --ws-ink-3: #6a746e;
-  --ws-ink-4: #939c96;
-  --ws-line: #e4dfd5;
-  --ws-line-strong: #cfc8bb;
+  --ws-bg: #f3f1ec;
+  --ws-surface: #fffdf9;
+  --ws-surface-2: #f7f4ee;
+  --ws-surface-3: #ece8e0;
+  --ws-ink: #141a17;
+  --ws-ink-2: #3c4540;
+  --ws-ink-3: #636d67;
+  --ws-ink-4: #8b948e;
+  --ws-line: #e3ded3;
+  --ws-line-strong: #cbc4b6;
   --ws-brand: #1a3d35;
   --ws-brand-hover: #255249;
-  --ws-brand-soft: rgb(26 61 53 / 0.1);
-  --ws-accent: #d24a33;
-  --ws-accent-soft: rgb(210 74 51 / 0.1);
-  --ws-success: #2d8f62;
-  --ws-success-soft: rgb(45 143 98 / 0.12);
-  --ws-danger: #c93b2c;
-  --ws-danger-soft: rgb(201 59 44 / 0.1);
+  --ws-brand-soft: rgb(26 61 53 / 0.09);
+  --ws-accent: #cf4a32;
+  --ws-accent-soft: rgb(207 74 50 / 0.1);
+  --ws-success: #23845a;
+  --ws-success-soft: rgb(35 132 90 / 0.12);
+  --ws-warning: #a8670f;
+  --ws-warning-soft: rgb(196 128 26 / 0.12);
+  --ws-danger: #c13a2b;
+  --ws-danger-soft: rgb(193 58 43 / 0.1);
   --ws-on-brand: #f7f4ee;
-  --ws-shadow-sm: 0 6px 18px rgb(21 27 24 / 0.05);
-  --ws-shadow-md: 0 14px 36px rgb(21 27 24 / 0.08);
+  --ws-scrim: rgb(20 26 23 / 0.32);
+  --ws-shadow-sm: 0 1px 2px rgb(20 26 23 / 0.04), 0 6px 18px rgb(20 26 23 / 0.05);
+  --ws-shadow-md: 0 2px 6px rgb(20 26 23 / 0.05), 0 18px 44px rgb(20 26 23 / 0.1);
   --ws-radius: 1rem;
   --ws-radius-sm: 0.75rem;
   --ws-radius-lg: 1.25rem;
+
+  /*
+    Layout rail. Every page (shell header, home, tool pages, workspaces) sizes
+    itself from these, so the Fixed / Wide setting changes all of them at once.
+  */
+  --app-max: 72rem;
+  --app-gutter: 1rem;
+  --app-header-h: 3.25rem;
+}
+
+html[data-layout='wide'] {
+  --app-max: 120rem;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --app-gutter: 1.5rem;
+    --app-header-h: 3.5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --app-gutter: 2rem;
+  }
 }
 
 .dark,
 html[data-theme='dark'] {
   color-scheme: dark;
 
-  --ws-bg: #0d110f;
-  --ws-surface: #161c19;
-  --ws-surface-2: #1c231f;
-  --ws-surface-3: #252e29;
-  --ws-ink: #f1eee7;
-  --ws-ink-2: #c5ccc7;
-  --ws-ink-3: #8f9892;
-  --ws-ink-4: #66706a;
-  --ws-line: #2a342f;
-  --ws-line-strong: #3c4a43;
+  --ws-bg: #0c100e;
+  --ws-surface: #141a17;
+  --ws-surface-2: #1a211d;
+  --ws-surface-3: #232c27;
+  --ws-ink: #f0ede6;
+  --ws-ink-2: #c7cec9;
+  --ws-ink-3: #939c96;
+  --ws-ink-4: #6c7670;
+  --ws-line: #27302b;
+  --ws-line-strong: #3a4740;
   --ws-brand: #7dcfb6;
   --ws-brand-hover: #9bdbc8;
   --ws-brand-soft: rgb(125 207 182 / 0.12);
@@ -62,11 +91,14 @@ html[data-theme='dark'] {
   --ws-accent-soft: rgb(255 122 92 / 0.14);
   --ws-success: #4ecf8c;
   --ws-success-soft: rgb(78 207 140 / 0.14);
-  --ws-danger: #e85d4c;
-  --ws-danger-soft: rgb(232 93 76 / 0.14);
-  --ws-on-brand: #0d110f;
-  --ws-shadow-sm: 0 6px 18px rgb(0 0 0 / 0.3);
-  --ws-shadow-md: 0 14px 36px rgb(0 0 0 / 0.36);
+  --ws-warning: #f0b54a;
+  --ws-warning-soft: rgb(240 181 74 / 0.13);
+  --ws-danger: #ef6a58;
+  --ws-danger-soft: rgb(239 106 88 / 0.14);
+  --ws-on-brand: #0c100e;
+  --ws-scrim: rgb(0 0 0 / 0.55);
+  --ws-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3), 0 6px 18px rgb(0 0 0 / 0.28);
+  --ws-shadow-md: 0 2px 6px rgb(0 0 0 / 0.35), 0 18px 44px rgb(0 0 0 / 0.45);
 }
 
 @theme inline {
@@ -92,6 +124,9 @@ html[data-theme='dark'] {
   --color-destructive: var(--ws-danger);
   --color-destructive-foreground: #fff;
   --color-success: var(--ws-success);
+  --color-success-soft: var(--ws-success-soft);
+  --color-warning: var(--ws-warning);
+  --color-warning-soft: var(--ws-warning-soft);
   --color-border: var(--ws-line);
   --color-input: var(--ws-line);
   --color-ring: var(--ws-accent);
@@ -114,15 +149,19 @@ html[data-theme='dark'] {
   --radius-md: var(--ws-radius);
   --radius-lg: var(--ws-radius-lg);
   --radius-xl: 1.5rem;
-
-  /* Concrete shadow values (Tailwind needs real values for shadow-* utils) */
-  --shadow-card: 0 6px 18px rgb(21 27 24 / 0.05);
-  --shadow-panel: 0 14px 36px rgb(21 27 24 / 0.08);
 }
 
-.dark {
-  --shadow-card: 0 6px 18px rgb(0 0 0 / 0.3);
-  --shadow-panel: 0 14px 36px rgb(0 0 0 / 0.36);
+/*
+  Shadows as custom utilities. Theme-derived shadow-* utilities get their value
+  inlined at build time, so a .dark override never reached them. These read the
+  token at runtime and follow the theme.
+*/
+@utility shadow-card {
+  box-shadow: var(--ws-shadow-sm);
+}
+
+@utility shadow-panel {
+  box-shadow: var(--ws-shadow-md);
 }
 
 /* View-transition / theme-switch: freeze CSS color transitions so we don't
@@ -142,9 +181,16 @@ html[data-theme-switching='1'] * {
 
   html {
     scroll-behavior: smooth;
-    /* Avoid iOS zoom-on-focus for inputs ≥16px, and allow text size to settle. */
+    /* Room for the sticky header when jumping to anchors */
+    scroll-padding-top: calc(var(--app-header-h) + 1rem);
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
 
   /* Smooth token changes when VT API is unavailable */
@@ -167,14 +213,15 @@ html[data-theme-switching='1'] * {
     background-image:
       radial-gradient(
         ellipse 70% 40% at 0% -10%,
-        color-mix(in srgb, var(--ws-brand) 10%, transparent),
+        color-mix(in srgb, var(--ws-brand) 9%, transparent),
         transparent
       ),
       radial-gradient(
         ellipse 50% 35% at 100% 0%,
-        color-mix(in srgb, var(--ws-accent) 8%, transparent),
+        color-mix(in srgb, var(--ws-accent) 7%, transparent),
         transparent
       );
+    background-repeat: no-repeat;
     /* fixed backgrounds jank hard on iOS Safari during scroll */
     background-attachment: scroll;
     color: var(--color-foreground);
@@ -182,7 +229,6 @@ html[data-theme-switching='1'] * {
     -moz-osx-font-smoothing: grayscale;
     /* Kill horizontal rubber-band overflow from full-bleed tool UIs */
     overflow-x: clip;
-    /* Comfortable tap highlight */
     -webkit-tap-highlight-color: color-mix(
       in srgb,
       var(--ws-brand) 12%,
@@ -194,6 +240,10 @@ html[data-theme-switching='1'] * {
     body {
       background-attachment: fixed;
     }
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--ws-brand) 22%, transparent);
   }
 
   a {
@@ -224,34 +274,31 @@ html[data-theme-switching='1'] * {
     outline-offset: 2px;
   }
 
-  /* Compact density — applied on <html> so FOUC head script works before body */
-  html.density-compact .tool-card,
+  /* Thin, theme-aware scrollbars on desktop */
+  @media (hover: hover) and (pointer: fine) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--ws-line-strong) transparent;
+    }
+  }
+
+  /* Compact density, applied on <html> so the FOUC head script works before body */
   html[data-density='compact'] .tool-card {
     padding: 0.7rem 0.85rem;
     gap: 0.7rem;
   }
 
-  html.density-compact .tool-grid,
   html[data-density='compact'] .tool-grid {
     gap: 0.45rem;
   }
 
-  html.density-compact .tool-card p,
   html[data-density='compact'] .tool-card p {
     display: none;
   }
 
-  /* Narrow layout (full width mode off) */
-  html[data-layout='narrow'] .app-main:not(.app-main--workspace) {
-    max-width: 42rem;
-  }
-
-  html[data-layout='narrow'] .app-chrome-inner {
-    max-width: 42rem;
-  }
-
-  html[data-layout='narrow'] .tool-workspace {
-    max-width: 100%;
+  html[data-density='compact'] .tool-card-icon {
+    width: 2rem;
+    height: 2rem;
   }
 }
 
@@ -263,14 +310,33 @@ html[data-theme-switching='1'] * {
     padding-right: env(safe-area-inset-right, 0px);
   }
 
-  /* Shared max-width rail for header/footer (respects full-width setting) */
-  .app-chrome-inner {
-    @apply mx-auto w-full max-w-[1120px] px-3 sm:px-4;
+  /*
+    The one container. Header, footer, page content and workspace bodies all
+    use it, so their edges line up and the layout setting moves them together.
+  */
+  .app-container,
+  .app-chrome-inner,
+  .app-main,
+  .workspace-content {
+    width: 100%;
+    max-width: calc(var(--app-max) + 2 * var(--app-gutter));
+    margin-inline: auto;
+    padding-inline: var(--app-gutter);
   }
 
   .app-main {
-    @apply mx-auto w-full max-w-[1120px] flex-1 px-3 pb-10 sm:px-4 sm:pb-12;
-    padding-bottom: max(2.5rem, env(safe-area-inset-bottom, 0px));
+    @apply flex-1;
+    padding-bottom: max(3rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .app-header {
+    @apply sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-md;
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .app-header .app-chrome-inner {
+    @apply flex items-center justify-between gap-2 sm:gap-3;
+    height: var(--app-header-h);
   }
 
   /* Full-viewport workspaces: no shell padding, one chrome owner */
@@ -279,32 +345,105 @@ html[data-theme-switching='1'] * {
   }
 
   .app-main--workspace {
-    @apply m-0 max-w-none flex-1 p-0;
+    @apply m-0 flex-1 p-0;
+    max-width: none;
     padding-bottom: 0;
   }
 
   .app-shell--workspace .workspace-shell {
     min-height: 100dvh;
     min-height: 100svh;
-    margin-top: 0;
-    /* Safe areas still apply via shell horizontal padding */
     width: 100%;
     max-width: 100%;
-    margin-left: 0;
-    margin-right: 0;
+    margin: 0;
+  }
+
+  /* Square icon button used in every header (settings, theme, close) */
+  .icon-btn {
+    @apply inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-[0.7rem] border border-border bg-transparent text-foreground transition-colors;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .icon-btn:hover {
+      @apply bg-secondary;
+    }
+  }
+
+  /* Page heading block used on home, tool pages and status pages */
+  .page-head {
+    @apply pt-5 sm:pt-8 lg:pt-10;
+  }
+
+  .back-link {
+    @apply mb-4 inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors sm:mb-5;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .back-link:hover {
+      @apply border-brand/40 text-foreground;
+    }
+  }
+
+  .section-title {
+    @apply mb-3 flex items-center gap-2 border-b border-border pb-2 text-[0.95rem] font-bold tracking-tight text-foreground;
+  }
+
+  .count-badge {
+    @apply inline-grid h-5 min-w-5 place-items-center rounded-full bg-surface-3 px-1.5 text-[0.68rem] font-bold text-ink-3;
+  }
+
+  /*
+    Single-tool panel.
+    Fixed: one focused column.
+    Wide:  a wider panel; with options it splits into upload | options at lg.
+  */
+  /* The back link and panel share one column so their left edges line up. */
+  .tool-page {
+    margin-inline: auto;
+    max-width: 44rem;
+  }
+
+  html[data-layout='wide'] .tool-page {
+    max-width: 52rem;
+  }
+
+  html[data-layout='wide'] .tool-page:has(.tool-workspace--split) {
+    max-width: 80rem;
   }
 
   .tool-workspace {
-    @apply mx-auto w-full max-w-xl rounded-lg border border-border bg-card p-4 text-card-foreground shadow-card sm:p-7;
+    @apply w-full rounded-lg border border-border bg-card p-4 text-card-foreground shadow-card sm:p-7;
   }
 
-  /* Full width: roomier tool forms inside the 1120px shell */
-  html[data-layout='wide'] .tool-workspace {
-    max-width: 48rem;
+  .tool-body {
+    @apply mt-4 sm:mt-5;
   }
 
-  html[data-layout='narrow'] .tool-workspace {
-    max-width: 100%;
+  .tool-body-main,
+  .tool-body-side {
+    min-width: 0;
+  }
+
+  .tool-body-side:empty {
+    display: none;
+  }
+
+  @media (min-width: 1024px) {
+    html[data-layout='wide'] .tool-workspace--split .tool-body {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+      gap: 2rem;
+      align-items: start;
+    }
+
+    html[data-layout='wide'] .tool-workspace--split .tool-body-side {
+      position: sticky;
+      top: calc(var(--app-header-h) + 1.5rem);
+    }
+
+    html[data-layout='wide'] .tool-workspace--split .tool-body-side > :first-child {
+      margin-top: 0;
+    }
   }
 
   /* Sticky primary actions on long tool forms (mobile) */
@@ -317,6 +456,27 @@ html[data-theme-switching='1'] * {
     .tool-actions-sticky {
       padding-bottom: 0;
     }
+  }
+
+  /* Inline notices (info / warning / error / success) */
+  .notice {
+    @apply flex items-start gap-2.5 rounded-xl border px-3 py-2.5 text-sm leading-relaxed;
+  }
+
+  .notice-info {
+    @apply border-border bg-secondary text-muted-foreground;
+  }
+
+  .notice-warning {
+    @apply border-warning/30 bg-warning-soft text-foreground;
+  }
+
+  .notice-error {
+    @apply border-destructive/30 bg-destructive/10 text-destructive;
+  }
+
+  .notice-success {
+    @apply border-success/30 bg-success-soft text-foreground;
   }
 
   /* Fade hint on horizontal chip scroller */
@@ -356,11 +516,19 @@ html[data-theme-switching='1'] * {
   }
 
   .chip:hover {
-    @apply bg-card text-foreground;
+    @apply bg-secondary text-foreground;
   }
 
   .chip.is-active {
     @apply bg-primary text-primary-foreground;
+  }
+
+  /* Wrap chips instead of scrolling once there's room for them */
+  @media (min-width: 1024px) {
+    .h-scroll.chips-wrap {
+      flex-wrap: wrap;
+      overflow: visible;
+    }
   }
 
   /* Horizontal chip / toolbar scroller used across pages */
@@ -379,13 +547,17 @@ html[data-theme-switching='1'] * {
     scroll-snap-align: start;
   }
 
+  /* Fixed: 1 → 2 → 3 columns. Wide: as many ~18rem columns as fit. */
   .tool-grid {
     @apply grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3;
   }
 
+  html[data-layout='wide'] .tool-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  }
+
   .tool-card {
     @apply flex items-start gap-3 rounded-lg border border-border bg-card p-3.5 text-left transition-[transform,border-color,box-shadow] duration-150 sm:gap-3.5 sm:p-4;
-    /* Comfortable touch target */
     min-height: 3.25rem;
   }
 
@@ -434,20 +606,57 @@ html[data-theme-switching='1'] * {
     min-height: 100svh;
   }
 
+  /*
+    Workspace bars: the background spans the viewport, the contents sit on the
+    same rail as the page body (like the shell header). Pages whose body is
+    full-bleed (the PDF editor) add data-bleed to drop the cap.
+  */
   .workspace-header {
-    @apply sticky top-0 z-30 flex min-h-12 items-center justify-between gap-2 border-b border-border bg-card/95 px-3 py-2 backdrop-blur-md sm:px-4;
+    @apply sticky top-0 z-30 flex border-b border-border bg-card/90 py-2 backdrop-blur-md;
+    min-height: 3.25rem;
     padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
   }
 
-  .workspace-toolbar {
-    @apply flex items-center gap-2 border-b border-border bg-card px-3 py-2;
+  .workspace-header-inner {
+    @apply flex items-center justify-between gap-2;
+    width: 100%;
+    max-width: calc(var(--app-max) + 2 * var(--app-gutter));
+    margin-inline: auto;
+    padding-inline: var(--app-gutter);
   }
 
+  .workspace-header[data-bleed] .workspace-header-inner {
+    max-width: none;
+  }
+
+  .workspace-toolbar {
+    @apply flex items-center border-b border-border bg-card py-2;
+  }
+
+  /* Fade the right edge so a clipped toolbar reads as scrollable */
   .workspace-toolbar-scroll {
     @apply flex w-full gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5;
+    max-width: calc(var(--app-max) + 2 * var(--app-gutter));
+    margin-inline: auto;
+    padding-inline: var(--app-gutter) calc(var(--app-gutter) + 1.5rem);
+    mask-image: linear-gradient(
+      to right,
+      #000 0%,
+      #000 calc(100% - 2rem),
+      transparent 100%
+    );
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     scroll-snap-type: x proximity;
+  }
+
+  /* Centered empty state inside a workspace (pick a file to start) */
+  .workspace-empty {
+    @apply flex flex-1 flex-col items-center justify-center px-4 py-16;
+  }
+
+  .workspace-empty > div {
+    @apply w-full max-w-md text-center;
   }
 
   .mobile-action-bar {
@@ -456,11 +665,35 @@ html[data-theme-switching='1'] * {
   }
 
   .tool-actions {
-    @apply mt-5 flex flex-col-reverse gap-2 sm:mt-6 sm:flex-row sm:flex-wrap;
+    @apply mt-5 flex flex-col-reverse gap-2 sm:mt-6 sm:flex-row sm:flex-wrap sm:justify-end;
   }
 
   .tool-actions > .btn-primary-stretch,
   .tool-actions > [data-primary-action] {
     @apply w-full sm:w-auto sm:min-w-[8rem];
+  }
+}
+
+@layer components {
+  /* Page thumbnails in the multi-tool. Wide mode packs as many as fit. */
+  .page-grid {
+    @apply grid w-full grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6;
+  }
+
+  html[data-layout='wide'] .page-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr));
+  }
+}
+
+@layer components {
+  /* Desktop: wrap toolbar groups instead of hiding them behind a scroll */
+  @media (min-width: 1024px) {
+    .workspace-toolbar-scroll {
+      flex-wrap: wrap;
+      row-gap: 0.5rem;
+      overflow: visible;
+      mask-image: none;
+      padding-inline: var(--app-gutter);
+    }
   }
 }

@@ -29,6 +29,22 @@ const headers =
     : undefined;
 
 /**
+ * Files that decide which version of the app a browser runs. They must be
+ * revalidated on every load: without an explicit header Cloudflare caches
+ * /sw.js for 4 hours, so returning visitors never see a new deploy.
+ */
+const revalidate = { 'Cache-Control': 'no-cache' };
+const routeRules = {
+  ...(headers ? { '/**': { headers } } : {}),
+  ...Object.fromEntries(
+    ['/sw.js', '/manifest.webmanifest'].map((path) => [
+      path,
+      { headers: { ...headers, ...revalidate } },
+    ]),
+  ),
+};
+
+/**
  * Nitro sets `builder.sharedConfigBuild: true`, so vite-plugin-pwa would otherwise
  * generate the service worker once per environment (client, ssr, nitro). Later
  * regenerations grow sw.js after Nitro has already recorded its size/etag, which
@@ -186,15 +202,14 @@ export default defineConfig({
           ],
           // pdfium.wasm is ~4.3MB; default Workbox cap is 2MB.
           maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
-          // SPA shell from TanStack Start — offline navigations fall back here.
-          navigateFallback: '/_shell.html',
-          navigateFallbackDenylist: [
-            /^\/api\//,
-            /^\/_serverFn\//,
-            /^\/sw\.js$/,
-            /^\/workbox-/,
-            /^\/manifest\.webmanifest$/,
-          ],
+          // No navigateFallback: it answered every navigation from the
+          // precached shell, so an installed client kept showing the old UI
+          // until its service worker updated. Pages are NetworkFirst below and
+          // fall back to the shell only when offline.
+          // null, not omitted: vite-plugin-pwa otherwise defaults to
+          // index.html, which this app doesn't have.
+          navigateFallback: null,
+          cleanupOutdatedCaches: true,
           // Shell is prerendered after the PWA asset scan — list it explicitly.
           additionalManifestEntries: [
             {
@@ -203,6 +218,30 @@ export default defineConfig({
             },
           ],
           runtimeCaching: [
+            {
+              // Pages: always try the network so a deploy shows up on the next
+              // load. Offline (or network slower than 4s): last cached copy of
+              // that page, else the precached SPA shell.
+              urlPattern: ({ request, url }) =>
+                request.mode === 'navigate' &&
+                !url.pathname.startsWith('/api/') &&
+                !url.pathname.startsWith('/_serverFn/'),
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'pages',
+                networkTimeoutSeconds: 4,
+                expiration: { maxEntries: 50 },
+                cacheableResponse: { statuses: [200] },
+                plugins: [
+                  {
+                    handlerDidError: async () =>
+                      (await caches.match('/_shell.html', {
+                        ignoreSearch: true,
+                      })) ?? Response.error(),
+                  },
+                ],
+              },
+            },
             {
               // Office converter + any other large engine blobs (first-use cache).
               urlPattern: ({ url }) =>
@@ -277,6 +316,6 @@ export default defineConfig({
         },
       }) as Plugin[]
     ),
-    nitro(headers ? { routeRules: { '/**': { headers } } } : {}),
+    nitro({ routeRules }),
   ],
 });

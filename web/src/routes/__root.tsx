@@ -3,21 +3,23 @@ import {
   Outlet,
   Scripts,
   createRootRoute,
-} from '@tanstack/react-router'
-import * as React from 'react'
-import { useRef, useState } from 'react'
-import { DefaultCatchBoundary } from '~/components/DefaultCatchBoundary'
-import { NotFound } from '~/components/NotFound'
-import { AppShell } from '~/components/AppShell'
-import { SettingsModal } from '~/components/SettingsModal'
+} from '@tanstack/react-router';
+import * as React from 'react';
+import { useCallback, useState } from 'react';
+import { DefaultCatchBoundary } from '~/components/DefaultCatchBoundary';
+import { NotFound } from '~/components/NotFound';
+import { AppShell } from '~/components/AppShell';
+import { SettingsModal } from '~/components/SettingsModal';
 import {
   SETTINGS_BOOT_SCRIPT,
   SettingsProvider,
-} from '~/features/settings/settings'
-import { ThemeProvider } from '~/features/theme/theme'
-import appCss from '~/styles/app.css?url'
-
-const THEME_BOOT_SCRIPT = `(function(){try{var k='taf-pdf-theme';var s=localStorage.getItem(k);var t=s==='light'||s==='dark'?s:(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;document.documentElement.classList.toggle('dark',t==='dark');document.documentElement.style.colorScheme=t;}catch(e){}})();`
+} from '~/features/settings/settings';
+import {
+  THEME_BOOT_SCRIPT,
+  THEME_COLOR,
+  ThemeProvider,
+} from '~/features/theme/theme';
+import appCss from '~/styles/app.css?url';
 
 export const Route = createRootRoute({
   head: () => ({
@@ -37,7 +39,7 @@ export const Route = createRootRoute({
         content:
           'Merge, split, convert, and edit PDFs in your browser. Files never leave your device.',
       },
-      { name: 'theme-color', content: '#1a3d35' },
+      { name: 'theme-color', content: THEME_COLOR.light },
       { name: 'mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-capable', content: 'yes' },
       {
@@ -78,29 +80,23 @@ export const Route = createRootRoute({
   notFoundComponent: () => <NotFound />,
   shellComponent: RootDocument,
   component: RootComponent,
-})
+});
 
 function RootComponent() {
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const settingsButtonRef = useRef<HTMLButtonElement>(null)
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const openSettings = useCallback(() => setSettingsOpen(true), []);
+  const closeSettings = useCallback(() => setSettingsOpen(false), []);
 
   return (
     <ThemeProvider>
-      <SettingsProvider>
-        <AppShell
-          onOpenSettings={() => setSettingsOpen(true)}
-          settingsButtonRef={settingsButtonRef}
-        >
+      <SettingsProvider onOpenSettings={openSettings}>
+        <AppShell>
           <Outlet />
         </AppShell>
-        <SettingsModal
-          open={settingsOpen}
-          onClose={() => setSettingsOpen(false)}
-          returnFocusRef={settingsButtonRef}
-        />
+        <SettingsModal open={settingsOpen} onClose={closeSettings} />
       </SettingsProvider>
     </ThemeProvider>
-  )
+  );
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
@@ -114,5 +110,5 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <Scripts />
       </body>
     </html>
-  )
+  );
 }
