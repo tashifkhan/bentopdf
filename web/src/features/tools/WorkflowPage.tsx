@@ -1,6 +1,6 @@
-import { Link } from '@tanstack/react-router';
+import { WorkspaceHeader } from '~/components/Chrome';
 import { useCallback, useMemo, useState } from 'react';
-import { CloseCircle, Download, Trash } from 'reicon-react';
+import { Download, Trash } from 'reicon-react';
 import { Button, StatefulButton } from '~/components/beui/button';
 import {
   FileUpload,
@@ -76,10 +76,7 @@ export function WorkflowPage() {
   const [error, setError] = useState<string | null>(null);
   const [templateName, setTemplateName] = useState('');
 
-  const files = useMemo(
-    () => filesFromUploadItems(uploadItems),
-    [uploadItems],
-  );
+  const files = useMemo(() => filesFromUploadItems(uploadItems), [uploadItems]);
 
   const visibleTools = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -272,31 +269,14 @@ export function WorkflowPage() {
 
   return (
     <div className="workspace-shell">
-      <header className="workspace-header">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-sm font-bold text-foreground">
-            PDF Workflow
-          </span>
-          <span className="hidden text-xs text-muted-foreground sm:inline">
-            {steps.length} step{steps.length === 1 ? '' : 's'} · {files.length}{' '}
-            file{files.length === 1 ? '' : 's'}
-          </span>
-          <span className="truncate text-xs text-muted-foreground sm:hidden">
-            {steps.length}s · {files.length}f
-          </span>
-        </div>
-        <Link
-          to="/"
-          className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-secondary px-3 text-sm font-semibold text-foreground"
-        >
-          <CloseCircle size={14} color="currentColor" />
-          Close
-        </Link>
-      </header>
+      <WorkspaceHeader
+        title="PDF Workflow"
+        subtitle={`${steps.length} step${steps.length === 1 ? '' : 's'} · ${files.length} file${files.length === 1 ? '' : 's'}`}
+      />
 
-      <div className="flex flex-1 flex-col gap-4 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-4 lg:flex-row">
+      <div className="workspace-content flex flex-1 flex-col gap-4 py-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:py-4 lg:flex-row lg:items-start">
         {/* -------------------------------------------------- pipeline */}
-        <div className="flex-1 space-y-3">
+        <div className="min-w-0 flex-1 space-y-3">
           <div className="surface-card p-4">
             <h2 className="mb-3 text-sm font-bold text-foreground">
               Input files
@@ -422,7 +402,7 @@ export function WorkflowPage() {
         </div>
 
         {/* ----------------------------------------------------- side */}
-        <aside className="w-full shrink-0 space-y-3 lg:w-80">
+        <aside className="w-full shrink-0 space-y-3 lg:sticky lg:top-[4.25rem] lg:w-80 2xl:w-96">
           <div className="surface-card p-4">
             <h2 className="mb-2 text-sm font-bold text-foreground">Run</h2>
             {progress ? (

@@ -1,21 +1,21 @@
-import { useMemo } from 'react'
-import { Checkbox } from '~/components/beui/checkbox'
+import { useMemo } from 'react';
+import { Checkbox } from '~/components/beui/checkbox';
 import {
   FileUpload,
   createFileUploadItem,
   filesFromUploadItems,
-} from '~/components/beui/file-upload'
-import { Input } from '~/components/beui/input'
-import { RangeSlider } from '~/components/beui/range-slider'
+} from '~/components/beui/file-upload';
+import { Input } from '~/components/beui/input';
+import { RangeSlider } from '~/components/beui/range-slider';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '~/components/beui/select'
-import { Textarea } from '~/components/beui/textarea'
-import type { ToolField } from './types'
+} from '~/components/beui/select';
+import { Textarea } from '~/components/beui/textarea';
+import type { ToolField } from './types';
 
 /**
  * Shared beUI-backed field control used by ToolWorkspace and WorkflowPage.
@@ -30,24 +30,25 @@ export function ToolFieldControl({
   onFiles,
   compact = false,
 }: {
-  field: ToolField
-  value: string
-  files?: File[]
-  onChange: (v: string) => void
-  onFiles?: (files: File[]) => void
+  field: ToolField;
+  value: string;
+  files?: File[];
+  onChange: (v: string) => void;
+  onFiles?: (files: File[]) => void;
   /** Tighter layout for multi-column workflow step cards. */
-  compact?: boolean
+  compact?: boolean;
 }) {
-  const id = `field-${field.key}`
+  const id = `field-${field.key}`;
   const labelClass = compact
     ? 'mb-1 block text-[11px] font-semibold text-muted-foreground'
-    : 'mb-1.5 block text-xs font-semibold text-muted-foreground'
-  const helpClass = 'mt-1 block text-[11px] text-ink-4'
+    : 'mb-1.5 block text-xs font-semibold text-muted-foreground';
+  const helpClass = 'mt-1 block text-[11px] text-ink-4';
 
   if (field.type === 'checkbox') {
     return (
       <Checkbox
         id={id}
+        className="flex w-full"
         checked={value === 'true'}
         onCheckedChange={(checked) => onChange(checked ? 'true' : 'false')}
         label={
@@ -63,7 +64,7 @@ export function ToolFieldControl({
           </span>
         }
       />
-    )
+    );
   }
 
   if (field.type === 'select') {
@@ -84,12 +85,12 @@ export function ToolFieldControl({
         </Select>
         {field.help ? <span className={helpClass}>{field.help}</span> : null}
       </div>
-    )
+    );
   }
 
   if (field.type === 'range') {
-    const num = Number(value)
-    const safe = Number.isFinite(num) ? num : Number(field.defaultValue ?? 0)
+    const num = Number(value);
+    const safe = Number.isFinite(num) ? num : Number(field.defaultValue ?? 0);
     return (
       <div className="block">
         <span className="mb-1.5 flex items-baseline justify-between gap-2">
@@ -109,7 +110,7 @@ export function ToolFieldControl({
         />
         {field.help ? <span className={helpClass}>{field.help}</span> : null}
       </div>
-    )
+    );
   }
 
   if (field.type === 'textarea') {
@@ -126,7 +127,7 @@ export function ToolFieldControl({
         />
         {field.help ? <span className={helpClass}>{field.help}</span> : null}
       </div>
-    )
+    );
   }
 
   if (field.type === 'color') {
@@ -150,7 +151,7 @@ export function ToolFieldControl({
         </span>
         {field.help ? <span className={helpClass}>{field.help}</span> : null}
       </div>
-    )
+    );
   }
 
   if (field.type === 'file') {
@@ -164,7 +165,7 @@ export function ToolFieldControl({
         onFiles={onFiles}
         compact={compact}
       />
-    )
+    );
   }
 
   return (
@@ -189,7 +190,7 @@ export function ToolFieldControl({
       />
       {field.help ? <span className={helpClass}>{field.help}</span> : null}
     </div>
-  )
+  );
 }
 
 function FileField({
@@ -201,23 +202,21 @@ function FileField({
   onFiles,
   compact,
 }: {
-  label: string
-  help?: string
-  accept?: string
-  multiple?: boolean
-  files: File[]
-  onFiles?: (files: File[]) => void
-  compact?: boolean
+  label: string;
+  help?: string;
+  accept?: string;
+  multiple?: boolean;
+  files: File[];
+  onFiles?: (files: File[]) => void;
+  compact?: boolean;
 }) {
   // Dropzone-only when parent owns the list via `files`; rebuild items from
   // the File objects so remove/add stay in sync with the tool processor.
   const items = useMemo(
     () =>
-      files.map((file, index) =>
-        createFileUploadItem(file, index, 'success'),
-      ),
-    [files],
-  )
+      files.map((file, index) => createFileUploadItem(file, index, 'success')),
+    [files]
+  );
 
   return (
     <div className="block">
@@ -233,7 +232,7 @@ function FileField({
       <FileUpload
         value={items}
         onValueChange={(next) => {
-          onFiles?.(filesFromUploadItems(next))
+          onFiles?.(filesFromUploadItems(next));
         }}
         accept={accept}
         multiple={multiple}
@@ -244,14 +243,12 @@ function FileField({
         description="Stays on this device"
         browseLabel="Browse"
         classNames={
-          compact
-            ? { dropzone: 'min-h-0 rounded-2xl p-3' }
-            : undefined
+          compact ? { dropzone: 'min-h-0 rounded-2xl p-3' } : undefined
         }
       />
       {help ? (
         <span className="mt-1 block text-[11px] text-ink-4">{help}</span>
       ) : null}
     </div>
-  )
+  );
 }

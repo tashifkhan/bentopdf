@@ -1,7 +1,7 @@
-import { Link } from '@tanstack/react-router';
+import { WorkspaceHeader } from '~/components/Chrome';
 import { PDFDocument } from 'pdf-lib';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CloseCircle, Download, Trash } from 'reicon-react';
+import { Download, Trash } from 'reicon-react';
 import { Button, StatefulButton } from '~/components/beui/button';
 import { Checkbox } from '~/components/beui/checkbox';
 import { FileUpload } from '~/components/beui/file-upload';
@@ -281,32 +281,21 @@ export function FormCreatorPage() {
 
   return (
     <div className="workspace-shell">
-      <header className="workspace-header">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-sm font-bold text-foreground">
-            Form Creator
-          </span>
-          <span className="hidden text-xs text-muted-foreground sm:inline">
-            {empty
-              ? 'Draw fields onto a PDF'
-              : `${fields.length} field${fields.length === 1 ? '' : 's'} · page ${pageIndex + 1} of ${pageImages.length}`}
-          </span>
-        </div>
-        <Link
-          to="/"
-          className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-secondary px-3 text-sm font-semibold text-foreground"
-        >
-          <CloseCircle size={14} color="currentColor" />
-          Close
-        </Link>
-      </header>
+      <WorkspaceHeader
+        title="Form Creator"
+        subtitle={
+          empty
+            ? 'Draw fields onto a PDF'
+            : `${fields.length} field${fields.length === 1 ? '' : 's'} · page ${pageIndex + 1} of ${pageImages.length}`
+        }
+      />
 
       {empty ? (
-        <div className="flex flex-1 flex-col items-center justify-center px-4 py-16">
-          <div className="w-full max-w-md text-center">
-            <h1 className="text-lg font-bold text-foreground">
+        <div className="workspace-empty">
+          <div>
+            <h2 className="text-lg font-bold text-foreground">
               Choose a PDF to add form fields to
-            </h1>
+            </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Drag a rectangle anywhere on the page to place a field. Everything
               stays in your browser.

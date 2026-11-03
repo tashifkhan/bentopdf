@@ -1,124 +1,61 @@
-import { Link, useRouterState } from '@tanstack/react-router'
-import { motion } from 'motion/react'
-import { useEffect, useRef, type ReactNode, type RefObject } from 'react'
-import { Settings, ShieldCheck } from 'reicon-react'
-import { Button } from '~/components/beui/button'
-import { ThemeToggle } from '~/components/beui/theme-toggle'
-import { PageTransition } from '~/components/PageTransition'
-import { isWorkspacePath } from '~/features/settings/workspace-routes'
-import { cn } from '~/lib/utils'
+import { useRouterState } from '@tanstack/react-router';
+import { motion, useReducedMotion } from 'motion/react';
+import { useEffect, type ReactNode } from 'react';
+import { BrandMark, HeaderControls, PrivacyBadge } from '~/components/Chrome';
+import { PageTransition } from '~/components/PageTransition';
+import { isWorkspacePath } from '~/features/settings/workspace-routes';
+import { cn } from '~/lib/utils';
 
-export function AppShell({
-  children,
-  onOpenSettings,
-  settingsButtonRef,
-}: {
-  children: ReactNode
-  onOpenSettings?: () => void
-  settingsButtonRef?: RefObject<HTMLButtonElement | null>
-}) {
-  const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const workspace = isWorkspacePath(pathname)
-  const internalSettingsRef = useRef<HTMLButtonElement>(null)
-  const gearRef = settingsButtonRef ?? internalSettingsRef
+export function AppShell({ children }: { children: ReactNode }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const workspace = isWorkspacePath(pathname);
+  const reduce = useReducedMotion();
 
-  // Workspace routes own the full viewport — lock body scroll chaining noise.
   useEffect(() => {
-    document.documentElement.classList.toggle('workspace-route', workspace)
+    document.documentElement.classList.toggle('workspace-route', workspace);
     return () => {
-      document.documentElement.classList.remove('workspace-route')
-    }
-  }, [workspace])
+      document.documentElement.classList.remove('workspace-route');
+    };
+  }, [workspace]);
 
   return (
     <div
       className={cn('app-shell', workspace && 'app-shell--workspace')}
       data-workspace={workspace ? 'true' : undefined}
     >
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[60] focus:rounded-lg focus:bg-card focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:shadow-panel"
+      >
+        Skip to content
+      </a>
+
       {!workspace ? (
         <motion.header
+          // Same initial state on server and client; reduced motion just makes it instant.
           initial={{ y: -12, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-md"
-          style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+          transition={
+            reduce
+              ? { duration: 0 }
+              : { duration: 0.35, ease: [0.22, 1, 0.36, 1] }
+          }
+          className="app-header"
         >
-          <div className="app-chrome-inner flex h-12 items-center justify-between gap-2 sm:h-14 sm:gap-3">
-            <Link
-              to="/"
-              className="flex min-w-0 items-center gap-2 sm:gap-2.5"
-              aria-label="BentoPDF home"
-            >
-              <motion.img
-                src="/images/taf-pdf-mark.svg"
-                alt=""
-                width={28}
-                height={28}
-                className="size-7 shrink-0 rounded-[10px] border border-border sm:size-7"
-                whileHover={{ rotate: -6, scale: 1.05 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 18 }}
-              />
-              <span className="flex min-w-0 flex-col leading-tight">
-                <strong className="truncate text-[0.92rem] font-bold tracking-tight text-foreground">
-                  BentoPDF
-                </strong>
-                <small className="hidden text-[0.66rem] font-semibold uppercase tracking-[0.04em] text-ink-4 sm:inline">
-                  Private document tools
-                </small>
-              </span>
-            </Link>
-
+          <div className="app-chrome-inner">
+            <BrandMark />
             <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-              <motion.span
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.15 }}
-                className="hidden items-center gap-1.5 rounded-full bg-success/15 px-2.5 py-1 text-[0.7rem] font-bold text-success md:inline-flex"
-              >
-                <span className="relative flex size-1.5">
-                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-40" />
-                  <span className="relative inline-flex size-1.5 rounded-full bg-success" />
-                </span>
-                <ShieldCheck size={12} color="currentColor" />
-                On this device
-              </motion.span>
-
-              <span
-                className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-1 text-[0.65rem] font-bold text-success md:hidden"
-                title="Files stay on this device"
-              >
-                <span className="relative flex size-1.5">
-                  <span className="relative inline-flex size-1.5 rounded-full bg-success" />
-                </span>
-                Local
-              </span>
-
-              {onOpenSettings ? (
-                <Button
-                  ref={gearRef}
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={onOpenSettings}
-                  aria-label="Open settings"
-                  className="size-9 sm:size-8"
-                >
-                  <Settings size={16} color="currentColor" />
-                </Button>
-              ) : null}
-
-              <ThemeToggle
-                variant="circle-blur"
-                start="center"
-                className="size-9 sm:size-8"
-                iconClassName="size-4"
-              />
+              <PrivacyBadge />
+              <HeaderControls />
             </div>
           </div>
         </motion.header>
       ) : null}
 
-      <main className={cn('app-main', workspace && 'app-main--workspace')}>
+      <main
+        id="main"
+        className={cn('app-main', workspace && 'app-main--workspace')}
+      >
         {workspace ? children : <PageTransition>{children}</PageTransition>}
       </main>
 
@@ -136,12 +73,12 @@ export function AppShell({
                 Privacy-first PDF tools. Files stay in your browser.
               </p>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-ink-4">
               TanStack Start · Tailwind v4 · beUI · Reicon
             </p>
           </div>
         </footer>
       ) : null}
     </div>
-  )
+  );
 }

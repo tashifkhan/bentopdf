@@ -1,6 +1,6 @@
-import { useRouterState } from '@tanstack/react-router'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import type { ReactNode } from 'react'
+import { useRouterState } from '@tanstack/react-router';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import type { ReactNode } from 'react';
 
 const pageVariants = {
   initial: { opacity: 0, y: 12, filter: 'blur(6px)' },
@@ -16,21 +16,28 @@ const pageVariants = {
     filter: 'blur(4px)',
     transition: { duration: 0.18, ease: [0.4, 0, 1, 1] },
   },
-}
+};
 
 const reduceVariants = {
   initial: { opacity: 0 },
-  animate: { opacity: 1, transition: { duration: 0.15 } },
+  // Same resolved styles as pageVariants.animate so SSR (which can't know the
+  // user's motion preference) hydrates without an attribute mismatch.
+  animate: {
+    opacity: 1,
+    y: 0,
+    filter: 'blur(0px)',
+    transition: { duration: 0.15 },
+  },
   exit: { opacity: 0, transition: { duration: 0.1 } },
-}
+};
 
 /**
  * Wraps route content with enter/exit motion.
  * Keyed by pathname so each navigation remounts the animated layer.
  */
 export function PageTransition({ children }: { children: ReactNode }) {
-  const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const reduce = useReducedMotion()
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const reduce = useReducedMotion();
 
   return (
     <AnimatePresence mode="wait" initial={false}>
@@ -45,5 +52,5 @@ export function PageTransition({ children }: { children: ReactNode }) {
         {children}
       </motion.div>
     </AnimatePresence>
-  )
+  );
 }
