@@ -178,7 +178,12 @@ export default defineConfig({
             '**/*.{js,mjs,css,html,svg,png,ico,webp,woff,woff2,json,wasm}',
           ],
           // LibreOffice is ~75MB — too large to precache; cached on first use.
-          globIgnores: ['**/libreoffice-wasm/**', '**/*.{gz}'],
+          globIgnores: [
+            '**/libreoffice-wasm/**',
+            '**/*.{gz}',
+            // pdfium organizer engine (~7.4MB) is runtime-cached on first use.
+            '**/editcore-*.wasm',
+          ],
           // pdfium.wasm is ~4.3MB; default Workbox cap is 2MB.
           maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
           // SPA shell from TanStack Start — offline navigations fall back here.
@@ -204,7 +209,8 @@ export default defineConfig({
                 url.pathname.includes('/libreoffice-wasm/') ||
                 url.pathname.endsWith('.gz') ||
                 (url.pathname.endsWith('.wasm') &&
-                  url.pathname.includes('libreoffice')),
+                  (url.pathname.includes('libreoffice') ||
+                    url.pathname.includes('editcore'))),
               handler: 'CacheFirst',
               options: {
                 cacheName: 'pdf-engines-large',
