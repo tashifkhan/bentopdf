@@ -615,166 +615,29 @@
     <h1 class="sr-only">PDF Multi Tool Free Online - Edit & Organize PDFs</h1>
 
     <div class="flex flex-col flex-1 overflow-hidden relative">
-      <!-- Toolbar: scrollable tools + pinned primary actions -->
+      <!-- Toolbar: organizer actions (page tools live inside the pdfium organizer) -->
       <div class="mt-toolbar toolbar-container">
         <div class="mt-toolbar-inner">
-          <div class="mt-toolbar-scroll scrollbar-hide">
-            <!-- Files -->
-            <div class="mt-group" role="group" aria-label="Files">
-              <button
-                id="upload-pdfs-btn"
-                type="button"
-                class="mt-btn mt-btn-primary"
-                title="Upload PDFs"
-              >
-                <i data-lucide="upload"></i>
-                <span data-i18n="multiTool.upload">Upload</span>
-              </button>
-              <button
-                id="add-blank-page-btn"
-                type="button"
-                class="mt-btn"
-                title="Add blank page"
-              >
-                <i data-lucide="file-plus"></i>
-                <span class="mt-label-sm" data-i18n="multiTool.addBlankPage"
-                  >Blank</span
-                >
-              </button>
-            </div>
-
-            <div class="mt-sep" aria-hidden="true"></div>
-
-            <!-- History -->
-            <div class="mt-group" role="group" aria-label="History">
-              <button
-                id="undo-btn"
-                type="button"
-                class="mt-btn mt-btn-icon"
-                title="Undo"
-                aria-label="Undo"
-              >
-                <i data-lucide="undo-2"></i>
-              </button>
-              <button
-                id="redo-btn"
-                type="button"
-                class="mt-btn mt-btn-icon"
-                title="Redo"
-                aria-label="Redo"
-              >
-                <i data-lucide="redo-2"></i>
-              </button>
-              <button
-                id="reset-btn"
-                type="button"
-                class="mt-btn mt-btn-icon"
-                title="Reset"
-                aria-label="Reset"
-              >
-                <i data-lucide="refresh-ccw"></i>
-              </button>
-            </div>
-
-            <!-- Selection -->
-            <div class="mt-group" role="group" aria-label="Selection">
-              <button
-                id="select-all-btn"
-                type="button"
-                class="mt-btn"
-                title="Select all"
-              >
-                <i data-lucide="check-square"></i>
-                <span class="mt-label-sm" data-i18n="multiTool.selectAll"
-                  >All</span
-                >
-              </button>
-              <button
-                id="deselect-all-btn"
-                type="button"
-                class="mt-btn"
-                title="Deselect all"
-              >
-                <i data-lucide="square"></i>
-                <span class="mt-label-sm" data-i18n="multiTool.deselectAll"
-                  >None</span
-                >
-              </button>
-            </div>
-
-            <!-- Transform -->
-            <div class="mt-group" role="group" aria-label="Transform">
-              <button
-                id="bulk-rotate-left-btn"
-                type="button"
-                class="mt-btn mt-btn-icon"
-                title="Rotate left"
-                aria-label="Rotate left"
-              >
-                <i data-lucide="rotate-ccw"></i>
-              </button>
-              <button
-                id="bulk-rotate-btn"
-                type="button"
-                class="mt-btn mt-btn-icon"
-                title="Rotate right"
-                aria-label="Rotate right"
-              >
-                <i data-lucide="rotate-cw"></i>
-              </button>
-              <button
-                id="bulk-duplicate-btn"
-                type="button"
-                class="mt-btn mt-btn-icon"
-                title="Duplicate"
-                aria-label="Duplicate"
-              >
-                <i data-lucide="copy"></i>
-              </button>
-              <button
-                id="bulk-split-btn"
-                type="button"
-                class="mt-btn mt-btn-icon"
-                title="Split"
-                aria-label="Split"
-              >
-                <i data-lucide="scissors"></i>
-              </button>
-            </div>
-          </div>
-
-          <!-- Desktop / tablet primary actions (pinned) -->
-          <div class="mt-toolbar-end">
+          <div class="mt-toolbar-scroll scrollbar-hide"></div>
+          <div class="mt-group" role="group" aria-label="Document">
             <button
-              id="bulk-delete-btn"
+              id="reset-btn"
               type="button"
-              class="mt-btn mt-btn-danger"
-              title="Delete selected"
+              style="display: none"
+              class="mt-btn"
+              title="Reset"
             >
-              <i data-lucide="trash-2"></i>
-              <span class="mt-label-sm" data-i18n="multiTool.delete"
-                >Delete</span
-              >
-            </button>
-            <button
-              id="bulk-download-btn"
-              type="button"
-              class="mt-btn mt-btn-ghost"
-              title="Download selected pages"
-            >
-              <i data-lucide="download"></i>
-              <span class="mt-label-sm" data-i18n="multiTool.downloadSelected"
-                >Selected</span
-              >
+              <i data-lucide="refresh-ccw"></i>
+              <span class="mt-label-sm" data-i18n="multiTool.reset">Reset</span>
             </button>
             <button
               id="export-pdf-btn"
               type="button"
+              style="display: none"
               class="mt-btn mt-btn-primary"
-              title="Export PDF"
             >
               <i data-lucide="file-output"></i>
-              <span data-i18n="multiTool.exportPdf">Export</span>
+              <span data-i18n="multiTool.exportPdf">Export PDF</span>
             </button>
           </div>
         </div>
@@ -798,56 +661,22 @@
             id="pdf-file-input"
             accept="application/pdf,image/*,.heic,.heif,.jpg,.jpeg,.png,.bmp,.gif,.tiff,.tif,.webp,.svg,.psd,.jp2,.jpx,.jxr,.pnm,.pgm,.pbm,.ppm,.pam"
             multiple
-            class="mt-file-input"
+            class="hidden"
           />
-          <label
+          <button
             id="pdf-file-input-select-btn"
-            for="pdf-file-input"
+            type="button"
             class="mt-btn mt-btn-primary"
             data-i18n="multiTool.selectFiles"
-            role="button"
-            tabindex="0"
           >
             Select Files
-          </label>
+          </button>
         </div>
-
-        <div
-          id="pages-container"
-          class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4"
-        ></div>
       </div>
+
+      <div id="organize-viewer" class="hidden flex-1 min-h-0"></div>
     </div>
 
-    <!-- Mobile dock: primary actions in the thumb zone -->
-    <div class="mt-dock" aria-label="Primary actions">
-      <div class="mt-dock-inner">
-        <button
-          type="button"
-          class="mt-btn mt-btn-ghost"
-          data-mt-proxy="upload-pdfs-btn"
-        >
-          <i data-lucide="upload"></i>
-          <span data-i18n="multiTool.upload">Upload</span>
-        </button>
-        <button
-          type="button"
-          class="mt-btn mt-btn-danger"
-          data-mt-proxy="bulk-delete-btn"
-        >
-          <i data-lucide="trash-2"></i>
-          <span data-i18n="multiTool.delete">Delete</span>
-        </button>
-        <button
-          type="button"
-          class="mt-btn mt-btn-primary"
-          data-mt-proxy="export-pdf-btn"
-        >
-          <i data-lucide="file-output"></i>
-          <span data-i18n="multiTool.exportPdf">Export</span>
-        </button>
-      </div>
-    </div>
 
     <!-- Loading Overlay -->
     <div
@@ -903,14 +732,7 @@
       </div>
     </div>
 
-    <!-- Visually hidden (not display:none) so programmatic click works -->
-    <input
-      type="file"
-      id="insert-pdf-input"
-      accept="application/pdf"
-      class="mt-file-input"
-    />
-
+    <!-- Hidden File Input -->
     <!-- Scripts -->
     <!-- FAQ Modal -->
     <div
@@ -975,8 +797,8 @@
               <p class="faq-d-a">
                 Drop JPG, PNG, WebP, HEIC, TIFF, BMP, GIF, or SVG files
                 alongside your PDFs and each image becomes a page you can move,
-                rotate, or delete like any other. Blank A4 pages can also be
-                appended with the Add Blank Page button.
+                rotate, or delete like any other. Blank pages can also be added
+                from the Insert menu.
               </p>
             </details>
             <details class="faq-d">
@@ -985,10 +807,10 @@
                 <i data-lucide="plus" class="faq-d-icon"></i>
               </summary>
               <p class="faq-d-a">
-                Click the scissors icon on a page to place a split marker after
-                it; a dashed line shows where the document will be divided.
-                Export then produces split-documents.zip containing document -
-                1.pdf, document - 2.pdf, and so on.
+                Click Split and choose how to divide the document: by page
+                ranges, odd and even pages, every page, bookmarks, every N
+                pages, or file size. One part downloads as a PDF; several parts
+                download together as a ZIP.
               </p>
             </details>
             <details class="faq-d">
