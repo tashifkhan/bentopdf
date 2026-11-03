@@ -312,16 +312,6 @@
     ],
     "pageCount": 1
   },
-  "0204255c22df": {
-    "text": "Click the scissors icon on a page to place a split marker after it; a dashed line shows where the document will be divided. Export then produces split-documents.zip containing document - 1.pdf, document - 2.pdf, and so on.",
-    "tags": [
-      "p"
-    ],
-    "pages": [
-      "pdf-multi-tool"
-    ],
-    "pageCount": 1
-  },
   "020e6e164ee4": {
     "text": "A scanned PDF stores each page as one large image, so you'll get one full-page picture per page rather than the individual photos or figures on it. Crop what you need from those page images afterward.",
     "tags": [
@@ -5776,6 +5766,16 @@
     ],
     "pages": [
       "word-to-pdf"
+    ],
+    "pageCount": 1
+  },
+  "21d9f5119b3f": {
+    "text": "Click Split and choose how to divide the document: by page ranges, odd and even pages, every page, bookmarks, every N pages, or file size. One part downloads as a PDF; several parts download together as a ZIP.",
+    "tags": [
+      "p"
+    ],
+    "pages": [
+      "pdf-multi-tool"
     ],
     "pageCount": 1
   },
@@ -17105,6 +17105,16 @@
     ],
     "pageCount": 1
   },
+  "65b2261a26c5": {
+    "text": "<1>Building on BentoPDF?</1> Hyper Compress is included with the <2>BentoPDF commercial license</2> when you use it through BentoPDF's own tools in an eligible product, for companies under US$1 million in revenue and funding. These tiers are for using the engine directly, inside your own software, or above that size.",
+    "tags": [
+      "p"
+    ],
+    "pages": [
+      "hyper-compress"
+    ],
+    "pageCount": 1
+  },
   "65e0f54619a3": {
     "text": "FB2 to PDF Online Free - FB2 to PDF Tool | BentoPDF",
     "tags": [
@@ -27687,16 +27697,6 @@
     ],
     "pageCount": 1
   },
-  "a0db9fb53182": {
-    "text": "Drop JPG, PNG, WebP, HEIC, TIFF, BMP, GIF, or SVG files alongside your PDFs and each image becomes a page you can move, rotate, or delete like any other. Blank A4 pages can also be appended with the Add Blank Page button.",
-    "tags": [
-      "p"
-    ],
-    "pages": [
-      "pdf-multi-tool"
-    ],
-    "pageCount": 1
-  },
   "a0ddc60aede2": {
     "text": "What page size does the PDF get when I convert a BMP? <1/>",
     "tags": [
@@ -34015,16 +34015,6 @@
     ],
     "pages": [
       "json-to-pdf"
-    ],
-    "pageCount": 1
-  },
-  "c5dbad4daefd": {
-    "text": "No. Hyper Compress is a separate project with its own license. The BentoPDF app license does not grant any rights to Hyper Compress, and a Hyper Compress license does not cover BentoPDF.",
-    "tags": [
-      "p"
-    ],
-    "pages": [
-      "hyper-compress"
     ],
     "pageCount": 1
   },
@@ -42323,6 +42313,16 @@
     ],
     "pageCount": 1
   },
+  "f82e523997cf": {
+    "text": "Drop JPG, PNG, WebP, HEIC, TIFF, BMP, GIF, or SVG files alongside your PDFs and each image becomes a page you can move, rotate, or delete like any other. Blank pages can also be added from the Insert menu.",
+    "tags": [
+      "p"
+    ],
+    "pages": [
+      "pdf-multi-tool"
+    ],
+    "pageCount": 1
+  },
   "f8504f4422b2": {
     "text": "PDF/A-3b (Modern, allows attachments)",
     "tags": [
@@ -43360,6 +43360,16 @@
     ],
     "pages": [
       "add-stamps"
+    ],
+    "pageCount": 1
+  },
+  "fe29dd5f87d7": {
+    "text": "Yes, through BentoPDF's own tools in an eligible product. The <1>BentoPDF commercial license</1> includes Hyper Compress as a bundled component for companies under US$1 million in revenue and funding, in general PDF toolkits, running on the end user's device. Using the engine directly, through an API, SDK, command line or server process, inside other software, in a compression product, or above that size needs a Hyper Compress license. A Hyper Compress license does not cover BentoPDF.",
+    "tags": [
+      "p"
+    ],
+    "pages": [
+      "hyper-compress"
     ],
     "pageCount": 1
   },

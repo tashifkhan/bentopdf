@@ -13,6 +13,8 @@
         "@tanstack/react-router": "^1.170.18",
         "@tanstack/react-router-devtools": "^1.167.0",
         "@tanstack/react-start": "^1.168.33",
+        "bentopdf-pdfium": "../vendor/bentopdf-pdfium/bentopdf-pdfium-3f6b6114b166.tgz",
+        "bentopdf-viewer": "../vendor/bentopdf-viewer/bentopdf-viewer-3f6b6114b166.tgz",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "embedpdf-snippet": "../vendor/embedpdf/embedpdf-snippet-2.9.1.tgz",
@@ -682,6 +684,10 @@
     "balanced-match": ["balanced-match@4.0.4", "", {}, "sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA=="],
 
     "baseline-browser-mapping": ["baseline-browser-mapping@2.11.7", "", { "bin": { "baseline-browser-mapping": "dist/cli.cjs" } }, "sha512-APw5YuIQAg6L9w4sHDI6j26DGFJI6RpYOhnkMPdC9lWbkKvsyPHzDsve1yd73lk21yz7Y09Kci8B2Pp9FonzWA=="],
+
+    "bentopdf-pdfium": ["bentopdf-pdfium@../vendor/bentopdf-pdfium/bentopdf-pdfium-3f6b6114b166.tgz", {}, "sha512-KedXrcBtrLgR9JMWi9odfz+oMeOHPcPWvn9fevOaNAZA6eMmYOYUOT3EzZeZVqytX7GoZ5A63nuYuPSrBUJfCw=="],
+
+    "bentopdf-viewer": ["bentopdf-viewer@../vendor/bentopdf-viewer/bentopdf-viewer-3f6b6114b166.tgz", { "dependencies": { "preact": "^10.17.0", "tailwind-merge": "^3.4.0" } }, "sha512-2sL3JXDeHW5MID3Hw3zxdMjkzMgoPNiERarAsjiJ+w8j2hd6sK7o4gkn0KuEPkgIxwuH3RSlRatqG7fxcNDKpA=="],
 
     "bmp-js": ["bmp-js@0.1.0", "", {}, "sha512-vHdS19CnY3hwiNdkaqk93DvjVLfbEcI8mys4UjuWrlX1haDmroo8o4xCzh4wD6DGV6HxRCyauwhHRqMTfERtjw=="],
 
