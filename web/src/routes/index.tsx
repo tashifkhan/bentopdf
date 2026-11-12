@@ -5,6 +5,7 @@ import { CloseCircle, Search } from 'reicon-react';
 import { Input } from '~/components/beui/input';
 import { FadeUp, Stagger } from '~/components/Motion';
 import { ToolIcon } from '~/components/icons';
+import { UpstreamCredits } from '~/components/UpstreamCredits';
 import { categories, searchTools, type Tool } from '~/data/tools';
 import { cn } from '~/lib/utils';
 
@@ -166,6 +167,8 @@ function HomePage() {
           ))
         )}
       </div>
+
+      {isSearching ? null : <UpstreamCredits />}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { PDFDocument } from 'pdf-lib';
-import { getPdfjs, stem, type OutFile } from './core';
+import { getPdfDocument, stem, type OutFile } from './core';
 
 /** A loaded pdf.js document. pdf.js has no exported doc type we can name cheaply. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -8,12 +8,11 @@ export type PdfjsDoc = any;
 export async function openWithPdfjs(
   file: File | Uint8Array
 ): Promise<PdfjsDoc> {
-  const pdfjs = await getPdfjs();
   const data =
     file instanceof File
       ? await file.arrayBuffer()
       : (file.slice().buffer as ArrayBuffer);
-  return pdfjs.getDocument({ data }).promise;
+  return getPdfDocument({ data });
 }
 
 export function newCanvas(width: number, height: number) {
