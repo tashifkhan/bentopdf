@@ -6,7 +6,10 @@ import { FadeUp } from '~/components/Motion';
  */
 
 const SPONSORS = [
-  { name: 'Vercel OSS Program', href: 'https://vercel.com/open-source-program' },
+  {
+    name: 'Vercel OSS Program',
+    href: 'https://vercel.com/open-source-program',
+  },
   { name: 'DigitalOcean', href: 'https://www.digitalocean.com/' },
   { name: 'NVIDIA Inception', href: 'https://www.nvidia.com/en-us/startups/' },
 ] as const;
