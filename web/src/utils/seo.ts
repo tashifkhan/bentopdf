@@ -1,33 +1,33 @@
-export const seo = ({
+export const SITE_URL = (
+  import.meta.env.VITE_SITE_URL || 'https://pdf.taf.sh'
+).replace(/\/+$/, '');
+
+export function seo({
   title,
   description,
-  keywords,
-  image,
+  path,
 }: {
-  title: string
-  description?: string
-  image?: string
-  keywords?: string
-}) => {
-  const tags = [
-    { title },
-    { name: 'description', content: description },
-    { name: 'keywords', content: keywords },
-    { name: 'twitter:title', content: title },
-    { name: 'twitter:description', content: description },
-    { name: 'twitter:creator', content: '@tannerlinsley' },
-    { name: 'twitter:site', content: '@tannerlinsley' },
-    { name: 'og:type', content: 'website' },
-    { name: 'og:title', content: title },
-    { name: 'og:description', content: description },
-    ...(image
-      ? [
-          { name: 'twitter:image', content: image },
-          { name: 'twitter:card', content: 'summary_large_image' },
-          { name: 'og:image', content: image },
-        ]
-      : []),
-  ]
-
-  return tags
+  title: string;
+  description: string;
+  path: string;
+}) {
+  const url = `${SITE_URL}${path}`;
+  const image = `${SITE_URL}/android-chrome-512x512.png`;
+  return {
+    meta: [
+      { title },
+      { name: 'description', content: description },
+      { property: 'og:type', content: 'website' },
+      { property: 'og:site_name', content: 'BentoPDF' },
+      { property: 'og:title', content: title },
+      { property: 'og:description', content: description },
+      { property: 'og:url', content: url },
+      { property: 'og:image', content: image },
+      { name: 'twitter:card', content: 'summary' },
+      { name: 'twitter:title', content: title },
+      { name: 'twitter:description', content: description },
+      { name: 'twitter:image', content: image },
+    ],
+    links: [{ rel: 'canonical', href: url }],
+  };
 }

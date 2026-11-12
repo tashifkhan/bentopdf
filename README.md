@@ -74,6 +74,17 @@ cd web && bun install && bun run dev
 | `bun run dev` | TanStack app on :3000 |
 | `bun run build` | Production build |
 | `bun run html:dev` | Optional legacy HTML app on :5173 |
+| `npm run seo-audit` | Audit every route on the built production server |
+
+Build with `bun run build` before running the SEO audit. The audit needs the
+root dependencies and `web/` dependencies installed. It starts and stops its
+own Nitro server, checks the home page and every catalog tool, and verifies
+canonicals, descriptions, social images, internal links, sitemap, robots.txt,
+and missing-page responses.
+
+Set `VITE_SITE_URL` at build time for a different public origin. It defaults
+to `https://pdf.taf.sh`. Use the same value when running the audit.
+`npm run seo-audit:legacy` retains the old audit for optional root Vite builds.
 
 ## License
 

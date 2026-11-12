@@ -8,6 +8,7 @@
     "dev": "bun run --cwd web dev",
     "build": "bun run --cwd web build",
     "seo-audit": "node scripts/seo-audit.mjs",
+    "seo-audit:legacy": "node scripts/seo-audit-legacy.mjs",
     "build:with-docs": "INCLUDE_DOCS=true npm run build && npm run docs:build && node scripts/include-docs-in-dist.js && node scripts/apply-indexing-policy.mjs && node scripts/compress-static-assets.mjs",
     "build:gzip": "COMPRESSION_MODE=g npm run build",
     "build:brotli": "COMPRESSION_MODE=b npm run build",
