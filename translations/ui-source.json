@@ -84,6 +84,12 @@
     ],
     "fileCount": 1
   },
+  "1 match": {
+    "files": [
+      "main.ts"
+    ],
+    "fileCount": 1
+  },
   "1.0° (Normal)": {
     "files": [
       "workflow/nodes/control-specs.ts"
@@ -576,6 +582,12 @@
   "All files repaired successfully!": {
     "files": [
       "logic/repair-pdf.ts"
+    ],
+    "fileCount": 1
+  },
+  "All pages (or e.g. 1-3, 5)": {
+    "files": [
+      "logic/merge-pdf-page.ts"
     ],
     "fileCount": 1
   },
@@ -2323,6 +2335,12 @@
     ],
     "fileCount": 1
   },
+  "Ctrl K": {
+    "files": [
+      "workspace-ui.ts"
+    ],
+    "fileCount": 1
+  },
   "Custom": {
     "files": [
       "logic/form-creator.ts",
@@ -2643,9 +2661,10 @@
   },
   "Drag to reorder": {
     "files": [
+      "logic/merge-pdf-page.ts",
       "utils/sortable-file-list.ts"
     ],
-    "fileCount": 1
+    "fileCount": 2
   },
   "Drops tagging, which screen readers rely on.": {
     "files": [
@@ -4765,12 +4784,6 @@
     ],
     "fileCount": 1
   },
-  "Leave blank for all pages": {
-    "files": [
-      "logic/merge-pdf-page.ts"
-    ],
-    "fileCount": 1
-  },
   "Left": {
     "files": [
       "logic/form-creator.ts",
@@ -5560,6 +5573,12 @@
     ],
     "fileCount": 3
   },
+  "No tools match “{{query}}”": {
+    "files": [
+      "main.ts"
+    ],
+    "fileCount": 1
+  },
   "No valid page numbers found.": {
     "files": [
       "logic/extract-pages-page.ts"
@@ -6248,12 +6267,6 @@
     ],
     "fileCount": 5
   },
-  "Pages (e.g., 1-3, 5) - Total: {{pageCount}}": {
-    "files": [
-      "logic/merge-pdf-page.ts"
-    ],
-    "fileCount": 1
-  },
   "Pages Files": {
     "files": [
       "logic/pdf-workflow-page.ts"
@@ -6293,6 +6306,12 @@
   "Pages to PDF": {
     "files": [
       "workflow/nodes/registry.ts"
+    ],
+    "fileCount": 1
+  },
+  "Pages · {{pageCount}} total": {
+    "files": [
+      "logic/merge-pdf-page.ts"
     ],
     "fileCount": 1
   },
@@ -7287,6 +7306,12 @@
       "workflow/nodes/digital-sign-node.ts"
     ],
     "fileCount": 2
+  },
+  "Recent": {
+    "files": [
+      "workspace-ui.ts"
+    ],
+    "fileCount": 1
   },
   "Red": {
     "files": [
@@ -8502,6 +8527,18 @@
     ],
     "fileCount": 1
   },
+  "Switch to dark theme": {
+    "files": [
+      "workspace-ui.ts"
+    ],
+    "fileCount": 1
+  },
+  "Switch to light theme": {
+    "files": [
+      "workspace-ui.ts"
+    ],
+    "fileCount": 1
+  },
   "Switches apps": {
     "files": [
       "main.ts"
@@ -9023,6 +9060,12 @@
   "Trusted certificate loaded": {
     "files": [
       "logic/validate-signature-pdf-page.ts"
+    ],
+    "fileCount": 1
+  },
+  "Try a broader term like merge, compress, sign, or convert.": {
+    "files": [
+      "main.ts"
     ],
     "fileCount": 1
   },
@@ -9776,6 +9819,12 @@
     ],
     "fileCount": 1
   },
+  "{{count}} matches": {
+    "files": [
+      "main.ts"
+    ],
+    "fileCount": 1
+  },
   "{{count}} node": {
     "files": [
       "logic/pdf-workflow-page.ts"
@@ -9785,6 +9834,12 @@
   "{{count}} nodes": {
     "files": [
       "logic/pdf-workflow-page.ts"
+    ],
+    "fileCount": 1
+  },
+  "{{count}} of {{total}} tools": {
+    "files": [
+      "workspace-ui.ts"
     ],
     "fileCount": 1
   },
@@ -10009,6 +10064,12 @@
   "{{totalPages}} pages → {{numSheets}} output sheets": {
     "files": [
       "logic/pdf-booklet-page.ts"
+    ],
+    "fileCount": 1
+  },
+  "{{total}} tools": {
+    "files": [
+      "workspace-ui.ts"
     ],
     "fileCount": 1
   },

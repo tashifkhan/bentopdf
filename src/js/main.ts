@@ -767,11 +767,14 @@ const init = async () => {
         empty.className = 'workspace-empty-search';
 
         const title = document.createElement('strong');
-        title.textContent = `No tools match “${searchTerm}”`;
+        title.textContent = trText('No tools match “{{query}}”', {
+          query: searchTerm,
+        });
 
         const hint = document.createElement('p');
-        hint.textContent =
-          'Try a broader term like merge, compress, sign, or convert.';
+        hint.textContent = trText(
+          'Try a broader term like merge, compress, sign, or convert.'
+        );
 
         empty.append(title, hint);
         searchResultsContainer.appendChild(empty);
@@ -783,7 +786,9 @@ const init = async () => {
 
       if (resultCount) {
         resultCount.textContent =
-          allTools.length === 1 ? '1 match' : `${allTools.length} matches`;
+          allTools.length === 1
+            ? trText('1 match')
+            : trText('{{count}} matches', { count: allTools.length });
       }
 
       createIcons({ icons });

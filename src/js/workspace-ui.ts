@@ -1,3 +1,4 @@
+import { trText } from './i18n/i18n';
 const THEME_KEY = 'taf-pdf-theme';
 const RECENT_TOOLS_KEY = 'taf-pdf-recent-tools';
 const FILTER_KEY = 'taf-pdf-category-filter';
@@ -26,8 +27,12 @@ function setTheme(theme: Theme) {
   const toggle = document.getElementById('theme-toggle');
   if (toggle) {
     const nextTheme = theme === 'light' ? 'dark' : 'light';
-    toggle.setAttribute('aria-label', `Switch to ${nextTheme} theme`);
-    toggle.setAttribute('title', `Switch to ${nextTheme} theme`);
+    const label =
+      nextTheme === 'dark'
+        ? trText('Switch to dark theme')
+        : trText('Switch to light theme');
+    toggle.setAttribute('aria-label', label);
+    toggle.setAttribute('title', label);
   }
 
   // Keep native form controls and scrollbars in sync
@@ -89,7 +94,7 @@ function renderRecentTools() {
 
   const label = document.createElement('span');
   label.className = 'recent-tools-label';
-  label.textContent = 'Recent';
+  label.textContent = trText('Recent');
   container.appendChild(label);
 
   recent.forEach((tool) => {
@@ -132,9 +137,9 @@ function updateResultCount(visible?: number) {
   const count = visible ?? total;
 
   if (count === total) {
-    el.textContent = `${total} tools`;
+    el.textContent = trText('{{total}} tools', { total });
   } else {
-    el.textContent = `${count} of ${total} tools`;
+    el.textContent = trText('{{count}} of {{total}} tools', { count, total });
   }
 }
 
@@ -169,7 +174,9 @@ function decorateCategoryCounts() {
 
     if (!titleSpan) return;
 
-    let badge = titleSpan.querySelector('.category-count') as HTMLElement | null;
+    let badge = titleSpan.querySelector(
+      '.category-count'
+    ) as HTMLElement | null;
     if (!badge) {
       badge = document.createElement('span');
       badge.className = 'category-count';
@@ -232,7 +239,8 @@ function buildCategoryFilters() {
     }
 
     groups.forEach((group) => {
-      const name = group.getAttribute('data-category') || getCategoryName(group);
+      const name =
+        group.getAttribute('data-category') || getCategoryName(group);
       const show = filterId === 'all' || name === filterId;
       group.classList.toggle('is-filtered-out', !show);
       (group as HTMLElement).style.display = show ? '' : 'none';
@@ -280,7 +288,7 @@ function syncShortcutHints() {
   const isMac = navigator.userAgent.toUpperCase().includes('MAC');
   const hint = document.getElementById('shortcut-hint');
   if (hint) {
-    hint.textContent = isMac ? '⌘K' : 'Ctrl K';
+    hint.textContent = isMac ? '⌘K' : trText('Ctrl K');
   }
 }
 

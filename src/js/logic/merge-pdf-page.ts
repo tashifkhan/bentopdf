@@ -506,7 +506,7 @@ export async function refreshMergeUI() {
 
     const dragHandle = document.createElement('div');
     dragHandle.className = 'tool-file-handle drag-handle';
-    dragHandle.title = 'Drag to reorder';
+    dragHandle.title = trText('Drag to reorder');
     dragHandle.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="19" r="1"/></svg>`; // Safe: static content
 
     const nameSpan = document.createElement('span');

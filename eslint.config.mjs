@@ -11,6 +11,7 @@ export default [
     ignores: [
       'dist/**',
       'web/.output/**',
+      'web/public/pdfjs-wasm/**',
       'coverage/**',
       'node_modules/**',
       '**/.vitepress/cache/**',
