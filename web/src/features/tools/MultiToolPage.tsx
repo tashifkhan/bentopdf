@@ -341,6 +341,8 @@ export function MultiToolPage() {
                 type="button"
                 disabled={busy}
                 onClick={resetAll}
+                title="Reset"
+                aria-label="Reset"
               >
                 <Restart size={14} color="currentColor" />
                 <span className="hidden sm:inline">Reset</span>

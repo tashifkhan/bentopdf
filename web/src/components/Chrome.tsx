@@ -100,6 +100,7 @@ export function WorkspaceHeader({
             to="/"
             className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[0.7rem] border border-border bg-secondary px-2.5 text-sm font-semibold text-foreground transition-colors hover:border-brand/40 sm:px-3"
             aria-label="Close and return to all tools"
+            title="Close"
           >
             <CloseCircle size={14} color="currentColor" />
             <span className="hidden sm:inline">Close</span>
