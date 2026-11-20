@@ -428,6 +428,7 @@
   "Downloaded {{length}} PDF files in a ZIP archive.": "{{length}} file PDF scaricati in un archivio ZIP.",
   "Downloads started for all files.": "Download avviato per tutti i file.",
   "Dpi": "DPI",
+  "Drag to reorder": "Trascina per riordinare",
   "Drops tagging, which screen readers rely on.": "Rimuove i tag, su cui si basano gli screen reader.",
   "Duplicate Field Name": "Nome campo duplicato",
   "Duplicate Field Names": "Nomi campo duplicati",
@@ -1640,5 +1641,11 @@
   "{{value}}x": "{{value}}x",
   "{{width}} x {{height}} {{unit}}": "{{width}} x {{height}} {{unit}}",
   "• {{label}}: 1 page": "• {{label}}: 1 pagina",
-  "• {{label}}: {{count}} pages": "• {{label}}: {{count}} pagine"
+  "• {{label}}: {{count}} pages": "• {{label}}: {{count}} pagine",
+  "Sort by": "Ordina per",
+  "Name": "Nome",
+  "Modified date": "Data di modifica",
+  "Size": "Dimensione",
+  "Ascending": "Crescente",
+  "Descending": "Decrescente"
 }

@@ -84,6 +84,12 @@
     ],
     "fileCount": 1
   },
+  "1 match": {
+    "files": [
+      "main.ts"
+    ],
+    "fileCount": 1
+  },
   "1.0° (Normal)": {
     "files": [
       "workflow/nodes/control-specs.ts"
@@ -579,6 +585,12 @@
     ],
     "fileCount": 1
   },
+  "All pages (or e.g. 1-3, 5)": {
+    "files": [
+      "logic/merge-pdf-page.ts"
+    ],
+    "fileCount": 1
+  },
   "Alternate Merge": {
     "files": [
       "utils/wasm-provider.ts",
@@ -891,6 +903,12 @@
   "Arrange pages for booklet printing": {
     "files": [
       "workflow/nodes/registry.ts"
+    ],
+    "fileCount": 1
+  },
+  "Ascending": {
+    "files": [
+      "utils/sortable-file-list.ts"
     ],
     "fileCount": 1
   },
@@ -2155,6 +2173,12 @@
     ],
     "fileCount": 1
   },
+  "Could not read the timestamp token": {
+    "files": [
+      "logic/validate-signature-pdf.ts"
+    ],
+    "fileCount": 1
+  },
   "Could not reduce file size further. Original: {{originalSize}}, New: {{compressedSize}}.": {
     "files": [
       "logic/compress-pdf-page.ts"
@@ -2320,6 +2344,12 @@
   "Cryptographic verification failed": {
     "files": [
       "logic/validate-signature-pdf.ts"
+    ],
+    "fileCount": 1
+  },
+  "Ctrl K": {
+    "files": [
+      "workspace-ui.ts"
     ],
     "fileCount": 1
   },
@@ -2489,6 +2519,12 @@
     ],
     "fileCount": 1
   },
+  "Descending": {
+    "files": [
+      "utils/sortable-file-list.ts"
+    ],
+    "fileCount": 1
+  },
   "Description": {
     "files": [
       "logic/edit-pdf-text-page.ts"
@@ -2580,9 +2616,21 @@
     ],
     "fileCount": 1
   },
+  "Document Timestamp {{n}}": {
+    "files": [
+      "logic/validate-signature-pdf-page.ts"
+    ],
+    "fileCount": 1
+  },
   "Document Type": {
     "files": [
       "logic/page-dimensions-page.ts"
+    ],
+    "fileCount": 1
+  },
+  "Document hash does not match the timestamp: PDF was modified after timestamping": {
+    "files": [
+      "logic/validate-signature-pdf.ts"
     ],
     "fileCount": 1
   },
@@ -2629,12 +2677,6 @@
     ],
     "fileCount": 1
   },
-  "Downloaded {{length}} PDF files in a ZIP archive.": {
-    "files": [
-      "logic/pdf-multi-tool.ts"
-    ],
-    "fileCount": 1
-  },
   "Downloads started for all files.": {
     "files": [
       "logic/deskew-pdf-page.ts"
@@ -2646,6 +2688,13 @@
       "workflow/nodes/pdf-to-images-node.ts"
     ],
     "fileCount": 1
+  },
+  "Drag to reorder": {
+    "files": [
+      "logic/merge-pdf-page.ts",
+      "utils/sortable-file-list.ts"
+    ],
+    "fileCount": 2
   },
   "Drops tagging, which screen readers rely on.": {
     "files": [
@@ -2889,7 +2938,7 @@
       "logic/add-attachments-page.ts",
       "logic/add-blank-page-page.ts"
     ],
-    "fileCount": 91
+    "fileCount": 90
   },
   "Error during execution": {
     "files": [
@@ -3286,12 +3335,6 @@
     ],
     "fileCount": 1
   },
-  "Failed to create PDF.": {
-    "files": [
-      "logic/pdf-multi-tool.ts"
-    ],
-    "fileCount": 1
-  },
   "Failed to create PNG blob": {
     "files": [
       "logic/bmp-to-pdf-page.ts"
@@ -3304,12 +3347,6 @@
       "utils/pdf-operations.ts"
     ],
     "fileCount": 2
-  },
-  "Failed to create split PDFs.": {
-    "files": [
-      "logic/pdf-multi-tool.ts"
-    ],
-    "fileCount": 1
   },
   "Failed to decode image: {{name}}": {
     "files": [
@@ -3425,12 +3462,6 @@
       "logic/cbz-to-pdf-page.ts"
     ],
     "fileCount": 2
-  },
-  "Failed to insert PDF. The file may be corrupted.": {
-    "files": [
-      "logic/pdf-multi-tool.ts"
-    ],
-    "fileCount": 1
   },
   "Failed to load Ghostscript from {{normalizedUrl}}: {{msg}}": {
     "files": [
@@ -4783,12 +4814,6 @@
     ],
     "fileCount": 1
   },
-  "Leave blank for all pages": {
-    "files": [
-      "logic/merge-pdf-page.ts"
-    ],
-    "fileCount": 1
-  },
   "Left": {
     "files": [
       "logic/form-creator.ts",
@@ -5240,6 +5265,18 @@
     ],
     "fileCount": 1
   },
+  "Modified After Timestamping (timestamped part intact)": {
+    "files": [
+      "logic/validate-signature-pdf-page.ts"
+    ],
+    "fileCount": 1
+  },
+  "Modified date": {
+    "files": [
+      "utils/sortable-file-list.ts"
+    ],
+    "fileCount": 1
+  },
   "More": {
     "files": [
       "logic/edit-pdf-text-dock.ts"
@@ -5291,6 +5328,12 @@
   "N-Up PDF created successfully!": {
     "files": [
       "logic/n-up-pdf-page.ts"
+    ],
+    "fileCount": 1
+  },
+  "Name": {
+    "files": [
+      "utils/sortable-file-list.ts"
     ],
     "fileCount": 1
   },
@@ -5408,16 +5451,9 @@
   "No Pages": {
     "files": [
       "logic/delete-pages-page.ts",
-      "logic/extract-pages-page.ts",
-      "logic/pdf-multi-tool.ts"
+      "logic/extract-pages-page.ts"
     ],
-    "fileCount": 3
-  },
-  "No Selection": {
-    "files": [
-      "logic/pdf-multi-tool.ts"
-    ],
-    "fileCount": 1
+    "fileCount": 2
   },
   "No Signatures Found": {
     "files": [
@@ -5585,6 +5621,12 @@
     ],
     "fileCount": 3
   },
+  "No tools match “{{query}}”": {
+    "files": [
+      "main.ts"
+    ],
+    "fileCount": 1
+  },
   "No valid page numbers found.": {
     "files": [
       "logic/extract-pages-page.ts"
@@ -5616,7 +5658,7 @@
       "logic/compress-pdf-page.ts",
       "logic/form-creator.ts"
     ],
-    "fileCount": 3
+    "fileCount": 4
   },
   "None of the files could be compressed: {{join}}.": {
     "files": [
@@ -5928,12 +5970,6 @@
     ],
     "fileCount": 1
   },
-  "PDF downloaded successfully.": {
-    "files": [
-      "logic/pdf-multi-tool.ts"
-    ],
-    "fileCount": 1
-  },
   "PDF encrypted successfully with 256-bit AES!": {
     "files": [
       "logic/protect-pdf-page.ts"
@@ -6216,12 +6252,6 @@
     ],
     "fileCount": 1
   },
-  "Page {{n}} ": {
-    "files": [
-      "logic/pdf-multi-tool.ts"
-    ],
-    "fileCount": 1
-  },
   "Page {{n}} of {{length}}": {
     "files": [
       "logic/form-creator.ts"
@@ -6285,12 +6315,6 @@
     ],
     "fileCount": 5
   },
-  "Pages (e.g., 1-3, 5) - Total: {{pageCount}}": {
-    "files": [
-      "logic/merge-pdf-page.ts"
-    ],
-    "fileCount": 1
-  },
   "Pages Files": {
     "files": [
       "logic/pdf-workflow-page.ts"
@@ -6330,6 +6354,12 @@
   "Pages to PDF": {
     "files": [
       "workflow/nodes/registry.ts"
+    ],
+    "fileCount": 1
+  },
+  "Pages · {{pageCount}} total": {
+    "files": [
+      "logic/merge-pdf-page.ts"
     ],
     "fileCount": 1
   },
@@ -6739,26 +6769,7 @@
   },
   "Please select pages to delete.": {
     "files": [
-      "logic/delete-pages-page.ts",
-      "logic/pdf-multi-tool.ts"
-    ],
-    "fileCount": 2
-  },
-  "Please select pages to duplicate.": {
-    "files": [
-      "logic/pdf-multi-tool.ts"
-    ],
-    "fileCount": 1
-  },
-  "Please select pages to mark for splitting.": {
-    "files": [
-      "logic/pdf-multi-tool.ts"
-    ],
-    "fileCount": 1
-  },
-  "Please select pages to rotate.": {
-    "files": [
-      "logic/pdf-multi-tool.ts"
+      "logic/delete-pages-page.ts"
     ],
     "fileCount": 1
   },
@@ -6771,12 +6782,6 @@
   "Please upload PDF files.": {
     "files": [
       "logic/pdf-to-svg-page.ts"
-    ],
-    "fileCount": 1
-  },
-  "Please upload PDFs first.": {
-    "files": [
-      "logic/pdf-multi-tool.ts"
     ],
     "fileCount": 1
   },
@@ -7350,6 +7355,12 @@
     ],
     "fileCount": 2
   },
+  "Recent": {
+    "files": [
+      "workspace-ui.ts"
+    ],
+    "fileCount": 1
+  },
   "Red": {
     "files": [
       "logic/bookmark-pdf.ts"
@@ -7684,12 +7695,6 @@
   "Repairing {{name}} ({{n}}/{{length}})...": {
     "files": [
       "logic/repair-pdf.ts"
-    ],
-    "fileCount": 1
-  },
-  "Repairing {{name}}...": {
-    "files": [
-      "logic/pdf-multi-tool.ts"
     ],
     "fileCount": 1
   },
@@ -8140,6 +8145,12 @@
     ],
     "fileCount": 1
   },
+  "Size": {
+    "files": [
+      "utils/sortable-file-list.ts"
+    ],
+    "fileCount": 1
+  },
   "Skew Threshold": {
     "files": [
       "workflow/nodes/deskew-node.ts"
@@ -8257,6 +8268,12 @@
   "Some redaction marks could not be applied, so the file was not downloaded. Apply or remove them in the editor and try again.": {
     "files": [
       "logic/edit-pdf-page.ts"
+    ],
+    "fileCount": 1
+  },
+  "Sort by": {
+    "files": [
+      "utils/sortable-file-list.ts"
     ],
     "fileCount": 1
   },
@@ -8388,7 +8405,7 @@
       "logic/add-blank-page-page.ts",
       "logic/add-watermark-page.ts"
     ],
-    "fileCount": 64
+    "fileCount": 63
   },
   "Success!": {
     "files": [
@@ -8567,6 +8584,18 @@
   "Supported: XPS, OXPS": {
     "files": [
       "logic/pdf-workflow-page.ts"
+    ],
+    "fileCount": 1
+  },
+  "Switch to dark theme": {
+    "files": [
+      "workspace-ui.ts"
+    ],
+    "fileCount": 1
+  },
+  "Switch to light theme": {
+    "files": [
+      "workspace-ui.ts"
     ],
     "fileCount": 1
   },
@@ -8971,6 +9000,30 @@
     ],
     "fileCount": 1
   },
+  "Timestamp Imprint Algorithm:": {
+    "files": [
+      "logic/validate-signature-pdf-page.ts"
+    ],
+    "fileCount": 1
+  },
+  "Timestamp Intact: Timestamp Authority Not Verified": {
+    "files": [
+      "logic/validate-signature-pdf-page.ts"
+    ],
+    "fileCount": 1
+  },
+  "Timestamped By": {
+    "files": [
+      "logic/validate-signature-pdf-page.ts"
+    ],
+    "fileCount": 1
+  },
+  "Timestamped On": {
+    "files": [
+      "logic/validate-signature-pdf-page.ts"
+    ],
+    "fileCount": 1
+  },
   "Tint": {
     "files": [
       "workflow/nodes/adjust-colors-node.ts"
@@ -9091,6 +9144,12 @@
   "Trusted certificate loaded": {
     "files": [
       "logic/validate-signature-pdf-page.ts"
+    ],
+    "fileCount": 1
+  },
+  "Try a broader term like merge, compress, sign, or convert.": {
+    "files": [
+      "main.ts"
     ],
     "fileCount": 1
   },
@@ -9508,6 +9567,12 @@
     ],
     "fileCount": 1
   },
+  "Valid Timestamp": {
+    "files": [
+      "logic/validate-signature-pdf-page.ts"
+    ],
+    "fileCount": 1
+  },
   "Valid Until": {
     "files": [
       "logic/validate-signature-pdf-page.ts"
@@ -9844,6 +9909,12 @@
     ],
     "fileCount": 1
   },
+  "{{count}} matches": {
+    "files": [
+      "main.ts"
+    ],
+    "fileCount": 1
+  },
   "{{count}} node": {
     "files": [
       "logic/pdf-workflow-page.ts"
@@ -9853,6 +9924,12 @@
   "{{count}} nodes": {
     "files": [
       "logic/pdf-workflow-page.ts"
+    ],
+    "fileCount": 1
+  },
+  "{{count}} of {{total}} tools": {
+    "files": [
+      "workspace-ui.ts"
     ],
     "fileCount": 1
   },
@@ -9954,12 +10031,6 @@
       "logic/rotate-pdf-page.ts"
     ],
     "fileCount": 2
-  },
-  "{{page}} {{n}}": {
-    "files": [
-      "logic/pdf-multi-tool.ts"
-    ],
-    "fileCount": 1
   },
   "{{progress}}%": {
     "files": [
@@ -10083,6 +10154,12 @@
   "{{totalPages}} pages → {{numSheets}} output sheets": {
     "files": [
       "logic/pdf-booklet-page.ts"
+    ],
+    "fileCount": 1
+  },
+  "{{total}} tools": {
+    "files": [
+      "workspace-ui.ts"
     ],
     "fileCount": 1
   },

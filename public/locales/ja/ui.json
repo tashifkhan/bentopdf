@@ -428,6 +428,7 @@
   "Downloaded {{length}} PDF files in a ZIP archive.": "{{length}}個のPDFファイルをZIPアーカイブでダウンロードしました。",
   "Downloads started for all files.": "すべてのファイルのダウンロードを開始しました。",
   "Dpi": "DPI",
+  "Drag to reorder": "ドラッグして並べ替え",
   "Drops tagging, which screen readers rely on.": "スクリーンリーダーが利用するタグ付けが削除されます。",
   "Duplicate Field Name": "フィールド名の重複",
   "Duplicate Field Names": "フィールド名の重複",
@@ -1640,5 +1641,11 @@
   "{{value}}x": "{{value}}x",
   "{{width}} x {{height}} {{unit}}": "{{width}} x {{height}} {{unit}}",
   "• {{label}}: 1 page": "• {{label}}: 1 ページ",
-  "• {{label}}: {{count}} pages": "• {{label}}: {{count}} ページ"
+  "• {{label}}: {{count}} pages": "• {{label}}: {{count}} ページ",
+  "Sort by": "並べ替え",
+  "Name": "名前",
+  "Modified date": "更新日時",
+  "Size": "サイズ",
+  "Ascending": "昇順",
+  "Descending": "降順"
 }

@@ -4,6 +4,9 @@ import viteReact from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { nitro } from 'nitro/vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { copyFileSync, mkdirSync, readdirSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 
 /**
  * Cross-origin isolation, required by the LibreOffice-wasm Office converters
@@ -103,6 +106,32 @@ function pwaOnceOnClient(plugins: Plugin[]): Plugin[] {
   });
 }
 
+/**
+ * pdf.js decodes JPEG2000 (OpenJPEG), JBIG2 and ICC colour (QCMS) images with
+ * wasm modules it fetches at runtime from `wasmUrl`. Without them those pages
+ * render blank. Copy the files that ship with the installed pdfjs-dist into
+ * `public/pdfjs-wasm/` so they always match the library version (the folder is
+ * gitignored). Mirrors upstream's `getPDFDocument({ wasmUrl })` fix.
+ */
+function pdfjsWasmAssets(): Plugin {
+  return {
+    name: 'bentopdf:pdfjs-wasm',
+    config() {
+      const require = createRequire(import.meta.url);
+      const src = join(
+        dirname(require.resolve('pdfjs-dist/package.json')),
+        'wasm'
+      );
+      const dest = join(process.cwd(), 'public', 'pdfjs-wasm');
+      mkdirSync(dest, { recursive: true });
+      for (const file of readdirSync(src)) {
+        if (file.startsWith('quickjs')) continue; // JS sandbox, unused here
+        copyFileSync(join(src, file), join(dest, file));
+      }
+    },
+  };
+}
+
 export default defineConfig({
   server: {
     port: 3000,
@@ -125,6 +154,7 @@ export default defineConfig({
     exclude: ['embedpdf-snippet'],
   },
   plugins: [
+    pdfjsWasmAssets(),
     tailwindcss(),
     tanstackStart({
       srcDirectory: 'src',
@@ -153,6 +183,9 @@ export default defineConfig({
           'favicon-32x32.png',
           'apple-touch-icon.png',
           'images/taf-pdf-mark.svg',
+          'images/vultr-logo-*.svg',
+          // pdf.js image decoders (JPEG2000 / JBIG2 / ICC), copied at build.
+          'pdfjs-wasm/*.{wasm,js}',
           // Core offline engines (LibreOffice is runtime-cached — too large).
           'qpdf.wasm',
         ],
@@ -194,7 +227,12 @@ export default defineConfig({
             '**/*.{js,mjs,css,html,svg,png,ico,webp,woff,woff2,json,wasm}',
           ],
           // LibreOffice is ~75MB — too large to precache; cached on first use.
-          globIgnores: ['**/libreoffice-wasm/**', '**/*.{gz}'],
+          globIgnores: [
+            '**/libreoffice-wasm/**',
+            '**/*.{gz}',
+            // pdfium organizer engine (~7.4MB) is runtime-cached on first use.
+            '**/editcore-*.wasm',
+          ],
           // pdfium.wasm is ~4.3MB; default Workbox cap is 2MB.
           maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
           // No navigateFallback: it answered every navigation from the
@@ -243,7 +281,8 @@ export default defineConfig({
                 url.pathname.includes('/libreoffice-wasm/') ||
                 url.pathname.endsWith('.gz') ||
                 (url.pathname.endsWith('.wasm') &&
-                  url.pathname.includes('libreoffice')),
+                  (url.pathname.includes('libreoffice') ||
+                    url.pathname.includes('editcore'))),
               handler: 'CacheFirst',
               options: {
                 cacheName: 'pdf-engines-large',

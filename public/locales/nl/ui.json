@@ -428,6 +428,7 @@
   "Downloaded {{length}} PDF files in a ZIP archive.": "{{length}} PDF-bestanden gedownload in een ZIP-archief.",
   "Downloads started for all files.": "Downloads gestart voor alle bestanden.",
   "Dpi": "Dpi",
+  "Drag to reorder": "Sleep om de volgorde te wijzigen",
   "Drops tagging, which screen readers rely on.": "Verwijdert de tagging waar schermlezers op vertrouwen.",
   "Duplicate Field Name": "Dubbele veldnaam",
   "Duplicate Field Names": "Dubbele veldnamen",
@@ -1640,5 +1641,11 @@
   "{{value}}x": "{{value}}x",
   "{{width}} x {{height}} {{unit}}": "{{width}} x {{height}} {{unit}}",
   "• {{label}}: 1 page": "• {{label}}: 1 pagina",
-  "• {{label}}: {{count}} pages": "• {{label}}: {{count}} pagina's"
+  "• {{label}}: {{count}} pages": "• {{label}}: {{count}} pagina's",
+  "Sort by": "Sorteren op",
+  "Name": "Naam",
+  "Modified date": "Wijzigingsdatum",
+  "Size": "Grootte",
+  "Ascending": "Oplopend",
+  "Descending": "Aflopend"
 }

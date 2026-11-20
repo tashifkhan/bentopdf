@@ -77,14 +77,19 @@ podman-compose up -d
 # Dockerfile
 FROM node:20-alpine AS builder
 WORKDIR /app
+ENV HUSKY=0
 COPY package*.json ./
+COPY vendor ./vendor
 RUN npm ci
 COPY . .
 RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/security-headers.conf /etc/nginx/security-headers.conf
+COPY --from=builder /app/security-headers-docs.conf /etc/nginx/security-headers-docs.conf
 COPY nginx.conf /etc/nginx/nginx.conf
+RUN mkdir -p /etc/nginx/tmp
 EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
 ```
@@ -118,6 +123,7 @@ docker run -d -p 3000:8080 bentopdf:custom
 | `DISABLE_GITHUB_STARS`               | Sla het ophalen van het aantal GitHub-sterren bij het laden van de pagina over en haal `api.github.com` uit de CSP. Builds in Simple Mode slaan het altijd over.            | `false`                                                        |
 | `SITE_URL`                           | Openbare URL die in canonical-, hreflang- en sitemaplinks wordt geschreven. Laat de standaardwaarde staan, tenzij zoekmachines je implementatie als eigen site moeten zien. | `https://www.bentopdf.com`                                     |
 | `ALLOW_INDEXING`                     | Bij een aangepaste `SITE_URL` krijgt elke pagina `noindex`, zodat je kopie niet concurreert met bentopdf.com in zoekresultaten. Zet op `true` om indexering toe te staan.   | `false`                                                        |
+| `COMPRESSION_MODE`                   | Voorgecomprimeerde kopieën: `o` geen, `g` `.gz` (geserveerd door de nginx van de image), `b` `.br`, `all` beide. De nginx van de image kan `.br` niet serveren.             | `o`                                                            |
 
 WASM-module-URL's zijn vooraf geconfigureerd met CDN-standaardwaarden, dus alle geavanceerde functies werken direct. Overschrijf ze voor air-gapped of zelfgehoste implementaties.
 
@@ -143,7 +149,7 @@ De CSP bevat `'unsafe-eval'` in `script-src`, omdat de LibreOffice WASM-runtime 
 
 Laat voor OCR de `VITE_TESSERACT_*`-variabelen leeg om de standaard online assets te gebruiken, of stel alle drie samen in voor zelfgehoste/offline OCR. Gedeeltelijke OCR-overschrijvingen worden geweigerd, omdat de worker, de core-runtime en de traineddata-map bij elkaar moeten passen. Stel voor volledig offline doorzoekbare PDF-uitvoer ook `VITE_OCR_FONT_BASE_URL` in, zodat de OCR-tekstlaaglettertypen van je interne server worden geladen in plaats van van de openbare Noto-lettertype-URL's.
 
-`VITE_DEFAULT_LANGUAGE` stelt de interfacetaal in voor nieuwe bezoekers. Ondersteunde waarden: `en`, `ar`, `be`, `fr`, `de`, `es`, `zh`, `zh-TW`, `vi`, `tr`, `id`, `it`, `pt`, `nl`, `da`. Gebruikers kunnen nog steeds van taal wisselen: dit verandert alleen de standaardtaal.
+`VITE_DEFAULT_LANGUAGE` stelt de interfacetaal in voor nieuwe bezoekers. Ondersteunde waarden: `en`, `ar`, `be`, `fr`, `de`, `es`, `zh`, `zh-TW`, `vi`, `tr`, `id`, `it`, `pt`, `nl`, `da`, `ko`, `sv`, `ru`, `pl`, `ja`, `uk`, `sk`, `ca`, `fa`. Gebruikers kunnen nog steeds van taal wisselen: dit verandert alleen de standaardtaal.
 
 Voorbeeld:
 
@@ -254,6 +260,8 @@ Je kunt ook specifieke functies in de PDF-editor (bijv. redactie, annotaties, fo
 
 **Vormen:** `annotation-shape`, `annotation-rectangle`, `annotation-circle`, `annotation-line`, `annotation-arrow`, `annotation-polygon`, `annotation-polyline`
 
+**Meten:** `annotation-measurement`, `mode-measure`, `annotation-distance`, `annotation-perimeter`, `annotation-area`
+
 **Formulier:** `form`, `form-textfield`, `form-checkbox`, `form-radio`, `form-select`, `form-listbox`, `form-fill-mode`
 
 **Redactie:** `redaction`, `redaction-area`, `redaction-text`, `redaction-apply`, `redaction-clear`
@@ -264,7 +272,7 @@ Je kunt ook specifieke functies in de PDF-editor (bijv. redactie, annotaties, fo
 
 **Paneel:** `panel`, `panel-sidebar`, `panel-search`, `panel-comment`
 
-**Tools:** `tools`, `pan`, `pointer`, `capture`
+**Tools:** `tools`, `pan`, `pointer`, `capture`, `organize`
 
 **Selectie:** `selection`, `selection-copy`
 

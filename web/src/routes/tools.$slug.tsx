@@ -9,6 +9,7 @@ import { MultiToolPage } from '~/features/tools/MultiToolPage';
 import { ToolWorkspace } from '~/features/tools/ToolWorkspace';
 import { WorkflowPage } from '~/features/tools/WorkflowPage';
 import { getToolEntry } from '~/features/tools/processors';
+import { seo } from '~/utils/seo';
 
 export const Route = createFileRoute('/tools/$slug')({
   component: ToolPage,
@@ -17,15 +18,14 @@ export const Route = createFileRoute('/tools/$slug')({
     if (!tool) throw notFound();
     return { tool };
   },
-  head: ({ loaderData }) => ({
-    meta: [
-      {
-        title: loaderData
-          ? `${loaderData.tool.name} — PDF Tools`
-          : 'Tool — PDF Tools',
-      },
-    ],
-  }),
+  head: ({ loaderData }) =>
+    loaderData
+      ? seo({
+          title: `${loaderData.tool.name} | BentoPDF`,
+          description: `${loaderData.tool.subtitle} Use ${loaderData.tool.name} in your browser. Files stay on your device.`,
+          path: `/tools/${loaderData.tool.slug}`,
+        })
+      : { meta: [{ title: 'Page not found | BentoPDF' }] },
 });
 
 function ToolPage() {

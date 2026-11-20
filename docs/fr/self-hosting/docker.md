@@ -77,14 +77,19 @@ podman-compose up -d
 # Dockerfile
 FROM node:20-alpine AS builder
 WORKDIR /app
+ENV HUSKY=0
 COPY package*.json ./
+COPY vendor ./vendor
 RUN npm ci
 COPY . .
 RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/security-headers.conf /etc/nginx/security-headers.conf
+COPY --from=builder /app/security-headers-docs.conf /etc/nginx/security-headers-docs.conf
 COPY nginx.conf /etc/nginx/nginx.conf
+RUN mkdir -p /etc/nginx/tmp
 EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
 ```
@@ -118,6 +123,7 @@ docker run -d -p 3000:8080 bentopdf:custom
 | `DISABLE_GITHUB_STARS`               | Ignore la récupération du nombre d'étoiles GitHub au chargement de la page et retire `api.github.com` de la CSP. Les builds en Simple Mode l'ignorent toujours.                                                                      | `false`                                                        |
 | `SITE_URL`                           | URL publique écrite dans les liens canonical, hreflang et sitemap. Laissez la valeur par défaut, sauf si vous voulez que les moteurs de recherche traitent votre déploiement comme un site à part entière.                           | `https://www.bentopdf.com`                                     |
 | `ALLOW_INDEXING`                     | Avec un `SITE_URL` personnalisé, chaque page est marquée `noindex` pour que votre copie ne concurrence pas bentopdf.com dans les résultats de recherche. Définissez `true` pour autoriser l'indexation par les moteurs de recherche. | `false`                                                        |
+| `COMPRESSION_MODE`                   | Copies précompressées enregistrées à côté de chaque fichier : `o` aucune, `g` `.gz` (servies par le nginx de l'image), `b` `.br`, `all` les deux. Le nginx de l'image ne peut pas servir `.br`.                                      | `o`                                                            |
 
 Les URL des modules WASM sont préconfigurées avec des valeurs CDN par défaut : toutes les fonctionnalités avancées fonctionnent sans configuration. Remplacez-les pour les déploiements isolés du réseau ou auto-hébergés.
 
@@ -143,7 +149,7 @@ La CSP inclut `'unsafe-eval'` dans `script-src`, car le runtime LibreOffice WASM
 
 Pour l'OCR, laissez les variables `VITE_TESSERACT_*` vides afin d'utiliser les ressources en ligne par défaut, ou définissez les trois ensemble pour un OCR auto-hébergé/hors ligne. Les remplacements OCR partiels sont refusés, car le worker, le runtime principal et le dossier traineddata doivent correspondre. Pour une production de PDF avec texte recherchable entièrement hors ligne, définissez aussi `VITE_OCR_FONT_BASE_URL` afin que les polices de la couche de texte OCR soient chargées depuis votre serveur interne plutôt que depuis les URL publiques des polices Noto.
 
-`VITE_DEFAULT_LANGUAGE` définit la langue de l'interface pour les nouveaux visiteurs. Valeurs prises en charge : `en`, `ar`, `be`, `fr`, `de`, `es`, `zh`, `zh-TW`, `vi`, `tr`, `id`, `it`, `pt`, `nl`, `da`. Les utilisateurs peuvent toujours changer de langue : cela ne modifie que la valeur par défaut.
+`VITE_DEFAULT_LANGUAGE` définit la langue de l'interface pour les nouveaux visiteurs. Valeurs prises en charge : `en`, `ar`, `be`, `fr`, `de`, `es`, `zh`, `zh-TW`, `vi`, `tr`, `id`, `it`, `pt`, `nl`, `da`, `ko`, `sv`, `ru`, `pl`, `ja`, `uk`, `sk`, `ca`, `fa`. Les utilisateurs peuvent toujours changer de langue : cela ne modifie que la valeur par défaut.
 
 Exemple :
 
@@ -254,6 +260,8 @@ Vous pouvez aussi désactiver des fonctionnalités précises de l'éditeur PDF (
 
 **Formes :** `annotation-shape`, `annotation-rectangle`, `annotation-circle`, `annotation-line`, `annotation-arrow`, `annotation-polygon`, `annotation-polyline`
 
+**Mesure :** `annotation-measurement`, `mode-measure`, `annotation-distance`, `annotation-perimeter`, `annotation-area`
+
 **Formulaire :** `form`, `form-textfield`, `form-checkbox`, `form-radio`, `form-select`, `form-listbox`, `form-fill-mode`
 
 **Caviardage :** `redaction`, `redaction-area`, `redaction-text`, `redaction-apply`, `redaction-clear`
@@ -264,7 +272,7 @@ Vous pouvez aussi désactiver des fonctionnalités précises de l'éditeur PDF (
 
 **Panneau :** `panel`, `panel-sidebar`, `panel-search`, `panel-comment`
 
-**Outils :** `tools`, `pan`, `pointer`, `capture`
+**Outils :** `tools`, `pan`, `pointer`, `capture`, `organize`
 
 **Sélection :** `selection`, `selection-copy`
 

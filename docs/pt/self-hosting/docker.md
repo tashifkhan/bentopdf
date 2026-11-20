@@ -77,14 +77,19 @@ podman-compose up -d
 # Dockerfile
 FROM node:20-alpine AS builder
 WORKDIR /app
+ENV HUSKY=0
 COPY package*.json ./
+COPY vendor ./vendor
 RUN npm ci
 COPY . .
 RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/security-headers.conf /etc/nginx/security-headers.conf
+COPY --from=builder /app/security-headers-docs.conf /etc/nginx/security-headers-docs.conf
 COPY nginx.conf /etc/nginx/nginx.conf
+RUN mkdir -p /etc/nginx/tmp
 EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
 ```
@@ -118,6 +123,7 @@ docker run -d -p 3000:8080 bentopdf:custom
 | `DISABLE_GITHUB_STARS`               | Pula a busca da contagem de estrelas do GitHub ao carregar a página e remove `api.github.com` da CSP. As versões Simple Mode sempre a dispensam.                                                                                  | `false`                                                        |
 | `SITE_URL`                           | URL pública gravada nos links canonical, hreflang e sitemap. Mantenha o padrão, a menos que queira que os mecanismos de busca tratem sua implantação como um site próprio.                                                        | `https://www.bentopdf.com`                                     |
 | `ALLOW_INDEXING`                     | Com um `SITE_URL` personalizado, todas as páginas são marcadas como `noindex` para que sua cópia não concorra com o bentopdf.com nos resultados de busca. Defina como `true` para permitir a indexação pelos mecanismos de busca. | `false`                                                        |
+| `COMPRESSION_MODE`                   | Cópias pré-comprimidas salvas ao lado de cada arquivo: `o` nenhuma, `g` `.gz` (servidas pelo nginx da imagem), `b` `.br`, `all` ambas. O nginx da imagem não consegue servir `.br`.                                               | `o`                                                            |
 
 As URLs dos módulos WASM vêm pré-configuradas com padrões de CDN, então todos os recursos avançados funcionam sem configuração. Substitua-as em implantações isoladas da internet (air-gapped) ou hospedadas por conta própria.
 
@@ -143,7 +149,7 @@ A CSP inclui `'unsafe-eval'` no `script-src` porque o runtime do LibreOffice WAS
 
 Para o OCR, deixe as variáveis `VITE_TESSERACT_*` vazias para usar os recursos online padrão, ou defina as três juntas para OCR hospedado por conta própria/offline. Substituições parciais do OCR são rejeitadas porque o worker, o runtime principal e o diretório traineddata precisam corresponder. Para uma saída de PDF pesquisável totalmente offline, defina também `VITE_OCR_FONT_BASE_URL`, de modo que as fontes da camada de texto do OCR sejam carregadas do seu servidor interno e não das URLs públicas de fontes Noto.
 
-`VITE_DEFAULT_LANGUAGE` define o idioma da interface para quem visita pela primeira vez. Valores aceitos: `en`, `ar`, `be`, `fr`, `de`, `es`, `zh`, `zh-TW`, `vi`, `tr`, `id`, `it`, `pt`, `nl`, `da`. Os usuários ainda podem trocar de idioma; isso só muda o padrão.
+`VITE_DEFAULT_LANGUAGE` define o idioma da interface para quem visita pela primeira vez. Valores aceitos: `en`, `ar`, `be`, `fr`, `de`, `es`, `zh`, `zh-TW`, `vi`, `tr`, `id`, `it`, `pt`, `nl`, `da`, `ko`, `sv`, `ru`, `pl`, `ja`, `uk`, `sk`, `ca`, `fa`. Os usuários ainda podem trocar de idioma; isso só muda o padrão.
 
 Exemplo:
 
@@ -254,6 +260,8 @@ Você também pode desativar recursos específicos dentro do Editor de PDF (p. e
 
 **Formas:** `annotation-shape`, `annotation-rectangle`, `annotation-circle`, `annotation-line`, `annotation-arrow`, `annotation-polygon`, `annotation-polyline`
 
+**Medição:** `annotation-measurement`, `mode-measure`, `annotation-distance`, `annotation-perimeter`, `annotation-area`
+
 **Formulário:** `form`, `form-textfield`, `form-checkbox`, `form-radio`, `form-select`, `form-listbox`, `form-fill-mode`
 
 **Redação:** `redaction`, `redaction-area`, `redaction-text`, `redaction-apply`, `redaction-clear`
@@ -264,7 +272,7 @@ Você também pode desativar recursos específicos dentro do Editor de PDF (p. e
 
 **Painel:** `panel`, `panel-sidebar`, `panel-search`, `panel-comment`
 
-**Ferramentas:** `tools`, `pan`, `pointer`, `capture`
+**Ferramentas:** `tools`, `pan`, `pointer`, `capture`, `organize`
 
 **Seleção:** `selection`, `selection-copy`
 

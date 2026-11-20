@@ -77,14 +77,19 @@ podman-compose up -d
 # Dockerfile
 FROM node:20-alpine AS builder
 WORKDIR /app
+ENV HUSKY=0
 COPY package*.json ./
+COPY vendor ./vendor
 RUN npm ci
 COPY . .
 RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/security-headers.conf /etc/nginx/security-headers.conf
+COPY --from=builder /app/security-headers-docs.conf /etc/nginx/security-headers-docs.conf
 COPY nginx.conf /etc/nginx/nginx.conf
+RUN mkdir -p /etc/nginx/tmp
 EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
 ```
@@ -118,6 +123,7 @@ docker run -d -p 3000:8080 bentopdf:custom
 | `DISABLE_GITHUB_STARS`               | 页面加载时跳过获取 GitHub star 数量，并从 CSP 中移除 `api.github.com`。Simple Mode 构建始终会跳过。                                      | `false`                                                        |
 | `SITE_URL`                           | 写入 canonical、hreflang 和站点地图链接的公开 URL。除非您希望搜索引擎将您的部署视为独立站点，否则请保持默认值。                          | `https://www.bentopdf.com`                                     |
 | `ALLOW_INDEXING`                     | 使用自定义 `SITE_URL` 时，每个页面都会被标记为 `noindex`，以免您的副本在搜索结果中与 bentopdf.com 竞争。设为 `true` 可允许搜索引擎索引。 | `false`                                                        |
+| `COMPRESSION_MODE`                   | 要保存的预压缩副本：`o` 不保存，`g` `.gz`（由镜像内的 nginx 提供），`b` `.br`，`all` 两者都保存。镜像内的 nginx 无法提供 `.br`。         | `o`                                                            |
 
 WASM 模块 URL 已预先配置了 CDN 默认值，所有高级功能开箱即用。对于离线隔离或自托管部署，请覆盖这些值。
 
@@ -143,7 +149,7 @@ CSP 的 `script-src` 中包含 `'unsafe-eval'`，因为 LibreOffice WASM 运行�
 
 对于 OCR，将 `VITE_TESSERACT_*` 变量留空即可使用默认的在线资源，或者三个一起设置以用于自托管/离线 OCR。部分覆盖会被拒绝，因为 worker、核心运行时和 traineddata 目录必须相互匹配。要完全离线输出可搜索 PDF，还需设置 `VITE_OCR_FONT_BASE_URL`，让 OCR 文本层字体从您的内部服务器加载，而不是公共的 Noto 字体 URL。
 
-`VITE_DEFAULT_LANGUAGE` 设置首次访问者的界面语言。支持的值：`en`、`ar`、`be`、`fr`、`de`、`es`、`zh`、`zh-TW`、`vi`、`tr`、`id`、`it`、`pt`、`nl`、`da`。用户仍可切换语言，这只会更改默认值。
+`VITE_DEFAULT_LANGUAGE` 设置首次访问者的界面语言。支持的值：`en`、`ar`、`be`、`fr`、`de`、`es`、`zh`、`zh-TW`、`vi`、`tr`、`id`、`it`、`pt`、`nl`、`da`、`ko`、`sv`、`ru`、`pl`、`ja`、`uk`、`sk`、`ca`、`fa`。用户仍可切换语言，这只会更改默认值。
 
 示例：
 
@@ -254,6 +260,8 @@ services:
 
 **形状：** `annotation-shape`, `annotation-rectangle`, `annotation-circle`, `annotation-line`, `annotation-arrow`, `annotation-polygon`, `annotation-polyline`
 
+**测量：** `annotation-measurement`, `mode-measure`, `annotation-distance`, `annotation-perimeter`, `annotation-area`
+
 **表单：** `form`, `form-textfield`, `form-checkbox`, `form-radio`, `form-select`, `form-listbox`, `form-fill-mode`
 
 **涂黑：** `redaction`, `redaction-area`, `redaction-text`, `redaction-apply`, `redaction-clear`
@@ -264,7 +272,7 @@ services:
 
 **面板：** `panel`, `panel-sidebar`, `panel-search`, `panel-comment`
 
-**工具：** `tools`, `pan`, `pointer`, `capture`
+**工具：** `tools`, `pan`, `pointer`, `capture`, `organize`
 
 **选择：** `selection`, `selection-copy`
 

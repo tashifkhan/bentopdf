@@ -14,6 +14,28 @@ export async function getPdfjs() {
   return pdfjs;
 }
 
+/** Where pdf.js fetches its image-decoder wasm (see vite.config.ts). */
+export const PDFJS_WASM_URL = `${import.meta.env.BASE_URL ?? '/'}pdfjs-wasm/`;
+
+type PdfjsModule = Awaited<ReturnType<typeof getPdfjs>>;
+type PdfjsSource = Parameters<PdfjsModule['getDocument']>[0];
+
+/**
+ * Open a document with pdf.js, always passing `wasmUrl` so JPEG2000 / JBIG2
+ * pages decode instead of rendering blank. pdf.js transfers (detaches) the
+ * buffer it is given, so callers that reuse their bytes must pass a copy.
+ */
+export async function getPdfDocument(src: PdfjsSource) {
+  const pdfjs = await getPdfjs();
+  const params =
+    src instanceof Uint8Array || src instanceof ArrayBuffer
+      ? { data: src }
+      : typeof src === 'string' || src instanceof URL
+        ? { url: src }
+        : src;
+  return pdfjs.getDocument({ wasmUrl: PDFJS_WASM_URL, ...params }).promise;
+}
+
 export async function loadPdf(file: File | ArrayBuffer) {
   const data = file instanceof File ? await file.arrayBuffer() : file;
   return PDFDocument.load(data.slice(0), { ignoreEncryption: true });
@@ -131,9 +153,8 @@ export async function pdfToImages(
   format: 'jpeg' | 'png' = 'jpeg',
   scale = 1.5
 ): Promise<OutFile[]> {
-  const pdfjs = await getPdfjs();
   const data = await file.arrayBuffer();
-  const pdf = await pdfjs.getDocument({ data: data.slice(0) }).promise;
+  const pdf = await getPdfDocument({ data: data.slice(0) });
   const out: OutFile[] = [];
   const base = stem(file.name);
   for (let i = 0; i < pdf.numPages; i++) {
@@ -270,9 +291,8 @@ export async function compressPdfRaster(
   scale = 1.25,
   opts: { greyscale?: boolean; stripMetadata?: boolean } = {}
 ): Promise<Uint8Array> {
-  const pdfjs = await getPdfjs();
   const data = await file.arrayBuffer();
-  const pdf = await pdfjs.getDocument({ data: data.slice(0) }).promise;
+  const pdf = await getPdfDocument({ data: data.slice(0) });
   const out = await PDFDocument.create();
   for (let i = 0; i < pdf.numPages; i++) {
     const page = await pdf.getPage(i + 1);
@@ -462,9 +482,8 @@ export async function textToPdf(text: string, filename = 'text.pdf') {
 }
 
 export async function invertPdfColors(file: File): Promise<Uint8Array> {
-  const pdfjs = await getPdfjs();
   const data = await file.arrayBuffer();
-  const pdf = await pdfjs.getDocument({ data: data.slice(0) }).promise;
+  const pdf = await getPdfDocument({ data: data.slice(0) });
   const out = await PDFDocument.create();
   for (let i = 0; i < pdf.numPages; i++) {
     const page = await pdf.getPage(i + 1);
@@ -495,9 +514,8 @@ export async function invertPdfColors(file: File): Promise<Uint8Array> {
 }
 
 export async function greyscalePdf(file: File): Promise<Uint8Array> {
-  const pdfjs = await getPdfjs();
   const data = await file.arrayBuffer();
-  const pdf = await pdfjs.getDocument({ data: data.slice(0) }).promise;
+  const pdf = await getPdfDocument({ data: data.slice(0) });
   const out = await PDFDocument.create();
   for (let i = 0; i < pdf.numPages; i++) {
     const page = await pdf.getPage(i + 1);

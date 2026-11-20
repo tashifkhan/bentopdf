@@ -464,7 +464,7 @@ export const secureProcessors: Record<string, ToolProcessor> = {
         signatures.length === 0
           ? 'No digital signatures found.'
           : signatures.every((s) => s.digestValid)
-            ? `${signatures.length} signature(s): all intact.`
+            ? `${signatures.length} signature(s)/timestamp(s): all intact.`
             : 'One or more signatures could not be verified — see the report.';
       return {
         files: [report],

@@ -77,14 +77,19 @@ podman-compose up -d
 # Dockerfile
 FROM node:20-alpine AS builder
 WORKDIR /app
+ENV HUSKY=0
 COPY package*.json ./
+COPY vendor ./vendor
 RUN npm ci
 COPY . .
 RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/security-headers.conf /etc/nginx/security-headers.conf
+COPY --from=builder /app/security-headers-docs.conf /etc/nginx/security-headers-docs.conf
 COPY nginx.conf /etc/nginx/nginx.conf
+RUN mkdir -p /etc/nginx/tmp
 EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
 ```
@@ -118,6 +123,7 @@ docker run -d -p 3000:8080 bentopdf:custom
 | `DISABLE_GITHUB_STARS`               | Пропустити отримання кількості зірок GitHub під час завантаження сторінки та прибрати `api.github.com` із CSP. Збірки Simple Mode завжди це пропускають.                          | `false`                                                        |
 | `SITE_URL`                           | Публічний URL, що записується в canonical, hreflang і посилання sitemap. Залиште типовим, якщо не хочете, щоб пошукові системи сприймали ваше розгортання як окремий сайт.        | `https://www.bentopdf.com`                                     |
 | `ALLOW_INDEXING`                     | Із власним `SITE_URL` кожну сторінку позначено `noindex`, щоб ваша копія не конкурувала з bentopdf.com у пошуку. Задайте `true`, щоб дозволити пошуковим системам її індексувати. | `false`                                                        |
+| `COMPRESSION_MODE`                   | Попередньо стиснені копії поруч із кожним файлом: `o` немає, `g` `.gz` (їх віддає nginx образу), `b` `.br`, `all` обидві. Nginx образу не вміє віддавати `.br`.                   | `o`                                                            |
 
 URL модулів WASM попередньо налаштовано з типовими значеннями CDN, тому всі розширені функції працюють одразу. Перевизначте їх для ізольованих (air-gapped) або самостійно розгорнутих середовищ.
 
@@ -143,7 +149,7 @@ CSP містить `'unsafe-eval'` у `script-src`, тому що runtime LibreO
 
 Для OCR залиште змінні `VITE_TESSERACT_*` порожніми, щоб використовувати типові онлайн-ресурси, або задайте всі три разом для самостійного/офлайн OCR. Часткові перевизначення OCR відхиляються, бо worker, основний runtime і каталог traineddata мають збігатися. Для повністю офлайн-виводу пошукового PDF також задайте `VITE_OCR_FONT_BASE_URL`, щоб шрифти текстового шару OCR завантажувалися з вашого внутрішнього сервера, а не з публічних URL шрифтів Noto.
 
-`VITE_DEFAULT_LANGUAGE` задає мову інтерфейсу для нових відвідувачів. Підтримувані значення: `en`, `ar`, `be`, `fr`, `de`, `es`, `zh`, `zh-TW`, `vi`, `tr`, `id`, `it`, `pt`, `nl`, `da`. Користувачі й далі можуть змінювати мову: це змінює лише типове значення.
+`VITE_DEFAULT_LANGUAGE` задає мову інтерфейсу для нових відвідувачів. Підтримувані значення: `en`, `ar`, `be`, `fr`, `de`, `es`, `zh`, `zh-TW`, `vi`, `tr`, `id`, `it`, `pt`, `nl`, `da`, `ko`, `sv`, `ru`, `pl`, `ja`, `uk`, `sk`, `ca`, `fa`. Користувачі й далі можуть змінювати мову: це змінює лише типове значення.
 
 Приклад:
 
@@ -254,6 +260,8 @@ services:
 
 **Фігури:** `annotation-shape`, `annotation-rectangle`, `annotation-circle`, `annotation-line`, `annotation-arrow`, `annotation-polygon`, `annotation-polyline`
 
+**Вимірювання:** `annotation-measurement`, `mode-measure`, `annotation-distance`, `annotation-perimeter`, `annotation-area`
+
 **Форми:** `form`, `form-textfield`, `form-checkbox`, `form-radio`, `form-select`, `form-listbox`, `form-fill-mode`
 
 **Приховування даних:** `redaction`, `redaction-area`, `redaction-text`, `redaction-apply`, `redaction-clear`
@@ -264,7 +272,7 @@ services:
 
 **Панель:** `panel`, `panel-sidebar`, `panel-search`, `panel-comment`
 
-**Інструменти:** `tools`, `pan`, `pointer`, `capture`
+**Інструменти:** `tools`, `pan`, `pointer`, `capture`, `organize`
 
 **Виділення:** `selection`, `selection-copy`
 

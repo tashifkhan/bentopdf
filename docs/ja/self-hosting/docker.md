@@ -77,14 +77,19 @@ podman-compose up -d
 # Dockerfile
 FROM node:20-alpine AS builder
 WORKDIR /app
+ENV HUSKY=0
 COPY package*.json ./
+COPY vendor ./vendor
 RUN npm ci
 COPY . .
 RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/security-headers.conf /etc/nginx/security-headers.conf
+COPY --from=builder /app/security-headers-docs.conf /etc/nginx/security-headers-docs.conf
 COPY nginx.conf /etc/nginx/nginx.conf
+RUN mkdir -p /etc/nginx/tmp
 EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
 ```
@@ -118,6 +123,7 @@ docker run -d -p 3000:8080 bentopdf:custom
 | `DISABLE_GITHUB_STARS`               | ページ読み込み時のGitHubスター数の取得をスキップし、CSPから `api.github.com` を除外します。Simple Modeのビルドでは常にスキップされます。                                    | `false`                                                        |
 | `SITE_URL`                           | canonical、hreflang、サイトマップのリンクに書き込まれる公開URL。検索エンジンにデプロイ先を独立したサイトとして扱わせたい場合を除き、デフォルトのままにしてください。        | `https://www.bentopdf.com`                                     |
 | `ALLOW_INDEXING`                     | カスタムの `SITE_URL` を使う場合、検索結果でbentopdf.comと競合しないよう、すべてのページが `noindex` になります。検索エンジンにインデックスさせるには `true` に設定します。 | `false`                                                        |
+| `COMPRESSION_MODE`                   | 各ファイルの横に保存する事前圧縮コピー：`o` なし、`g` `.gz`（イメージのnginxが配信）、`b` `.br`、`all` 両方。イメージのnginxは `.br` を配信できません。                     | `o`                                                            |
 
 WASMモジュールのURLには、CDNのデフォルトがあらかじめ設定されているため、高度な機能はすべてそのまま動作します。エアギャップ環境やセルフホスト環境では、これらを上書きしてください。
 
@@ -143,7 +149,7 @@ CSPの `script-src` に `'unsafe-eval'` が含まれているのは、LibreOffic
 
 OCRでは、`VITE_TESSERACT_*` 変数を空のままにするとデフォルトのオンラインアセットを使い、セルフホスト／オフラインのOCRでは3つすべてを一緒に設定します。ワーカー、コアランタイム、traineddataディレクトリは対応している必要があるため、一部だけの上書きは拒否されます。完全オフラインで検索可能なPDFを出力するには、`VITE_OCR_FONT_BASE_URL` も設定して、OCRテキストレイヤー用フォントを公開のNotoフォントURLではなく社内サーバーから読み込むようにします。
 
-`VITE_DEFAULT_LANGUAGE` は、初めて訪れたユーザーのUI言語を設定します。サポートされる値：`en`、`ar`、`be`、`fr`、`de`、`es`、`zh`、`zh-TW`、`vi`、`tr`、`id`、`it`、`pt`、`nl`、`da`。ユーザーは引き続き言語を切り替えられ、これは既定値を変えるだけです。
+`VITE_DEFAULT_LANGUAGE` は、初めて訪れたユーザーのUI言語を設定します。サポートされる値：`en`、`ar`、`be`、`fr`、`de`、`es`、`zh`、`zh-TW`、`vi`、`tr`、`id`、`it`、`pt`、`nl`、`da`、`ko`、`sv`、`ru`、`pl`、`ja`、`uk`、`sk`、`ca`、`fa`。ユーザーは引き続き言語を切り替えられ、これは既定値を変えるだけです。
 
 例：
 
@@ -254,6 +260,8 @@ services:
 
 **図形：** `annotation-shape`, `annotation-rectangle`, `annotation-circle`, `annotation-line`, `annotation-arrow`, `annotation-polygon`, `annotation-polyline`
 
+**計測：** `annotation-measurement`, `mode-measure`, `annotation-distance`, `annotation-perimeter`, `annotation-area`
+
 **フォーム：** `form`, `form-textfield`, `form-checkbox`, `form-radio`, `form-select`, `form-listbox`, `form-fill-mode`
 
 **墨消し：** `redaction`, `redaction-area`, `redaction-text`, `redaction-apply`, `redaction-clear`
@@ -264,7 +272,7 @@ services:
 
 **パネル：** `panel`, `panel-sidebar`, `panel-search`, `panel-comment`
 
-**ツール：** `tools`, `pan`, `pointer`, `capture`
+**ツール：** `tools`, `pan`, `pointer`, `capture`, `organize`
 
 **選択：** `selection`, `selection-copy`
 

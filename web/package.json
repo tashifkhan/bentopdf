@@ -19,6 +19,8 @@
     "@tanstack/react-router": "^1.170.18",
     "@tanstack/react-router-devtools": "^1.167.0",
     "@tanstack/react-start": "^1.168.33",
+    "bentopdf-pdfium": "../vendor/bentopdf-pdfium/bentopdf-pdfium-3f6b6114b166.tgz",
+    "bentopdf-viewer": "../vendor/bentopdf-viewer/bentopdf-viewer-3f6b6114b166.tgz",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "embedpdf-snippet": "../vendor/embedpdf/embedpdf-snippet-2.9.1.tgz",

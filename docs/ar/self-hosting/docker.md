@@ -77,14 +77,19 @@ podman-compose up -d
 # Dockerfile
 FROM node:20-alpine AS builder
 WORKDIR /app
+ENV HUSKY=0
 COPY package*.json ./
+COPY vendor ./vendor
 RUN npm ci
 COPY . .
 RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/security-headers.conf /etc/nginx/security-headers.conf
+COPY --from=builder /app/security-headers-docs.conf /etc/nginx/security-headers-docs.conf
 COPY nginx.conf /etc/nginx/nginx.conf
+RUN mkdir -p /etc/nginx/tmp
 EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
 ```
@@ -118,6 +123,7 @@ docker run -d -p 3000:8080 bentopdf:custom
 | `DISABLE_GITHUB_STARS`               | تخطي جلب عدد نجوم GitHub عند تحميل الصفحة وحذف `api.github.com` من CSP. عمليات بناء Simple Mode تتخطاه دائمًا.                                       | `false`                                                        |
 | `SITE_URL`                           | العنوان العام المكتوب في روابط canonical وhreflang وخريطة الموقع. اتركه على الافتراضي ما لم تكن تريد أن تعامل محركات البحث نشرك كموقع مستقل.         | `https://www.bentopdf.com`                                     |
 | `ALLOW_INDEXING`                     | مع `SITE_URL` مخصص، توضع على كل صفحة علامة `noindex` لكي لا تنافس نسختك bentopdf.com في نتائج البحث. اضبطه على `true` للسماح لمحركات البحث بفهرستها. | `false`                                                        |
+| `COMPRESSION_MODE`                   | نسخ مضغوطة مسبقًا: `o` بلا نسخ، `g` `.gz` (يقدّمها nginx داخل الصورة)، `b` `.br`، `all` كلاهما. لا يستطيع nginx داخل الصورة تقديم `.br`.             | `o`                                                            |
 
 عناوين وحدات WASM مُعدّة مسبقًا بقيم CDN افتراضية، فتعمل جميع الميزات المتقدمة مباشرة. غيّرها في عمليات النشر المعزولة عن الإنترنت أو المستضافة ذاتيًا.
 
@@ -143,7 +149,7 @@ docker run -d -p 3000:8080 bentopdf:custom
 
 بالنسبة لـ OCR، اترك متغيرات `VITE_TESSERACT_*` فارغة لاستخدام الأصول الافتراضية عبر الإنترنت، أو اضبطها الثلاثة معًا لـ OCR المستضاف ذاتيًا أو بدون اتصال. تُرفض التغييرات الجزئية لإعدادات OCR لأن العامل والبيئة الأساسية ومجلد traineddata يجب أن تتطابق. وللحصول على ملف PDF قابل للبحث بالكامل دون اتصال، اضبط أيضًا `VITE_OCR_FONT_BASE_URL` لكي تُحمَّل خطوط الطبقة النصية الخاصة بـ OCR من خادمك الداخلي بدل روابط خطوط Noto العامة.
 
-يحدد `VITE_DEFAULT_LANGUAGE` لغة الواجهة للزوار لأول مرة. القيم المدعومة: `en` و`ar` و`be` و`fr` و`de` و`es` و`zh` و`zh-TW` و`vi` و`tr` و`id` و`it` و`pt` و`nl` و`da`. ما زال بإمكان المستخدمين تبديل اللغة، وهذا يغيّر الافتراضي فقط.
+يحدد `VITE_DEFAULT_LANGUAGE` لغة الواجهة للزوار لأول مرة. القيم المدعومة: `en` و`ar` و`be` و`fr` و`de` و`es` و`zh` و`zh-TW` و`vi` و`tr` و`id` و`it` و`pt` و`nl` و`da` و`ko` و`sv` و`ru` و`pl` و`ja` و`uk` و`sk` و`ca` و`fa`. ما زال بإمكان المستخدمين تبديل اللغة، وهذا يغيّر الافتراضي فقط.
 
 مثال:
 
@@ -254,6 +260,8 @@ services:
 
 **الأشكال:** `annotation-shape`, `annotation-rectangle`, `annotation-circle`, `annotation-line`, `annotation-arrow`, `annotation-polygon`, `annotation-polyline`
 
+**القياس:** `annotation-measurement`, `mode-measure`, `annotation-distance`, `annotation-perimeter`, `annotation-area`
+
 **النماذج:** `form`, `form-textfield`, `form-checkbox`, `form-radio`, `form-select`, `form-listbox`, `form-fill-mode`
 
 **التنقيح:** `redaction`, `redaction-area`, `redaction-text`, `redaction-apply`, `redaction-clear`
@@ -264,7 +272,7 @@ services:
 
 **اللوحة:** `panel`, `panel-sidebar`, `panel-search`, `panel-comment`
 
-**الأدوات:** `tools`, `pan`, `pointer`, `capture`
+**الأدوات:** `tools`, `pan`, `pointer`, `capture`, `organize`
 
 **التحديد:** `selection`, `selection-copy`
 

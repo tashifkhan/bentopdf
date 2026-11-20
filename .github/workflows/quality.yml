@@ -33,19 +33,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.9'
+
+      - name: Install site dependencies
+        working-directory: web
+        run: bun install --frozen-lockfile
+
       - name: Lint
         run: npm run lint
 
       - name: Test
-        # Upstream currently references two PDF fixtures that are not committed.
-        # Keep the other 841 tests required until those fixtures are restored.
-        run: npm run test:run -- --testNamePattern='^(?!.*fixes resource bloat)(?!.*preserves the document outline).*'
+        run: npm run test:run
 
-      - name: Build the deployed simple interface
+      - name: Build the deployed TanStack site and typecheck
         env:
-          SIMPLE_MODE: 'true'
-          SITE_URL: https://pdf.taf.sh
-          VITE_BRAND_NAME: Taf PDF
-          VITE_BRAND_LOGO: images/taf-pdf-mark.svg
-          VITE_FOOTER_TEXT: Private PDF tools powered by BentoPDF.
-        run: npm run build:docker
+          VITE_SITE_URL: https://pdf.taf.sh
+        run: npm run build

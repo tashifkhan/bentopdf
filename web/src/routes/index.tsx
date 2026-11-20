@@ -5,10 +5,19 @@ import { CloseCircle, Search } from 'reicon-react';
 import { Input } from '~/components/beui/input';
 import { FadeUp, Stagger } from '~/components/Motion';
 import { ToolIcon } from '~/components/icons';
+import { UpstreamCredits } from '~/components/UpstreamCredits';
 import { categories, searchTools, type Tool } from '~/data/tools';
 import { cn } from '~/lib/utils';
+import { seo } from '~/utils/seo';
 
 export const Route = createFileRoute('/')({
+  head: () =>
+    seo({
+      title: 'BentoPDF | Private PDF tools in your browser',
+      description:
+        'Merge, split, convert, sign, and edit PDFs in your browser. Files stay on your device. Free PDF tools with offline support.',
+      path: '/',
+    }),
   component: HomePage,
 });
 
@@ -166,6 +175,8 @@ function HomePage() {
           ))
         )}
       </div>
+
+      {isSearching ? null : <UpstreamCredits />}
     </div>
   );
 }

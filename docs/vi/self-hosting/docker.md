@@ -77,14 +77,19 @@ podman-compose up -d
 # Dockerfile
 FROM node:20-alpine AS builder
 WORKDIR /app
+ENV HUSKY=0
 COPY package*.json ./
+COPY vendor ./vendor
 RUN npm ci
 COPY . .
 RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/security-headers.conf /etc/nginx/security-headers.conf
+COPY --from=builder /app/security-headers-docs.conf /etc/nginx/security-headers-docs.conf
 COPY nginx.conf /etc/nginx/nginx.conf
+RUN mkdir -p /etc/nginx/tmp
 EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
 ```
@@ -118,6 +123,7 @@ docker run -d -p 3000:8080 bentopdf:custom
 | `DISABLE_GITHUB_STARS`               | Bỏ qua việc lấy số sao GitHub khi tải trang và loại `api.github.com` khỏi CSP. Các bản build Simple Mode luôn bỏ qua.                                                                     | `false`                                                        |
 | `SITE_URL`                           | URL công khai được ghi vào các liên kết canonical, hreflang và sitemap. Hãy giữ mặc định trừ khi bạn muốn công cụ tìm kiếm coi bản triển khai của bạn là một trang riêng.                 | `https://www.bentopdf.com`                                     |
 | `ALLOW_INDEXING`                     | Với `SITE_URL` tùy chỉnh, mọi trang được đánh dấu `noindex` để bản của bạn không cạnh tranh với bentopdf.com trong kết quả tìm kiếm. Đặt `true` để cho phép công cụ tìm kiếm lập chỉ mục. | `false`                                                        |
+| `COMPRESSION_MODE`                   | Bản nén sẵn lưu cạnh mỗi tệp: `o` không có, `g` `.gz` (do nginx trong image phục vụ), `b` `.br`, `all` cả hai. Nginx trong image không phục vụ được `.br`.                                | `o`                                                            |
 
 URL các module WASM đã được cấu hình sẵn với CDN mặc định, nên mọi tính năng nâng cao hoạt động ngay. Hãy ghi đè các URL này cho môi trường air-gapped hoặc tự lưu trữ.
 
@@ -143,7 +149,7 @@ CSP có `'unsafe-eval'` trong `script-src` vì runtime LibreOffice WASM (dùng c
 
 Với OCR, hãy để trống các biến `VITE_TESSERACT_*` để dùng tài nguyên trực tuyến mặc định, hoặc đặt cả ba cùng lúc cho OCR tự lưu trữ/ngoại tuyến. Ghi đè OCR một phần sẽ bị từ chối vì worker, runtime lõi và thư mục traineddata phải khớp nhau. Để có đầu ra PDF có thể tìm kiếm hoàn toàn ngoại tuyến, hãy đặt thêm `VITE_OCR_FONT_BASE_URL` để phông chữ lớp văn bản OCR được tải từ máy chủ nội bộ của bạn thay vì URL phông Noto công khai.
 
-`VITE_DEFAULT_LANGUAGE` đặt ngôn ngữ giao diện cho khách truy cập lần đầu. Giá trị được hỗ trợ: `en`, `ar`, `be`, `fr`, `de`, `es`, `zh`, `zh-TW`, `vi`, `tr`, `id`, `it`, `pt`, `nl`, `da`. Người dùng vẫn có thể đổi ngôn ngữ, giá trị này chỉ đổi mặc định.
+`VITE_DEFAULT_LANGUAGE` đặt ngôn ngữ giao diện cho khách truy cập lần đầu. Giá trị được hỗ trợ: `en`, `ar`, `be`, `fr`, `de`, `es`, `zh`, `zh-TW`, `vi`, `tr`, `id`, `it`, `pt`, `nl`, `da`, `ko`, `sv`, `ru`, `pl`, `ja`, `uk`, `sk`, `ca`, `fa`. Người dùng vẫn có thể đổi ngôn ngữ, giá trị này chỉ đổi mặc định.
 
 Ví dụ:
 
@@ -254,6 +260,8 @@ Bạn cũng có thể tắt các tính năng cụ thể trong Trình chỉnh s�
 
 **Hình dạng:** `annotation-shape`, `annotation-rectangle`, `annotation-circle`, `annotation-line`, `annotation-arrow`, `annotation-polygon`, `annotation-polyline`
 
+**Đo lường:** `annotation-measurement`, `mode-measure`, `annotation-distance`, `annotation-perimeter`, `annotation-area`
+
 **Biểu mẫu:** `form`, `form-textfield`, `form-checkbox`, `form-radio`, `form-select`, `form-listbox`, `form-fill-mode`
 
 **Che thông tin:** `redaction`, `redaction-area`, `redaction-text`, `redaction-apply`, `redaction-clear`
@@ -264,7 +272,7 @@ Bạn cũng có thể tắt các tính năng cụ thể trong Trình chỉnh s�
 
 **Bảng điều khiển:** `panel`, `panel-sidebar`, `panel-search`, `panel-comment`
 
-**Công cụ:** `tools`, `pan`, `pointer`, `capture`
+**Công cụ:** `tools`, `pan`, `pointer`, `capture`, `organize`
 
 **Lựa chọn:** `selection`, `selection-copy`
 

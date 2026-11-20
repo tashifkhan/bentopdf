@@ -70,6 +70,9 @@ describe('Navigation BASE_URL Consistency', () => {
       if (!fs.existsSync(filePath)) continue;
 
       const content = fs.readFileSync(filePath, 'utf-8');
+      // Fork: templates that render the shared navbar partial get their brand
+      // anchor from it, so there is no inline anchor to check here.
+      if (content.includes('{{> navbar }}')) continue;
       const anchors = [
         ...content.matchAll(
           /<a\b[^>]*href=["']([^"']*)["'][^>]*>([\s\S]*?)<\/a\s*>/gi
@@ -96,6 +99,11 @@ describe('Navigation BASE_URL Consistency', () => {
   it('ensures pdf-multi-tool uses standard navbar partial', () => {
     const pdfMultiTool = path.join(pagesDir, 'pdf-multi-tool.html');
     const content = fs.readFileSync(pdfMultiTool, 'utf-8');
-    expect(content).toContain('{{> navbar }}');
+    // Fork: the Multi Tool has its own app bar (organizer workspace) instead of
+    // the navbar partial; either way the brand must link home via {{baseUrl}}.
+    if (content.includes('{{> navbar }}')) return;
+    expect(content).toMatch(
+      /<a\b[^>]*class="mt-brand"[^>]*href="\{\{baseUrl\}\}"/
+    );
   });
 });

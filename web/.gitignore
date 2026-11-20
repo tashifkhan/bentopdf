@@ -18,3 +18,5 @@ yarn.lock
 /blob-report/
 /playwright/.cache/
 .tanstack
+# copied from pdfjs-dist at dev/build time (vite.config.ts)
+public/pdfjs-wasm/

@@ -77,14 +77,19 @@ podman-compose up -d
 # Dockerfile
 FROM node:20-alpine AS builder
 WORKDIR /app
+ENV HUSKY=0
 COPY package*.json ./
+COPY vendor ./vendor
 RUN npm ci
 COPY . .
 RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/security-headers.conf /etc/nginx/security-headers.conf
+COPY --from=builder /app/security-headers-docs.conf /etc/nginx/security-headers-docs.conf
 COPY nginx.conf /etc/nginx/nginx.conf
+RUN mkdir -p /etc/nginx/tmp
 EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
 ```
@@ -118,6 +123,7 @@ docker run -d -p 3000:8080 bentopdf:custom
 | `DISABLE_GITHUB_STARS`               | 페이지 로드 시 GitHub 스타 수 가져오기를 건너뛰고 CSP에서 `api.github.com`을 제거합니다. Simple Mode 빌드는 항상 건너뜁니다.                                                            | `false`                                                        |
 | `SITE_URL`                           | canonical, hreflang, 사이트맵 링크에 기록되는 공개 URL입니다. 검색 엔진이 사용자의 배포를 독립된 사이트로 취급하길 원하지 않는다면 기본값으로 두세요.                                   | `https://www.bentopdf.com`                                     |
 | `ALLOW_INDEXING`                     | 사용자 지정 `SITE_URL`을 사용하면 모든 페이지가 `noindex`로 표시되어 사용자의 사본이 검색 결과에서 bentopdf.com과 경쟁하지 않습니다. 검색 엔진이 색인하도록 하려면 `true`로 설정하세요. | `false`                                                        |
+| `COMPRESSION_MODE`                   | 각 파일 옆에 저장할 사전 압축 사본: `o` 없음, `g` `.gz` (이미지의 nginx가 제공), `b` `.br`, `all` 둘 다. 이미지의 nginx는 `.br`을 제공할 수 없습니다.                                   | `o`                                                            |
 
 WASM 모듈 URL에는 CDN 기본값이 미리 설정되어 있어 모든 고급 기능이 별도 설정 없이 작동합니다. 폐쇄망이나 직접 호스팅하는 배포에서는 이 값을 덮어쓰세요.
 
@@ -143,7 +149,7 @@ CSP의 `script-src`에는 `'unsafe-eval'`이 포함되어 있습니다. LibreOff
 
 OCR의 경우 `VITE_TESSERACT_*` 변수를 비워 두면 기본 온라인 에셋을 사용하고, 직접 호스팅하거나 오프라인 OCR을 쓰려면 세 가지를 함께 설정하세요. 워커, 코어 런타임, traineddata 디렉터리가 서로 일치해야 하므로 일부만 덮어쓰는 것은 거부됩니다. 완전히 오프라인으로 검색 가능한 PDF를 만들려면 `VITE_OCR_FONT_BASE_URL`도 설정하여 OCR 텍스트 레이어 글꼴을 공개 Noto 글꼴 URL 대신 내부 서버에서 불러오도록 하세요.
 
-`VITE_DEFAULT_LANGUAGE`는 처음 방문하는 사용자의 UI 언어를 설정합니다. 지원되는 값: `en`, `ar`, `be`, `fr`, `de`, `es`, `zh`, `zh-TW`, `vi`, `tr`, `id`, `it`, `pt`, `nl`, `da`. 사용자는 언제든 언어를 바꿀 수 있으며, 이 값은 기본값만 바꿉니다.
+`VITE_DEFAULT_LANGUAGE`는 처음 방문하는 사용자의 UI 언어를 설정합니다. 지원되는 값: `en`, `ar`, `be`, `fr`, `de`, `es`, `zh`, `zh-TW`, `vi`, `tr`, `id`, `it`, `pt`, `nl`, `da`, `ko`, `sv`, `ru`, `pl`, `ja`, `uk`, `sk`, `ca`, `fa`. 사용자는 언제든 언어를 바꿀 수 있으며, 이 값은 기본값만 바꿉니다.
 
 예시:
 
@@ -254,6 +260,8 @@ services:
 
 **도형:** `annotation-shape`, `annotation-rectangle`, `annotation-circle`, `annotation-line`, `annotation-arrow`, `annotation-polygon`, `annotation-polyline`
 
+**측정:** `annotation-measurement`, `mode-measure`, `annotation-distance`, `annotation-perimeter`, `annotation-area`
+
 **양식:** `form`, `form-textfield`, `form-checkbox`, `form-radio`, `form-select`, `form-listbox`, `form-fill-mode`
 
 **교정(Redaction):** `redaction`, `redaction-area`, `redaction-text`, `redaction-apply`, `redaction-clear`
@@ -264,7 +272,7 @@ services:
 
 **패널:** `panel`, `panel-sidebar`, `panel-search`, `panel-comment`
 
-**도구:** `tools`, `pan`, `pointer`, `capture`
+**도구:** `tools`, `pan`, `pointer`, `capture`, `organize`
 
 **선택:** `selection`, `selection-copy`
 

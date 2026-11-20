@@ -428,6 +428,7 @@
   "Downloaded {{length}} PDF files in a ZIP archive.": "تم تنزيل {{length}} من ملفات PDF في أرشيف ZIP.",
   "Downloads started for all files.": "بدأ تنزيل جميع الملفات.",
   "Dpi": "DPI",
+  "Drag to reorder": "اسحب لإعادة الترتيب",
   "Drops tagging, which screen readers rely on.": "يزيل الوسوم التي تعتمد عليها قارئات الشاشة.",
   "Duplicate Field Name": "اسم حقل مكرر",
   "Duplicate Field Names": "أسماء حقول مكررة",
@@ -1640,5 +1641,11 @@
   "{{value}}x": "{{value}}x",
   "{{width}} x {{height}} {{unit}}": "{{width}} x {{height}} {{unit}}",
   "• {{label}}: 1 page": "• {{label}}: صفحة واحدة",
-  "• {{label}}: {{count}} pages": "• {{label}}: عدد الصفحات: {{count}}"
+  "• {{label}}: {{count}} pages": "• {{label}}: عدد الصفحات: {{count}}",
+  "Sort by": "ترتيب حسب",
+  "Name": "الاسم",
+  "Modified date": "تاريخ التعديل",
+  "Size": "الحجم",
+  "Ascending": "تصاعدي",
+  "Descending": "تنازلي"
 }

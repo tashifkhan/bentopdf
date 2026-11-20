@@ -428,6 +428,7 @@
   "Downloaded {{length}} PDF files in a ZIP archive.": "S'han baixat {{length}} fitxers PDF en un arxiu ZIP.",
   "Downloads started for all files.": "S'han iniciat les baixades de tots els fitxers.",
   "Dpi": "Ppp",
+  "Drag to reorder": "Arrossega per reordenar",
   "Drops tagging, which screen readers rely on.": "Elimina l'etiquetatge, en què es basen els lectors de pantalla.",
   "Duplicate Field Name": "Nom de camp duplicat",
   "Duplicate Field Names": "Noms de camp duplicats",
@@ -1640,5 +1641,11 @@
   "{{value}}x": "{{value}}x",
   "{{width}} x {{height}} {{unit}}": "{{width}} x {{height}} {{unit}}",
   "• {{label}}: 1 page": "• {{label}}: 1 pàgina",
-  "• {{label}}: {{count}} pages": "• {{label}}: {{count}} pàgines"
+  "• {{label}}: {{count}} pages": "• {{label}}: {{count}} pàgines",
+  "Sort by": "Ordena per",
+  "Name": "Nom",
+  "Modified date": "Data de modificació",
+  "Size": "Mida",
+  "Ascending": "Ascendent",
+  "Descending": "Descendent"
 }

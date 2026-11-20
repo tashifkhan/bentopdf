@@ -1,5 +1,11 @@
 import { showLoader, hideLoader, showAlert } from '../ui.js';
 import { downloadFile, formatBytes } from '../utils/helpers.js';
+import {
+  createDragHandle,
+  enableFileListReorder,
+  enableFileListSort,
+  moveItem,
+} from '../utils/sortable-file-list.js';
 import { createIcons, icons } from 'lucide';
 import heic2any from 'heic2any';
 import { PDFDocument as PDFLibDocument } from 'pdf-lib';
@@ -39,7 +45,7 @@ const updateUI = () => {
         size: formatBytes(file.size),
       });
 
-      infoContainer.append(nameSpan, sizeSpan);
+      infoContainer.append(createDragHandle(), nameSpan, sizeSpan);
 
       const removeBtn = document.createElement('button');
       removeBtn.className =
@@ -52,6 +58,14 @@ const updateUI = () => {
 
       fileDiv.append(infoContainer, removeBtn);
       fileDisplayArea.appendChild(fileDiv);
+    });
+    enableFileListReorder(fileDisplayArea, (oldIndex, newIndex) => {
+      files = moveItem(files, oldIndex, newIndex);
+      updateUI();
+    });
+    enableFileListSort(fileControls, files, (sorted) => {
+      files = sorted;
+      updateUI();
     });
     createIcons({ icons });
   } else {

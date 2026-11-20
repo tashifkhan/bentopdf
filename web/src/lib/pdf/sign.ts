@@ -230,6 +230,12 @@ export async function digitallySign(
 
 export type SignatureInfo = {
   name: string;
+  /** A document timestamp (/DocTimeStamp, ETSI.RFC3161) rather than a signature. */
+  isTimestamp: boolean;
+  /** Hash algorithm of the timestamp's messageImprint, e.g. SHA-256. */
+  imprintAlgorithm?: string;
+  /** MD5 or SHA-1 was used; such a result is never treated as intact. */
+  usesInsecureDigest: boolean;
   reason: string;
   location: string;
   signedAt: string;
@@ -240,9 +246,17 @@ export type SignatureInfo = {
   notes: string[];
 };
 
+const TST_INFO_OID = '1.2.840.113549.1.9.16.1.4';
+const INSECURE_DIGESTS = new Set(['md5', 'sha1']);
+
 /**
  * Verify embedded signatures: re-hash the signed byte ranges and check them
  * against the PKCS#7 message digest, then report what the signature covers.
+ *
+ * Document timestamps (/Type /DocTimeStamp, /SubFilter /ETSI.RFC3161) hold an
+ * RFC 3161 token instead of a CMS signature over the document: the document
+ * hash lives in the token's TSTInfo messageImprint, and the TSA signs the
+ * TSTInfo. Both links are checked.
  */
 export async function verifySignatures(
   file: File,
@@ -262,7 +276,6 @@ export async function verifySignatures(
   }
   const bytes = new Uint8Array(await file.arrayBuffer());
   const doc = await loadPdf(file);
-  const form = doc.getForm();
 
   const results: SignatureInfo[] = [];
   const raw = new TextDecoder('latin1').decode(bytes);
@@ -281,13 +294,20 @@ export async function verifySignatures(
       parseInt(match[4]!, 10),
     ];
     const notes: string[] = [];
+    const isTimestamp = isTimestampDictionary(raw, match.index);
 
-    const contentsMatch = /\/Contents\s*<([0-9A-Fa-f]+)>/.exec(
-      raw.slice(match.index, match.index + 4000)
-    );
-    if (!contentsMatch) {
+    // The /Contents hex string is exactly the gap the ByteRange leaves out
+    // (PDF 32000-1, 12.8.1); fall back to a nearby /Contents for odd files.
+    const gapMatch = /^<([0-9A-Fa-f\s]+)>$/.exec(raw.slice(a + b, c).trim());
+    const nearbyMatch = gapMatch
+      ? null
+      : /\/Contents\s*<([0-9A-Fa-f]+)>/.exec(
+          raw.slice(match.index, match.index + 40000)
+        );
+    const contentsHex = (gapMatch?.[1] ?? nearbyMatch?.[1])?.replace(/\s/g, '');
+    if (!contentsHex) {
       notes.push('Signature bytes could not be located');
-      results.push(emptyInfo(index, notes));
+      results.push(emptyInfo(index, notes, isTimestamp));
       continue;
     }
 
@@ -301,9 +321,16 @@ export async function verifySignatures(
     let signer = '';
     let issuer = '';
     let signedAt = '';
+    let imprintAlgorithm: string | undefined;
+    let usesInsecureDigest = false;
     try {
-      const der = forge.util.hexToBytes(contentsMatch[1]!.replace(/00+$/, ''));
-      const p7 = forge.pkcs7.messageFromAsn1(forge.asn1.fromDer(der));
+      const der = forge.util.hexToBytes(contentsHex.replace(/(00)+$/, ''));
+      const asn1 = forge.asn1.fromDer(der);
+      const timestamp = isTimestamp ? unwrapTimestampToken(forge, asn1) : null;
+      if (isTimestamp && !timestamp) {
+        throw new Error('could not read the timestamp token');
+      }
+      const p7 = forge.pkcs7.messageFromAsn1(asn1);
       const cert = p7.certificates?.[0];
       if (cert) {
         const described = describeCert(cert);
@@ -344,22 +371,65 @@ export async function verifySignatures(
         p7.rawCapture?.digestAlgorithm &&
         forge.pki.oids[forge.asn1.derToOid(p7.rawCapture.digestAlgorithm)];
       const algo = typeof digestAlgo === 'string' ? digestAlgo : 'sha256';
+      if (INSECURE_DIGESTS.has(algo)) usesInsecureDigest = true;
       const md = forge.md[algo.replace('-', '')] ?? forge.md.sha256;
+      const signedByteString = forge.util.createBuffer(signedBytes).getBytes();
+
+      // A timestamp token signs its TSTInfo, which in turn holds the hash of
+      // the document bytes (RFC 3161, 2.4.2).
+      let imprintValid = true;
+      if (timestamp) {
+        imprintAlgorithm = timestamp.imprintAlgorithm.toUpperCase();
+        if (INSECURE_DIGESTS.has(timestamp.imprintAlgorithm)) {
+          usesInsecureDigest = true;
+        }
+        const imprintMd = forge.md[timestamp.imprintAlgorithm];
+        if (!imprintMd) {
+          imprintValid = false;
+          notes.push(
+            `Unsupported timestamp imprint algorithm ${timestamp.imprintAlgorithm}`
+          );
+        } else {
+          const imprintHash = imprintMd.create();
+          imprintHash.update(signedByteString);
+          imprintValid = imprintHash.digest().getBytes() === timestamp.imprint;
+          if (!imprintValid) {
+            notes.push(
+              'Document hash does not match the timestamp: PDF was modified after timestamping'
+            );
+          }
+        }
+        if (timestamp.genTime) signedAt = timestamp.genTime.toISOString();
+      }
+
       const hash = md.create();
-      hash.update(forge.util.createBuffer(signedBytes).getBytes());
+      hash.update(timestamp ? timestamp.tstInfo : signedByteString);
       const computed = hash.digest().toHex();
 
       const embedded = findMessageDigest(forge, authAttrs);
       if (embedded) {
-        digestValid = embedded.toLowerCase() === computed.toLowerCase();
-        if (!digestValid)
-          notes.push('Document has been modified since signing');
+        const attrValid = embedded.toLowerCase() === computed.toLowerCase();
+        digestValid = attrValid && imprintValid;
+        if (!attrValid) {
+          notes.push(
+            timestamp
+              ? 'Timestamp token does not match its TSA signature'
+              : 'Document has been modified since signing'
+          );
+        }
       } else if (signerInfo) {
         notes.push('Signature has no messageDigest attribute to check');
       }
 
-      const signingTime = findSigningTime(forge, authAttrs);
-      if (signingTime) signedAt = signingTime;
+      if (usesInsecureDigest) {
+        digestValid = false;
+        notes.push('Uses an insecure digest (MD5 / SHA-1)');
+      }
+
+      if (!signedAt) {
+        const signingTime = findSigningTime(forge, authAttrs);
+        if (signingTime) signedAt = signingTime;
+      }
     } catch (e) {
       notes.push(
         `Could not parse the signature: ${e instanceof Error ? e.message : 'unknown error'}`
@@ -373,7 +443,10 @@ export async function verifySignatures(
     }
 
     results.push({
-      name: `Signature ${index}`,
+      name: isTimestamp ? `Document Timestamp ${index}` : `Signature ${index}`,
+      isTimestamp,
+      imprintAlgorithm,
+      usesInsecureDigest,
       reason: '',
       location: '',
       signedAt,
@@ -387,7 +460,7 @@ export async function verifySignatures(
 
   // Enrich with field-level metadata where pdf-lib can see it.
   try {
-    const fields = form.getFields();
+    const fields = doc.getForm().getFields();
     results.forEach((info, i) => {
       const field = fields[i];
       if (field) info.name = field.getName();
@@ -399,9 +472,15 @@ export async function verifySignatures(
   return results;
 }
 
-function emptyInfo(index: number, notes: string[]): SignatureInfo {
+function emptyInfo(
+  index: number,
+  notes: string[],
+  isTimestamp = false
+): SignatureInfo {
   return {
-    name: `Signature ${index}`,
+    name: isTimestamp ? `Document Timestamp ${index}` : `Signature ${index}`,
+    isTimestamp,
+    usesInsecureDigest: false,
     reason: '',
     location: '',
     signedAt: '',
@@ -412,6 +491,98 @@ function emptyInfo(index: number, notes: string[]): SignatureInfo {
     notes,
   };
 }
+
+/**
+ * Whether the signature dictionary holding the /ByteRange at `at` is a
+ * document timestamp. /Type is optional, so /SubFilter /ETSI.RFC3161 counts
+ * too (ISO 32000-2, 12.8.5).
+ */
+function isTimestampDictionary(raw: string, at: number): boolean {
+  const objStart = raw.lastIndexOf('obj', at);
+  const start = objStart < 0 ? Math.max(0, at - 20000) : objStart;
+  const endObj = raw.indexOf('endobj', at);
+  const end = endObj < 0 ? Math.min(raw.length, at + 20000) : endObj;
+  // Drop the (large) hex signature so the scan stays cheap.
+  const dict = raw.slice(start, end).replace(/<[0-9A-Fa-f\s]+>/g, '<>');
+  return (
+    /\/Type\s*\/DocTimeStamp\b/.test(dict) ||
+    /\/SubFilter\s*\/ETSI\.RFC3161\b/.test(dict)
+  );
+}
+
+type TimestampToken = {
+  /** DER-encoded TSTInfo as a binary string (what the TSA signed). */
+  tstInfo: string;
+  imprintAlgorithm: string;
+  imprint: string;
+  genTime?: Date;
+};
+
+/**
+ * Read the TSTInfo out of an RFC 3161 timestamp token and relabel its
+ * encapsulated content as id-data, since node-forge only parses SignedData
+ * that wraps plain data. Mutates `contentInfo`.
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any -- node-forge ASN.1 nodes are untyped here */
+function unwrapTimestampToken(
+  forge: any,
+  contentInfo: any
+): TimestampToken | null {
+  const children = (node: any): any[] | null =>
+    node && Array.isArray(node.value) ? node.value : null;
+  try {
+    const signedData = children(children(contentInfo)?.[1])?.[0];
+    const encapContentInfo = children(signedData)?.[2];
+    const [typeNode, explicitContent] = children(encapContentInfo) ?? [];
+    if (
+      typeNode?.type !== forge.asn1.Type.OID ||
+      forge.asn1.derToOid(typeNode.value) !== TST_INFO_OID
+    ) {
+      return null;
+    }
+    const octets = children(explicitContent)?.[0];
+    if (!octets || octets.type !== forge.asn1.Type.OCTETSTRING) return null;
+    const tstInfoDer: string =
+      typeof octets.value === 'string'
+        ? octets.value
+        : octets.value.map((chunk: any) => chunk.value as string).join('');
+
+    const tstInfo = children(forge.asn1.fromDer(tstInfoDer));
+    const [hashAlgorithm, hashedMessage] = children(tstInfo?.[2]) ?? [];
+    const imprintOidNode = children(hashAlgorithm)?.[0];
+    if (
+      imprintOidNode?.type !== forge.asn1.Type.OID ||
+      hashedMessage?.type !== forge.asn1.Type.OCTETSTRING ||
+      typeof hashedMessage.value !== 'string'
+    ) {
+      return null;
+    }
+    const imprintOid = forge.asn1.derToOid(imprintOidNode.value);
+    const imprintName = forge.pki.oids[imprintOid];
+
+    let genTime: Date | undefined;
+    const genTimeNode = tstInfo?.[4];
+    if (
+      genTimeNode?.type === forge.asn1.Type.GENERALIZEDTIME &&
+      typeof genTimeNode.value === 'string'
+    ) {
+      genTime = forge.asn1.generalizedTimeToDate(genTimeNode.value);
+    }
+
+    typeNode.value = forge.asn1.oidToDer(forge.pki.oids.data).getBytes();
+
+    return {
+      tstInfo: tstInfoDer,
+      imprintAlgorithm:
+        typeof imprintName === 'string' ? imprintName : imprintOid,
+      imprint: hashedMessage.value,
+      genTime,
+    };
+  } catch {
+    return null;
+  }
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function findMessageDigest(forge: any, attrs: any): string | null {
@@ -453,14 +624,19 @@ export function formatVerificationReport(
     lines.push('This PDF contains no digital signatures.');
   }
   for (const sig of signatures) {
+    const ts = sig.isTimestamp;
     lines.push(
       `${sig.name}`,
-      `  Integrity:  ${sig.digestValid ? 'VALID — content matches the signature' : 'NOT VERIFIED'}`,
+      `  Type:       ${ts ? 'document timestamp (RFC 3161)' : 'digital signature'}`,
+      `  Integrity:  ${sig.digestValid ? `VALID — content matches the ${ts ? 'timestamp' : 'signature'}` : 'NOT VERIFIED'}`,
       `  Coverage:   ${sig.coversWholeDocument ? 'entire document' : 'partial'}`,
-      `  Signer:     ${sig.signer || 'unknown'}`,
+      `  ${ts ? 'TSA:   ' : 'Signer:'}     ${sig.signer || 'unknown'}`,
       `  Issuer:     ${sig.issuer || 'unknown'}`,
-      `  Signed at:  ${sig.signedAt || 'unknown'}`
+      `  ${ts ? 'Time:     ' : 'Signed at:'}  ${sig.signedAt || 'unknown'}`
     );
+    if (sig.imprintAlgorithm) {
+      lines.push(`  Imprint:    ${sig.imprintAlgorithm}`);
+    }
     for (const note of sig.notes) lines.push(`  Note:       ${note}`);
     lines.push('');
   }
